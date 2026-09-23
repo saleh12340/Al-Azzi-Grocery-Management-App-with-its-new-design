@@ -57,46 +57,33 @@ public class MainActivity extends Activity {
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         getWindow().setStatusBarColor(DARK);
         getWindow().setNavigationBarColor(DARK);
-        showStartupLoading();
+
+        // الواجهة لا تنتظر SQLite إطلاقاً. نعرض الشاشة الرئيسية فوراً.
+        startupFinished=true;
+        try{ home(); }catch(Throwable e){
+            android.util.Log.e("AlAzziStartup","Initial UI failed",e);
+            showStartupRecovery(e);
+        }
+
+        // فتح قاعدة البيانات يتم خارج خيط الواجهة.
         new Thread(() -> {
-            DB localDb=null;
             try{
-                // استخدم قاعدة بيانات جديدة ومستقلة تماماً لتجنب أي ملف قديم أو قفل سابق.
-                localDb=new DB(this);
+                DB localDb=new DB(this);
                 SQLiteDatabase writable=localDb.getWritableDatabase();
                 writable.setForeignKeyConstraintsEnabled(false);
-                final DB readyDb=localDb;
+                db=localDb;
+                try{ AppStorage.initializeAllDirectories(this); }catch(Throwable ignored){}
+                try{ BackupReceiver.schedule(this); }catch(Throwable ignored){}
                 runOnUiThread(() -> {
-                    if(startupFinished) return;
-                    try{
-                        db=readyDb;
-                        startupFinished=true;
-                        home();
-                        try{ AppStorage.initializeAllDirectories(this); }catch(Throwable ignored){}
-                        try{ BackupReceiver.schedule(this); }catch(Throwable ignored){}
-                    }catch(Throwable e){
-                        android.util.Log.e("AlAzziStartup","Home UI failed",e);
-                        startupFinished=true;
-                        showStartupRecovery(e);
-                    }
+                    Toast.makeText(this,"تم تجهيز قاعدة البيانات",Toast.LENGTH_SHORT).show();
                 });
             }catch(Throwable e){
                 android.util.Log.e("AlAzziStartup","Database startup failed",e);
-                final String detail=e.getClass().getSimpleName()+": "+String.valueOf(e.getMessage());
-                runOnUiThread(() -> {
-                    if(startupFinished) return;
-                    startupFinished=true;
-                    showStartupRecovery(new RuntimeException("تعذر فتح قاعدة البيانات: "+detail,e));
-                });
+                runOnUiThread(() -> Toast.makeText(this,
+                    "تعذر تجهيز قاعدة البيانات. الواجهة تعمل، ويمكن إعادة المحاولة من الإعدادات.",
+                    Toast.LENGTH_LONG).show());
             }
         }).start();
-        // لا نترك شاشة التشغيل معلقة. إذا لم تُفتح القاعدة خلال 8 ثوانٍ نعرض شاشة خطأ واضحة.
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            if(!startupFinished){
-                startupFinished=true;
-                showStartupRecovery(new RuntimeException("انتهت مهلة فتح قاعدة البيانات"));
-            }
-        },8000);
     }
 
     void showStartupLoading(){
