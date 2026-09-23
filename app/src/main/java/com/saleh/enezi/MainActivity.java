@@ -59,33 +59,44 @@ public class MainActivity extends Activity {
         getWindow().setNavigationBarColor(DARK);
         showStartupLoading();
         new Thread(() -> {
+            DB localDb=null;
             try{
-                DB localDb=new DB(this);
-                localDb.getWritableDatabase();
-                AppStorage.initializeAllDirectories(this);
-                try{ BackupReceiver.schedule(this); }catch(Throwable ignored){}
+                // استخدم قاعدة بيانات جديدة ومستقلة تماماً لتجنب أي ملف قديم أو قفل سابق.
+                localDb=new DB(this);
+                SQLiteDatabase writable=localDb.getWritableDatabase();
+                writable.setForeignKeyConstraintsEnabled(false);
+                final DB readyDb=localDb;
                 runOnUiThread(() -> {
+                    if(startupFinished) return;
                     try{
-                        if(startupFinished) return;
+                        db=readyDb;
                         startupFinished=true;
-                        db=localDb;
                         home();
+                        try{ AppStorage.initializeAllDirectories(this); }catch(Throwable ignored){}
+                        try{ BackupReceiver.schedule(this); }catch(Throwable ignored){}
                     }catch(Throwable e){
                         android.util.Log.e("AlAzziStartup","Home UI failed",e);
+                        startupFinished=true;
                         showStartupRecovery(e);
                     }
                 });
             }catch(Throwable e){
-                android.util.Log.e("AlAzziStartup","Startup failed",e);
-                runOnUiThread(() -> { if(!startupFinished){ startupFinished=true; showStartupRecovery(e); } });
+                android.util.Log.e("AlAzziStartup","Database startup failed",e);
+                final String detail=e.getClass().getSimpleName()+": "+String.valueOf(e.getMessage());
+                runOnUiThread(() -> {
+                    if(startupFinished) return;
+                    startupFinished=true;
+                    showStartupRecovery(new RuntimeException("تعذر فتح قاعدة البيانات: "+detail,e));
+                });
             }
         }).start();
+        // لا نترك شاشة التشغيل معلقة. إذا لم تُفتح القاعدة خلال 8 ثوانٍ نعرض شاشة خطأ واضحة.
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             if(!startupFinished){
                 startupFinished=true;
-                showStartupRecovery(new RuntimeException("Startup timeout"));
+                showStartupRecovery(new RuntimeException("انتهت مهلة فتح قاعدة البيانات"));
             }
-        },10000);
+        },8000);
     }
 
     void showStartupLoading(){
@@ -7214,7 +7225,8 @@ void notes(){ base("الملاحظات");
     }
 
     static class DB extends SQLiteOpenHelper{
-        DB(Context c){super(c,"alazzi_grocery_v3.db",null,15);}
+        static final String DB_NAME="alazzi_grocery_runtime_v4.db";
+        DB(Context c){super(c,DB_NAME,null,15);}
         @Override public void onConfigure(SQLiteDatabase d){
             super.onConfigure(d);
             try{d.execSQL("PRAGMA busy_timeout=1500");}catch(Exception ignored){}
