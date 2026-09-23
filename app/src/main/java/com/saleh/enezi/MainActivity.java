@@ -2657,14 +2657,11 @@ public class MainActivity extends Activity {
         try{
             ArrayList<PurchaseLine> lines=loadPurchaseLines(id);
             File file=createPurchaseInvoicePdf(no,supplier,lines,total,date);
-            Uri uri=FileProvider.getUriForFile(this,getPackageName()+".fileprovider",file);
-            Intent i=new Intent(Intent.ACTION_SEND);
-            i.setType("application/pdf");
-            i.putExtra(Intent.EXTRA_STREAM,uri);
             String text=purchaseReceiptText(no,supplier,lines,total,date);
-            i.putExtra(Intent.EXTRA_TEXT,text);
-            i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            startActivity(Intent.createChooser(i,"مشاركة فاتورة شراء PDF"));
+            DocumentCenter.sharePdf(this,file,text,"مشاركة فاتورة شراء PDF");
+            return;
+            /*
+        }*/
         }catch(Exception e){Toast.makeText(this,"تعذر إنشاء فاتورة الشراء PDF",Toast.LENGTH_SHORT).show();}
     }
 
@@ -2919,17 +2916,15 @@ public class MainActivity extends Activity {
     void shareAccountPdfToWhatsApp(long id,String name){
         try{
             File file=createCustomerStatementPdf(id,name);
-            Uri uri=FileProvider.getUriForFile(this,getPackageName()+".fileprovider",file);
-            Intent i=new Intent(Intent.ACTION_SEND);
-            i.setType("application/pdf");
-            i.putExtra(Intent.EXTRA_STREAM,uri);
             String caption="كشف حساب تفصيلي - "+name+"\nبقالة العزي للمواد الغذائية\nرصيدكم الحالي: "+balanceText(db.balance(id));
-            i.putExtra(Intent.EXTRA_TEXT,caption);
-            i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            DocumentCenter.sharePdf(this,file,caption,"مشاركة كشف الحساب PDF");
+            return;
+            /*
             String p=normalizeWhatsAppPhone(db.phoneByName(name));
             if(!p.isEmpty())i.putExtra("jid",p+"@s.whatsapp.net");
             try{i.setPackage("com.whatsapp");startActivity(i);}
             catch(Exception e){i.setPackage(null);startActivity(Intent.createChooser(i,"مشاركة كشف الحساب PDF"));}
+        }*/
         }catch(Exception e){Toast.makeText(this,"تعذر إنشاء كشف الحساب PDF",Toast.LENGTH_LONG).show();}
     }
 
@@ -3070,14 +3065,11 @@ public class MainActivity extends Activity {
     void shareInvoicePdf(String no,String customer,ArrayList<Line> lines,double total,double paid,double balanceAfter,String date){
         try{
             File file=createInvoicePdf(no,customer,lines,total,paid,balanceAfter,date);
-            Uri uri=FileProvider.getUriForFile(this,getPackageName()+".fileprovider",file);
-            Intent i=new Intent(Intent.ACTION_SEND);
-            i.setType("application/pdf");
-            i.putExtra(Intent.EXTRA_STREAM,uri);
             String text=invoiceWhatsAppText(no,customer,lines,total,paid,balanceAfter,date);
-            i.putExtra(Intent.EXTRA_TEXT,text);
-            i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            startActivity(Intent.createChooser(i,"مشاركة فاتورة PDF"));
+            DocumentCenter.sharePdf(this,file,text,"مشاركة فاتورة PDF");
+            return;
+            /*
+        }*/
         }catch(Exception e){Toast.makeText(this,"تعذر إنشاء فاتورة PDF",Toast.LENGTH_SHORT).show();}
     }
     void shareInvoicePdf(String no,String customer,ArrayList<Line> lines,double total){
@@ -3171,7 +3163,7 @@ public class MainActivity extends Activity {
         shareSmsToCustomer(phone,s.toString());
     }
 
-    void shareText(String s){Intent i=new Intent(Intent.ACTION_SEND);i.setType("text/plain");i.putExtra(Intent.EXTRA_TEXT,s);startActivity(Intent.createChooser(i,"إرسال"));}
+    void shareText(String s){ try{ DocumentCenter.shareText(this,s); }catch(Exception e){ Toast.makeText(this,"تعذر فتح شاشة المشاركة",Toast.LENGTH_SHORT).show(); } }
     String normalizeWhatsAppPhone(String phone){
         String p=phone==null?"":phone.replaceAll("[^0-9+]","");
         if(p.startsWith("+"))p=p.substring(1);
@@ -3697,7 +3689,8 @@ public class MainActivity extends Activity {
         return Bitmap.createBitmap(b,0,0,width,Math.min(y+10,b.getHeight()));
     }
 
-    Bitmap receiptBitmap(String text){
+    Bitmap receiptBitmap(String text){ return receiptBitmap(text,384); }
+    Bitmap receiptBitmap(String text,int targetWidth){
         final int width=384;
         final int margin=14;
         final int black=Color.BLACK;
@@ -3750,7 +3743,9 @@ public class MainActivity extends Activity {
             p.setTypeface(Typeface.create("sans",Typeface.NORMAL));p.setTextSize(11);p.setColor(gray);
             p.setTextAlign(Paint.Align.CENTER);canvas.drawText(l.replace("*",""),width/2,y,p);y+=18;
         }
-        return Bitmap.createBitmap(b,0,0,width,Math.min(y+16,b.getHeight()));
+        Bitmap out=Bitmap.createBitmap(b,0,0,width,Math.min(y+16,b.getHeight()));
+        if(targetWidth!=width) out=Bitmap.createScaledBitmap(out,targetWidth,Math.max(1,Math.round(out.getHeight()*targetWidth/(float)width)),true);
+        return out;
     }
 
     Uri saveReceiptBitmap(Bitmap bitmap,String no)throws Exception{
@@ -3783,10 +3778,12 @@ public class MainActivity extends Activity {
     }
 
     String pendingPrintNo="",pendingPrintCustomer="";ArrayList<Line> pendingPrintLines;double pendingPrintTotal;
-    String pendingPrintText="";
-    void printTextBluetooth(String text){
+    String pendingPrintText=""; int pendingPrintWidth=384;
+    void printTextBluetooth(String text){ printTextBluetooth(text,384); }
+    void printTextBluetooth(String text,int requestedWidth){
+        final int printWidth=(requestedWidth>=576?576:384);
         if(Build.VERSION.SDK_INT>=31&&checkSelfPermission("android.permission.BLUETOOTH_CONNECT")!=PackageManager.PERMISSION_GRANTED){
-            pendingPrintText=text;requestPermissions(new String[]{"android.permission.BLUETOOTH_CONNECT"},5102);return;
+            pendingPrintText=text; pendingPrintWidth=printWidth; requestPermissions(new String[]{"android.permission.BLUETOOTH_CONNECT"},5102);return;
         }
         BluetoothAdapter adapter=BluetoothAdapter.getDefaultAdapter();
         if(adapter==null){Toast.makeText(this,"هذا الجهاز لا يدعم البلوتوث",Toast.LENGTH_LONG).show();return;}
@@ -3795,10 +3792,14 @@ public class MainActivity extends Activity {
         if(paired==null||paired.isEmpty()){Toast.makeText(this,"لا توجد طابعة مقترنة. اقترن بالطابعة من إعدادات البلوتوث أولاً.",Toast.LENGTH_LONG).show();return;}
         BluetoothDevice[] devices=paired.toArray(new BluetoothDevice[0]);String[] names=new String[devices.length];
         for(int i=0;i<devices.length;i++)names[i]=(devices[i].getName()==null?"طابعة بلوتوث":devices[i].getName())+"\n"+devices[i].getAddress();
-        new AlertDialog.Builder(this).setTitle("اختر طابعة 58mm").setItems(names,(d,w)->{
-            Bitmap bitmap=receiptBitmap(text);
-            new Thread(()->sendBitmapToBluetooth(devices[w],bitmap)).start();
-        }).setNegativeButton("إلغاء",null).show();
+        new AlertDialog.Builder(this).setTitle("اختر عرض الطباعة")
+            .setItems(new String[]{"58mm — إيصال مضغوط","80mm — إيصال عريض"},(d,choice)->{
+                int width=choice==1?576:384;
+                new AlertDialog.Builder(this).setTitle("اختر طابعة البلوتوث").setItems(names,(d2,w)->{
+                    Bitmap bitmap=receiptBitmap(text,width);
+                    new Thread(()->sendBitmapToBluetooth(devices[w],bitmap)).start();
+                }).setNegativeButton("إلغاء",null).show();
+            }).setNegativeButton("إلغاء",null).show();
     }
     void sendBitmapToBluetooth(BluetoothDevice device,Bitmap bitmap){
         BluetoothSocket socket=null;OutputStream out=null;
@@ -3882,7 +3883,7 @@ public class MainActivity extends Activity {
         }else if(requestCode==5101&&grantResults.length>0&&grantResults[0]==PackageManager.PERMISSION_GRANTED&&pendingPrintLines!=null){
             printInvoiceBluetooth(pendingPrintNo,pendingPrintCustomer,pendingPrintLines,pendingPrintTotal);
         }else if(requestCode==5102&&grantResults.length>0&&grantResults[0]==PackageManager.PERMISSION_GRANTED&&!pendingPrintText.isEmpty()){
-            String x=pendingPrintText;pendingPrintText="";printTextBluetooth(x);
+            String x=pendingPrintText; int w=pendingPrintWidth; pendingPrintText=""; printTextBluetooth(x,w);
         }
     }
     void thermalPreview(String no,String customer,LinearLayout rows,double total){preview(no,customer,new ArrayList<Line>(),total,false,-1);}
