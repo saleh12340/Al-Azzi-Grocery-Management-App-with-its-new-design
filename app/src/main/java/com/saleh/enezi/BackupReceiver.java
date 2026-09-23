@@ -39,7 +39,7 @@ public class BackupReceiver extends BroadcastReceiver {
 
     static void backup(Context c){
         String fn="نسخة_احتياطية_"+new SimpleDateFormat("yyyy-MM-dd_HH-mm",Locale.US).format(new Date())+".db";
-        File src=c.getDatabasePath("alazzi_grocery_runtime_v4.db");
+        File src=c.getDatabasePath("alazzi_grocery_runtime_v5.db");
         if(!src.exists()) return;
         try{
             SQLiteDatabase d=null;
