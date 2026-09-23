@@ -709,7 +709,25 @@ public class MainActivity extends Activity {
         fButtons.addView(fClear,fcp);
 
         invFooter.addView(fButtons,new LinearLayout.LayoutParams(-1,dp(46)));
-        bottom.addView(invFooter,new LinearLayout.LayoutParams(-1,-2));
+
+        // أزرار طريقة البيع/السداد في الشريط السفلي الثابت
+        LinearLayout payModes=new LinearLayout(this);
+        payModes.setOrientation(LinearLayout.HORIZONTAL);
+        payModes.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        payModes.setGravity(Gravity.CENTER_VERTICAL);
+
+        Button cashMode=button("💵 نقدي");
+        Button creditMode=button("⏳ آجل");
+        Button calcMode=button("🧮 حاسبة الصرف");
+        cashMode.setTextSize(11.5f); creditMode.setTextSize(11.5f); calcMode.setTextSize(11.5f);
+        payModes.addView(cashMode,new LinearLayout.LayoutParams(0,dp(38),1));
+        LinearLayout.LayoutParams cmlpFooter=new LinearLayout.LayoutParams(0,dp(38),1); cmlpFooter.setMargins(dp(4),0,0,0);
+        payModes.addView(creditMode,cmlpFooter);
+        LinearLayout.LayoutParams clmlpFooter=new LinearLayout.LayoutParams(0,dp(38),1.1f); clmlpFooter.setMargins(dp(4),0,0,0);
+        payModes.addView(calcMode,clmlpFooter);
+        invFooter.addView(payModes,new LinearLayout.LayoutParams(-1,dp(40)));
+
+        bottom.addView(invFooter,new LinearLayout.LayoutParams(-1,dp(116)));
 
         section("بيانات الفاتورة");
 
@@ -960,14 +978,7 @@ public class MainActivity extends Activity {
         invoiceBox.addView(paidRow,new LinearLayout.LayoutParams(-1,dp(40)));
         addSpaceTo(invoiceBox,4);
 
-        // أزرار نوع السداد: نقدي / آجل / حاسبة الصرف
-        LinearLayout payModes=new LinearLayout(this);
-        payModes.setOrientation(LinearLayout.HORIZONTAL);
-        payModes.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        Button cashMode=button("💵 نقدي");
-        Button creditMode=button("⏳ آجل");
-        Button calcMode=button("🧮 حاسبة الصرف");
-        cashMode.setTextSize(11.5f); creditMode.setTextSize(11.5f); calcMode.setTextSize(11.5f);
+        // أزرار طريقة السداد موجودة في الشريط السفلي الثابت.
         if(edit){
             if(origPaid>=origTotal&&origTotal>0){
                 cashMode.setTextColor(Color.WHITE); cashMode.setBackground(rounded(GREEN,dp(10)));
@@ -981,12 +992,7 @@ public class MainActivity extends Activity {
             creditMode.setTextColor(TEXT); creditMode.setBackground(outline(CARD,10));
         }
         calcMode.setTextColor(Color.rgb(24,105,200)); calcMode.setBackground(outline(Color.rgb(240,248,255),10));
-        payModes.addView(cashMode,new LinearLayout.LayoutParams(0,dp(36),1));
-        LinearLayout.LayoutParams cmlp=new LinearLayout.LayoutParams(0,dp(36),1); cmlp.setMargins(dp(4),0,0,0);
-        payModes.addView(creditMode,cmlp);
-        LinearLayout.LayoutParams clmlp=new LinearLayout.LayoutParams(0,dp(36),1.1f); clmlp.setMargins(dp(4),0,0,0);
-        payModes.addView(calcMode,clmlp);
-        invoiceBox.addView(payModes,new LinearLayout.LayoutParams(-1,dp(38)));
+        // تم نقل أزرار نقدي وآجل والحاسبة إلى الشريط السفلي الثابت.
         addSpaceTo(invoiceBox,4);
 
         TextView remainingLabel=tv("المتبقي: 0 ريال",12.5f);
@@ -997,7 +1003,6 @@ public class MainActivity extends Activity {
 
         content.addView(invoiceBox,new LinearLayout.LayoutParams(-1,-2));
         space(5);
-
         final ArrayList<Line> lines=new ArrayList<>();
         if(edit){Cursor c=db.invoiceLines(invoiceId);while(c.moveToNext())lines.add(new Line(c.getString(1),c.getDouble(2),c.getDouble(3)));c.close();}
 
@@ -1997,8 +2002,7 @@ public class MainActivity extends Activity {
             row.setPadding(dp(6),dp(4),dp(6),dp(4));
             row.setBackground(outline(Color.rgb(248,250,248),8));
 
-            TextView nTv=tv(n,12); nTv.setTextColor(TEXT);
-            row.addView(nTv,new LinearLayout.LayoutParams(0,-2,1.2f));
+            TextView nTv=tv(n,12); nTv.setTextColor(TEXT);            row.addView(nTv,new LinearLayout.LayoutParams(0,-2,1.2f));
 
             TextView qTv=tv("× "+fmt(q),11); qTv.setTextColor(MUTED); qTv.setGravity(Gravity.CENTER);
             row.addView(qTv,new LinearLayout.LayoutParams(0,-2,0.6f));
@@ -2997,8 +3001,7 @@ public class MainActivity extends Activity {
         String custName=customer==null||customer.trim().isEmpty()?"عميل نقدي":customer.trim();
         String phone=db.phoneByName(custName);
         fillPaint.setColor(Color.rgb(250,252,250));
-        canvas.drawRoundRect(margin,y,pageW-margin,y+34,6,6,fillPaint);
-        canvas.drawRoundRect(margin,y,pageW-margin,y+34,6,6,strokePaint);
+        canvas.drawRoundRect(margin,y,pageW-margin,y+34,6,6,fillPaint);        canvas.drawRoundRect(margin,y,pageW-margin,y+34,6,6,strokePaint);
 
         boldCellP.setTextAlign(Paint.Align.RIGHT);
         canvas.drawText("العميل: "+custName+(phone.isEmpty()?"":" ("+phone+")"),pageW-margin-10,y+22,boldCellP);
@@ -3997,7 +4000,6 @@ public class MainActivity extends Activity {
         LinearLayout customerFields=new LinearLayout(this);
         customerFields.setOrientation(LinearLayout.HORIZONTAL);
         customerFields.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-
         EditText name=field("اسم العميل");
         EditText phone=phoneField("رقم الهاتف (اختياري)");
         customerNameInput=name; customerPhoneInput=phone;
@@ -4998,7 +5000,6 @@ public class MainActivity extends Activity {
         content.addView(list);
 
         final long[] editingId={-1};
-
         Runnable clearForm=()->{
             editingId[0]=-1;
             name.setText("");qty.setText("");min.setText("");
@@ -5998,7 +5999,6 @@ void notes(){ base("الملاحظات");
             TextView cProftT=tv("📈 الربح الإجمالي التقديري",10f); cProftT.setTextColor(MUTED); cProftT.setGravity(Gravity.CENTER);
             TextView cProftV=tv("0 ر.ي",12.5f); cProftV.setTextColor(BLUE); cProftV.setTypeface(Typeface.DEFAULT,Typeface.BOLD); cProftV.setGravity(Gravity.CENTER);
             cProfit.addView(cProftT,new LinearLayout.LayoutParams(-1,-2)); cProfit.addView(cProftV,new LinearLayout.LayoutParams(-1,-2));
-
             statRow1.addView(cSales,new LinearLayout.LayoutParams(0,-2,1));
             LinearLayout.LayoutParams slp1=new LinearLayout.LayoutParams(0,-2,1); slp1.setMargins(dp(4),0,0,0);
             statRow1.addView(cPurch,slp1);
@@ -6997,7 +6997,6 @@ void notes(){ base("الملاحظات");
 
     void scanner(){
         base("الماسح الضوئي");
-
         // 1. واجهة المعاينة والكاميرا الذكية (Camera Preview Card)
         LinearLayout cameraPreviewCard=new LinearLayout(this);
         cameraPreviewCard.setOrientation(LinearLayout.VERTICAL);
