@@ -229,17 +229,31 @@ public class MainActivity extends Activity {
     }
     void attachLearning(EditText e,String hint){
         final String kind=learningKind(hint);
+        final Handler h=new Handler(Looper.getMainLooper());
+        final Runnable[] pending=new Runnable[1];
         e.addTextChangedListener(new TextWatcher(){
             public void beforeTextChanged(CharSequence s,int st,int c,int a){}
             public void onTextChanged(CharSequence s,int st,int before,int count){
-                if(s!=null&&s.toString().trim().length()>=2)showLearningSuggestions(e,s.toString().trim(),kind);
-                else dismissLearningSuggestions();
+                if(pending[0]!=null) h.removeCallbacks(pending[0]);
+                final String q=s==null?"":s.toString().trim();
+                if(q.length()<2){ dismissLearningSuggestions(); return; }
+                pending[0]=()->{
+                    if(e.hasFocus()) showLearningSuggestions(e,q,kind);
+                };
+                h.postDelayed(pending[0],180);
             }
             public void afterTextChanged(Editable x){}
         });
         e.setOnFocusChangeListener((v,has)->{
-            if(has){e.postDelayed(() -> e.selectAll(),60); if(e.getText().toString().trim().length()>=2)showLearningSuggestions(e,e.getText().toString().trim(),kind);}
-            else{String value=e.getText().toString().trim();if(value.length()>=2)learnTypedValue(value,kind);dismissLearningSuggestions();}
+            if(has){
+                e.postDelayed(e::selectAll,60);
+                final String q=e.getText().toString().trim();
+                if(q.length()>=2) h.postDelayed(()->{if(e.hasFocus())showLearningSuggestions(e,q,kind);},180);
+            }else{
+                String value=e.getText().toString().trim();
+                if(value.length()>=2) learnTypedValue(value,kind);
+                h.postDelayed(()->{if(!e.hasFocus())dismissLearningSuggestions();},140);
+            }
         });
     }
     void learnTypedValue(String value,String kind){
@@ -265,8 +279,15 @@ public class MainActivity extends Activity {
         }
         if(n==0){dismissLearningSuggestions();return;}
         dismissLearningSuggestions();
-        learningPopup=new PopupWindow(box,Math.max(anchor.getWidth(),dp(220)),WindowManager.LayoutParams.WRAP_CONTENT,true);
-        learningPopup.setBackgroundDrawable(rounded(CARD,dp(10)));learningPopup.setOutsideTouchable(true);learningPopup.setElevation(dp(8));learningPopup.showAsDropDown(anchor,0,dp(2));
+        learningPopup=new PopupWindow(box,Math.max(anchor.getWidth(),dp(220)),WindowManager.LayoutParams.WRAP_CONTENT,false);
+        learningPopup.setTouchable(true);
+        learningPopup.setFocusable(false);
+        learningPopup.setOutsideTouchable(true);
+        learningPopup.setInputMethodMode(PopupWindow.INPUT_METHOD_NOT_NEEDED);
+        learningPopup.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+        learningPopup.setBackgroundDrawable(rounded(CARD,dp(10)));
+        learningPopup.setElevation(dp(8));
+        learningPopup.showAsDropDown(anchor,0,dp(2));
     }
 EditText numberField(String h){
         EditText e=field(h);
@@ -612,32 +633,7 @@ EditText numberField(String h){
         middle.setPadding(dp(10),dp(12),dp(10),dp(18));
         middle.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
-        // 1. شبكة المؤشرات والإحصائيات السريعة (4 كروت سريعة تفاعلية مع حركة اليوم)
-        LinearLayout metricsGrid=new LinearLayout(this);
-        metricsGrid.setOrientation(LinearLayout.HORIZONTAL);
-        metricsGrid.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-
-        int lowCount=0; // لا نلمس قاعدة البيانات أثناء رسم الشاشة الأولى
-        View m1=createMetricCard("💰","مبيعات اليوم","— ر.ي",GREEN);
-        View m2=createMetricCard("🧾","فواتير اليوم","—",Color.rgb(28,105,210));
-        View m3=createMetricCard(lowCount>0?"⚠️":"📦",lowCount>0?"نواقص ("+lowCount+")":"المخزون",lowCount>0?"تتطلب طلب":"سليم",lowCount>0?RED:Color.rgb(14,130,135));
-        View m4=createMetricCard("👥","العملاء","—",GOLD);
-
-        m1.setOnClickListener(v->reports());
-        m2.setOnClickListener(v->invoiceHistory());
-        if(lowCount>0) m3.setOnClickListener(v->showLowStockDialog());
-        else m3.setOnClickListener(v->inventory());
-        m4.setOnClickListener(v->customers());
-
-        LinearLayout.LayoutParams mp=new LinearLayout.LayoutParams(0,dp(86),1);
-        metricsGrid.addView(m1,mp);
-        LinearLayout.LayoutParams mp2=new LinearLayout.LayoutParams(0,dp(86),1); mp2.setMargins(dp(5),0,0,0); metricsGrid.addView(m2,mp2);
-        LinearLayout.LayoutParams mp3=new LinearLayout.LayoutParams(0,dp(86),1); mp3.setMargins(dp(5),0,0,0); metricsGrid.addView(m3,mp3);
-        LinearLayout.LayoutParams mp4=new LinearLayout.LayoutParams(0,dp(86),1); mp4.setMargins(dp(5),0,0,0); metricsGrid.addView(m4,mp4);
-
-        middle.addView(metricsGrid,new LinearLayout.LayoutParams(-1,dp(86)));
-        addSpaceTo(middle,12);
-
+        // تم حذف بطاقات التقارير/الإحصائيات من أعلى الشاشة الرئيسية بناءً على طلب المستخدم.
         // 3. عنوان قسم التبويبات الكبيرة
         TextView secTitle=tv("الأقسام الرئيسية",13);
         secTitle.setTextColor(GREEN); secTitle.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
