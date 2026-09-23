@@ -5188,7 +5188,10 @@ EditText numberField(String h){
             String rn=transferReceiverName.getText().toString().trim(),rp2=transferReceiverPhone.getText().toString().trim(),sn=transferSenderName.getText().toString().trim(),sp=transferSenderPhone.getText().toString().trim();
             boolean bad=am<=0||rn.isEmpty()||rp2.isEmpty()||sn.isEmpty()||sp.isEmpty();
             boolean dup=!bad&&db.transferDuplicate(am,sp,rp2);
-            if(dup){new AlertDialog.Builder(this).setTitle("⚠️ عملية مكررة").setMessage("توجد حوالة مشابهة. ستُحفظ باللون الأحمر للمراجعة.").setNegativeButton("إلغاء",null).setPositiveButton("حفظ",(d,w)->{db.addTransfer(am,sn,sp,rn,rp2,"",1);transfers();}).show();return;}
+            if(dup){
+                final double finalAm=am; final String finalRn=rn, finalRp2=rp2, finalSn=sn, finalSp=sp;
+                new AlertDialog.Builder(this).setTitle("⚠️ عملية مكررة").setMessage("توجد حوالة مشابهة. ستُحفظ باللون الأحمر للمراجعة.").setNegativeButton("إلغاء",null).setPositiveButton("حفظ",(d,w)->{db.addTransfer(finalAm,finalSn,finalSp,finalRn,finalRp2,"",1);transfers();}).show();return;
+            }
             db.addTransfer(am,sn,sp,rn,rp2,"",1);
             amount.setText(""); transferReceiverName.setText(""); transferReceiverPhone.setText(""); transferSenderName.setText(""); transferSenderPhone.setText("");
             render.run(); Toast.makeText(this,bad?"تم الحفظ مع تنبيه للمراجعة":"تم حفظ الحوالة باللون الأحمر حتى يتم تجهيزها",Toast.LENGTH_SHORT).show();
