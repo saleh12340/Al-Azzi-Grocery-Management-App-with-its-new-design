@@ -3237,6 +3237,29 @@ public class MainActivity extends Activity {
         }
     }
 
+    void shareTransferDirectToWhatsApp(String phone,String text){
+        String p=normalizeWhatsAppPhone(phone);
+        if(p.isEmpty()){ shareText(text); return; }
+        Uri uri=Uri.parse("https://wa.me/"+p+"?text="+Uri.encode(text));
+        Intent i=new Intent(Intent.ACTION_VIEW,uri);
+        try{
+            i.setPackage("com.whatsapp");
+            startActivity(i);
+        }catch(Exception e1){
+            try{
+                i.setPackage("com.whatsapp.w4b");
+                startActivity(i);
+            }catch(Exception e2){
+                try{
+                    i.setPackage(null);
+                    startActivity(i);
+                }catch(Exception e3){
+                    shareText(text);
+                }
+            }
+        }
+    }
+
     void showQuickCalculator(double initialTotal){
         final Dialog dlg=new Dialog(this);
         LinearLayout box=new LinearLayout(this);
@@ -5234,7 +5257,7 @@ public class MainActivity extends Activity {
                     String text=fmt(am)+" صافي\n"+
                             "المستلم "+rn+"\n"+rp2+"\n"+
                             "المرسل "+sn+"\n"+sp;
-                    shareWhatsAppToCustomer(rp2,text,null);
+                    // مشاركة الحوالة مباشرة إلى محادثة الرقم الثابت المحدد\n                    shareTransferDirectToWhatsApp("776425052",text);
                 });
 
                 Button de=button("🗑 حذف");
