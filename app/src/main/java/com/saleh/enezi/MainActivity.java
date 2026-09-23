@@ -4680,13 +4680,7 @@ public class MainActivity extends Activity {
             det=det.replace("فاتورة مبيعات رقم ","فاتورة #");
         }
         if(!det.isEmpty()){
-            if(det.startsWith("حق ")||det.startsWith("حق:")){
-                t.append(det);
-            }else{
-                t.append("حق ").append(det);
-            }
-        }else{
-            t.append("حق ").append(!cust.isEmpty()?cust:"عملية حسابية");
+            t.append(det);
         }
         t.append("\n\n");
         double bal=db.balanceByName(customer);
@@ -4778,7 +4772,7 @@ public class MainActivity extends Activity {
 
         String det=details==null?"":details.trim();
         if(det.startsWith("فاتورة مبيعات رقم ")) det=det.replace("فاتورة مبيعات رقم ","فاتورة #");
-        String detLabel=det.isEmpty()?("حق "+custName):(det.startsWith("حق")?det:("حق "+det));
+        String detLabel=det;
 
         p.setTextSize(13);p.setColor(DARK);p.setTypeface(Typeface.create("sans",Typeface.BOLD));
         p.setTextAlign(Paint.Align.RIGHT);
