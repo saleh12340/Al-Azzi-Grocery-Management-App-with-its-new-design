@@ -139,8 +139,8 @@ public class MainActivity extends Activity {
             public void afterTextChanged(Editable x){}
         });
         e.setOnFocusChangeListener((v,has)->{
-            if(!has){String value=e.getText().toString().trim();if(value.length()>=2)learnTypedValue(value,kind);dismissLearningSuggestions();}
-            else if(e.getText().toString().trim().length()>=2)showLearningSuggestions(e,e.getText().toString().trim(),kind);
+            if(has){e.postDelayed(() -> e.selectAll(),60); if(e.getText().toString().trim().length()>=2)showLearningSuggestions(e,e.getText().toString().trim(),kind);}
+            else{String value=e.getText().toString().trim();if(value.length()>=2)learnTypedValue(value,kind);dismissLearningSuggestions();}
         });
     }
     void learnTypedValue(String value,String kind){
