@@ -80,7 +80,6 @@ public class MainActivity extends Activity {
         else if(prev.equals("التقارير")) reports(); else if(prev.equals("الملاحظات")) notes();
         else if(prev.equals("ماسح الفواتير")||prev.equals("الماسح الضوئي")) scanner();
         else if(prev.equals("الحوالات")) transfers();
-        else if(prev.equals("الملاحظات")) notes();
         else home();
     }
 
@@ -182,7 +181,7 @@ public class MainActivity extends Activity {
         String[] icons={"🏠","🧾","👥","🛒","📦","📝","💸"};
         String[] keys={"الرئيسية","سجل الفواتير","الحسابات والعملاء","فواتير الشراء","المخزون","الملاحظات","الحوالات"};
 
-        for(int i=0;i<5;i++){
+        for(int i=0;i<7;i++){
             final int idx=i;
             boolean isActive = activeTitle!=null && (activeTitle.contains(labels[i]) || activeTitle.equals(keys[i]) || (i==1 && activeTitle.contains("فاتورة") && !activeTitle.contains("شراء")) || (i==3 && activeTitle.contains("شراء")));
             LinearLayout tab=new LinearLayout(this);
