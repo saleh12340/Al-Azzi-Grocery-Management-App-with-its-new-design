@@ -94,7 +94,7 @@ public class MainActivity extends Activity {
         box.setBackgroundColor(BG);
         TextView title=new TextView(this);
         title.setText("بقالة العزي للمواد الغذائية");
-        title.setTextSize(20);
+        title.setTextSize(22);
         title.setTextColor(DARK);
         title.setGravity(Gravity.CENTER);
         title.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
@@ -184,7 +184,7 @@ public class MainActivity extends Activity {
 
     GradientDrawable rounded(int color,float radius){ GradientDrawable g=new GradientDrawable(); g.setColor(color); g.setCornerRadius(radius); return g; }
     GradientDrawable outlined(int color,int stroke,float radius){ GradientDrawable g=rounded(color,radius); g.setStroke(stroke,Color.rgb(174,185,198)); return g; }
-    float fitText(float z){return Math.max(12f,Math.min(z,24f));}
+    float fitText(float z){return Math.max(14f,Math.min(z,27f));}
     void fitInside(View v,float maxSp,float minSp){
         if(v instanceof TextView){
             TextView t=(TextView)v;
@@ -204,14 +204,14 @@ public class MainActivity extends Activity {
         fitInside(v,fitText(z),8f); return v;
     }
     Button button(String s){
-        Button b=new Button(this); b.setText(s); b.setTextSize(fitText(17)); b.setAllCaps(false); b.setMinHeight(0);
+        Button b=new Button(this); b.setText(s); b.setTextSize(fitText(19)); b.setAllCaps(false); b.setMinHeight(0);
         b.setMinimumHeight(0); b.setPadding(dp(8),dp(0),dp(8),dp(0)); b.setGravity(Gravity.CENTER); b.setStateListAnimator(null);
         b.setIncludeFontPadding(true); b.setMaxLines(2); b.setEllipsize(null); b.setTextColor(TEXT);
         b.setBackground(outlined(CARD,dp(1),10)); b.setElevation(dp(2));
-        b.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); fitInside(b,17f,11f); return b;
+        b.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); fitInside(b,19f,13f); return b;
     }
     EditText field(String h){
-        EditText e=new EditText(this); e.setHint(h); e.setTextSize(20); e.setSingleLine(true); e.setIncludeFontPadding(true); e.setMaxLines(1); fitInside(e,20f,12f);
+        EditText e=new EditText(this); e.setHint(h); e.setTextSize(20); e.setSingleLine(true); e.setIncludeFontPadding(true); e.setMaxLines(1); fitInside(e,22f,14f);
         e.setTextColor(TEXT); e.setHintTextColor(MUTED); e.setPadding(dp(10),dp(1),dp(10),dp(1)); e.setBackground(outlined(Color.WHITE,dp(1),10)); e.setElevation(dp(1)); e.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL); e.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); e.setTextDirection(View.TEXT_DIRECTION_RTL);
         e.setSelectAllOnFocus(true); e.setOnClickListener(v -> e.selectAll());
         e.setOnFocusChangeListener((v,has)->{ if(has) e.postDelayed(() -> { e.selectAll(); },60); });
