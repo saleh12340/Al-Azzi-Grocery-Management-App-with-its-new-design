@@ -57,7 +57,51 @@ public class MainActivity extends Activity {
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         getWindow().setStatusBarColor(DARK);
         getWindow().setNavigationBarColor(DARK);
-        db=new DB(this); BackupReceiver.schedule(this); AppStorage.initializeAllDirectories(this); home();
+        try{
+            db=new DB(this);
+            BackupReceiver.schedule(this);
+            AppStorage.initializeAllDirectories(this);
+            home();
+        }catch(Throwable e){
+            android.util.Log.e("AlAzziStartup","Startup failed",e);
+            showStartupRecovery();
+        }
+    }
+
+    void showStartupRecovery(){
+        LinearLayout box=new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setGravity(Gravity.CENTER);
+        box.setPadding(dp(24),dp(24),dp(24),dp(24));
+        box.setBackgroundColor(BG);
+        TextView title=tv("بقالة العزي للمواد الغذائية",20);
+        title.setTextColor(DARK); title.setGravity(Gravity.CENTER);
+        title.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        box.addView(title,new LinearLayout.LayoutParams(-1,dp(50)));
+        TextView msg=tv("جاري تجهيز التطبيق وقاعدة البيانات.\nاضغط إعادة المحاولة للمتابعة.",15);
+        msg.setGravity(Gravity.CENTER); msg.setTextColor(MUTED);
+        box.addView(msg,new LinearLayout.LayoutParams(-1,dp(70)));
+        Button retry=button("إعادة المحاولة");
+        retry.setTextSize(15);
+        retry.setTextColor(Color.WHITE);
+        retry.setBackground(rounded(GREEN,dp(12)));
+        retry.setOnClickListener(v->{
+            try{
+                if(db!=null) db.close();
+                db=new DB(this);
+                AppStorage.initializeAllDirectories(this);
+                home();
+            }catch(Throwable e){
+                android.util.Log.e("AlAzziStartup","Retry failed",e);
+                Toast.makeText(this,"تعذر تحميل قاعدة البيانات، حاول مرة أخرى.",Toast.LENGTH_LONG).show();
+            }
+        });
+        box.addView(retry,new LinearLayout.LayoutParams(-1,dp(52)));
+        Button exit=button("خروج");
+        exit.setOnClickListener(v->finish());
+        LinearLayout.LayoutParams ep=new LinearLayout.LayoutParams(-1,dp(48));
+        ep.setMargins(0,dp(10),0,0); box.addView(exit,ep);
+        setContentView(box);
     }
 
     void confirmExit(){
