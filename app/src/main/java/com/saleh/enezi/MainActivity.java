@@ -46,8 +46,8 @@ import java.util.*;
 public class MainActivity extends Activity {
     static final int REQ_CONTACTS=4101, PICK_CONTACT=4102, REQ_CAMERA_SCAN=4103, REQ_GALLERY_SCAN=4104, REQ_PERM_CAMERA=4105;
     EditText customerNameInput, customerPhoneInput;
-    static final int GREEN=Color.rgb(0,118,62), DARK=Color.rgb(0,67,38), GOLD=Color.rgb(245,174,24), BLUE=Color.rgb(25,96,205), RED=Color.rgb(195,45,38);
-    static final int BG=Color.rgb(242,246,243), TEXT=Color.rgb(22,30,25), MUTED=Color.rgb(76,88,81), CARD=Color.WHITE;
+    static final int GREEN=Color.rgb(15,122,74), DARK=Color.rgb(6,61,43), GOLD=Color.rgb(238,174,61), BLUE=Color.rgb(37,99,235), RED=Color.rgb(207,61,61);
+    static final int BG=Color.rgb(246,248,246), TEXT=Color.rgb(20,31,25), MUTED=Color.rgb(88,101,94), CARD=Color.WHITE;
     DB db; LinearLayout root,content,bottom; TextView pageTitle; int textSize=16; String currentPage="الرئيسية"; ArrayDeque<String> pageStack=new ArrayDeque<>(); long currentNotePageId=-1; int noteFontSize=14; boolean noteScrollMode=true;
     Uri cameraScanTempUri; Bitmap scanRawBitmap; String scanFilterMode="magic"; float scanRotation=0; String scanCategoryFilter="الكل"; String scanSearchQuery="";
     EditText transferSenderName,transferSenderPhone,transferReceiverName,transferReceiverPhone,transferContactNameTarget,transferContactPhoneTarget;
@@ -84,7 +84,7 @@ public class MainActivity extends Activity {
     }
 
     GradientDrawable rounded(int color,float radius){ GradientDrawable g=new GradientDrawable(); g.setColor(color); g.setCornerRadius(radius); return g; }
-    GradientDrawable outlined(int color,int stroke,float radius){ GradientDrawable g=rounded(color,radius); g.setStroke(stroke,Color.rgb(190,203,195)); return g; }
+    GradientDrawable outlined(int color,int stroke,float radius){ GradientDrawable g=rounded(color,radius); g.setStroke(stroke,Color.rgb(211,222,215)); return g; }
     float fitText(float z){return Math.max(9f,Math.min(z,16f));}
     void fitInside(View v,float maxSp,float minSp){
         if(v instanceof TextView){
@@ -108,12 +108,12 @@ public class MainActivity extends Activity {
         Button b=new Button(this); b.setText(s); b.setTextSize(fitText(12)); b.setAllCaps(false); b.setMinHeight(0);
         b.setMinimumHeight(0); b.setPadding(dp(8),dp(0),dp(8),dp(0)); b.setGravity(Gravity.CENTER); b.setStateListAnimator(null);
         b.setIncludeFontPadding(true); b.setMaxLines(2); b.setEllipsize(null); b.setTextColor(TEXT);
-        b.setBackground(outlined(CARD,1,12)); b.setElevation(dp(1));
+        b.setBackground(outlined(CARD,dp(1),14)); b.setElevation(dp(2));
         b.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); fitInside(b,13f,9f); return b;
     }
     EditText field(String h){
         EditText e=new EditText(this); e.setHint(h); e.setTextSize(14); e.setSingleLine(true); e.setIncludeFontPadding(true); e.setMaxLines(1); fitInside(e,14f,9f);
-        e.setTextColor(TEXT); e.setHintTextColor(MUTED); e.setPadding(dp(10),dp(2),dp(10),dp(2)); e.setBackground(outlined(Color.rgb(252,254,253),dp(1),12)); e.setElevation(dp(1)); e.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL); e.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); e.setTextDirection(View.TEXT_DIRECTION_RTL);
+        e.setTextColor(TEXT); e.setHintTextColor(MUTED); e.setPadding(dp(10),dp(2),dp(10),dp(2)); e.setBackground(outlined(Color.WHITE,dp(1),14)); e.setElevation(dp(1)); e.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL); e.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); e.setTextDirection(View.TEXT_DIRECTION_RTL);
         e.setSelectAllOnFocus(true); e.setOnClickListener(v -> e.selectAll());
         e.setOnFocusChangeListener((v,has)->{ if(has) e.postDelayed(() -> { e.selectAll(); },60); });
         return e;
@@ -156,7 +156,7 @@ public class MainActivity extends Activity {
         bar.addView(pt,new LinearLayout.LayoutParams(dp(110),dp(38))); root.addView(bar,new LinearLayout.LayoutParams(-1,dp(58)));
         ScrollView sv=new ScrollView(this); sv.setFillViewport(true); sv.setClipToPadding(false);
         content=new LinearLayout(this); content.setOrientation(LinearLayout.VERTICAL); content.setPadding(dp(10),dp(9),dp(10),dp(18)); content.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        if(!"الرئيسية".equals(title)){ TextView operationChip=tv("📌 "+title,10.5f); operationChip.setTextColor(GREEN); operationChip.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL); operationChip.setSingleLine(true); operationChip.setMaxLines(1); operationChip.setEllipsize(TextUtils.TruncateAt.END); operationChip.setPadding(dp(8),0,dp(8),0); operationChip.setBackground(outline(Color.rgb(226,244,232),8)); content.addView(operationChip,new LinearLayout.LayoutParams(-1,dp(24))); addSpace(2); }
+        if(!"الرئيسية".equals(title)){ TextView operationChip=tv("  "+title+"  ",11.5f); operationChip.setTextColor(GREEN); operationChip.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL); operationChip.setSingleLine(true); operationChip.setMaxLines(1); operationChip.setEllipsize(TextUtils.TruncateAt.END); operationChip.setPadding(dp(8),0,dp(8),0); operationChip.setBackground(outline(Color.rgb(232,245,237),12)); content.addView(operationChip,new LinearLayout.LayoutParams(-1,dp(34))); addSpace(2); }
         sv.addView(content); root.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
         bottom=new LinearLayout(this); bottom.setOrientation(LinearLayout.VERTICAL); bottom.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         root.addView(bottom,new LinearLayout.LayoutParams(-1,-2));
@@ -264,10 +264,10 @@ public class MainActivity extends Activity {
     void hideKeyboard(){View v=getCurrentFocus();if(v!=null){((InputMethodManager)getSystemService(INPUT_METHOD_SERVICE)).hideSoftInputFromWindow(v.getWindowToken(),0);v.clearFocus();}}
 
     TextView cardTitle(String title,String sub){
-        LinearLayout c=new LinearLayout(this);c.setOrientation(LinearLayout.VERTICAL);c.setPadding(14,8,14,8);c.setBackground(outlined(CARD,1,16));c.setElevation(2);
+        LinearLayout c=new LinearLayout(this);c.setOrientation(LinearLayout.VERTICAL);c.setPadding(14,8,14,8);c.setBackground(outlined(CARD,dp(1),18));c.setElevation(dp(3));
         TextView a=tv(title,17);a.setTextColor(GREEN);a.setTypeface(Typeface.DEFAULT,Typeface.BOLD);c.addView(a);
         TextView b=tv(sub,12);b.setTextColor(MUTED);c.addView(b);LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(-1,dp(72)); cp.setMargins(0,0,0,7); content.addView(c,cp);return a;
-    }    void addAction(String a,String sub,View.OnClickListener l){        LinearLayout c=new LinearLayout(this);c.setOrientation(LinearLayout.VERTICAL);c.setPadding(12,5,12,5);c.setBackground(outlined(CARD,1,16));c.setElevation(2);
+    }    void addAction(String a,String sub,View.OnClickListener l){        LinearLayout c=new LinearLayout(this);c.setOrientation(LinearLayout.VERTICAL);c.setPadding(12,5,12,5);c.setBackground(outlined(CARD,dp(1),18));c.setElevation(dp(3));
         Button b=button(a);b.setTextSize(13);b.setTextColor(TEXT);b.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);b.setOnClickListener(l);c.addView(b,new LinearLayout.LayoutParams(-1,dp(38)));
         TextView s=tv(sub,12);s.setTextColor(MUTED);c.addView(s,new LinearLayout.LayoutParams(-1,30));LinearLayout.LayoutParams ap=new LinearLayout.LayoutParams(-1,dp(82)); ap.setMargins(0,0,0,7); content.addView(c,ap);
     }
@@ -276,24 +276,24 @@ public class MainActivity extends Activity {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setGravity(Gravity.CENTER);
-        card.setPadding(dp(4), dp(6), dp(4), dp(6));
+        card.setPadding(dp(5), dp(8), dp(5), dp(8));
         
         GradientDrawable bg = new GradientDrawable();
         bg.setColor(CARD);
-        bg.setCornerRadius(dp(12));
-        bg.setStroke(dp(1), Color.rgb(230, 236, 232));
+        bg.setCornerRadius(dp(16));
+        bg.setStroke(dp(1), Color.rgb(224, 232, 226));
         card.setBackground(bg);
         card.setElevation(dp(3));
 
         TextView iconTv = new TextView(this);
         iconTv.setText(icon);
-        iconTv.setTextSize(14);
+        iconTv.setTextSize(16);
         iconTv.setGravity(Gravity.CENTER);
         card.addView(iconTv, new LinearLayout.LayoutParams(-1, dp(20)));
 
         TextView valTv = new TextView(this);
         valTv.setText(value);
-        valTv.setTextSize(12);
+        valTv.setTextSize(13);
         valTv.setTextColor(color);
         valTv.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         valTv.setGravity(Gravity.CENTER);
@@ -304,7 +304,7 @@ public class MainActivity extends Activity {
 
         TextView lblTv = new TextView(this);
         lblTv.setText(label);
-        lblTv.setTextSize(9.5f);
+        lblTv.setTextSize(10f);
         lblTv.setTextColor(MUTED);
         lblTv.setGravity(Gravity.CENTER);
         lblTv.setSingleLine(true);
@@ -322,8 +322,8 @@ public class MainActivity extends Activity {
         
         GradientDrawable bg = new GradientDrawable();
         bg.setColor(CARD);
-        bg.setCornerRadius(dp(16));
-        bg.setStroke(dp(1), Color.rgb(228, 234, 230));
+        bg.setCornerRadius(dp(18));
+        bg.setStroke(dp(1), Color.rgb(224, 232, 226));
         card.setBackground(bg);
         card.setElevation(dp(2));
         card.setClickable(true);
@@ -337,11 +337,11 @@ public class MainActivity extends Activity {
         // Circular/Rounded Icon container
         TextView iconTv = new TextView(this);
         iconTv.setText(icon);
-        iconTv.setTextSize(18);
+        iconTv.setTextSize(20);
         iconTv.setGravity(Gravity.CENTER);
         GradientDrawable iconBg = new GradientDrawable();
         iconBg.setColor(Color.argb(26, Color.red(accentColor), Color.green(accentColor), Color.blue(accentColor)));
-        iconBg.setCornerRadius(dp(12));
+        iconBg.setCornerRadius(dp(14));
         iconTv.setBackground(iconBg);
         topRow.addView(iconTv, new LinearLayout.LayoutParams(dp(38), dp(38)));
 
@@ -372,7 +372,7 @@ public class MainActivity extends Activity {
             topRow.addView(badge, new LinearLayout.LayoutParams(dp(22), dp(20)));
         }
 
-        card.addView(topRow, new LinearLayout.LayoutParams(-1, dp(40)));
+        card.addView(topRow, new LinearLayout.LayoutParams(-1, dp(44)));
 
         // Subtitle
         TextView subTv = new TextView(this);
@@ -384,7 +384,7 @@ public class MainActivity extends Activity {
         subTv.setSingleLine(true);
         subTv.setEllipsize(TextUtils.TruncateAt.END);
         fitInside(subTv, 11f, 8.5f);
-        card.addView(subTv, new LinearLayout.LayoutParams(-1, dp(22)));
+        card.addView(subTv, new LinearLayout.LayoutParams(-1, dp(24)));
 
         card.setOnClickListener(onClick);
         return card;
@@ -470,7 +470,7 @@ public class MainActivity extends Activity {
         heroCard.setPadding(dp(14),dp(10),dp(14),dp(10));
         
         GradientDrawable heroBg=new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{Color.rgb(24,128,70), Color.rgb(18,95,52)});
-        heroBg.setCornerRadius(dp(16));
+        heroBg.setCornerRadius(dp(20));
         heroCard.setBackground(heroBg);
         heroCard.setElevation(dp(3));
         heroCard.setClickable(true);
@@ -478,7 +478,7 @@ public class MainActivity extends Activity {
 
         TextView heroIcon=new TextView(this);
         heroIcon.setText("🧾");
-        heroIcon.setTextSize(26);
+        heroIcon.setTextSize(29);
         heroIcon.setGravity(Gravity.CENTER);
         GradientDrawable hiBg=new GradientDrawable();
         hiBg.setColor(Color.argb(45,255,255,255));
@@ -491,7 +491,7 @@ public class MainActivity extends Activity {
         heroTextBox.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         heroTextBox.setPadding(dp(10),0,dp(8),0);
 
-        TextView heroTitle=tv("＋ إنشاء فاتورة بيع جديدة",15);
+        TextView heroTitle=tv("＋ إنشاء فاتورة بيع جديدة",16);
         heroTitle.setTextColor(Color.WHITE); heroTitle.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         heroTitle.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         
@@ -510,7 +510,7 @@ public class MainActivity extends Activity {
         heroCard.addView(heroArrow,new LinearLayout.LayoutParams(dp(28),dp(28)));
 
         heroCard.setOnClickListener(v->invoice());
-        middle.addView(heroCard,new LinearLayout.LayoutParams(-1,dp(82)));
+        middle.addView(heroCard,new LinearLayout.LayoutParams(-1,dp(92)));
         addSpaceTo(middle,10);
 
         // 2. شبكة المؤشرات والإحصائيات السريعة (4 كروت سريعة تفاعلية مع حركة اليوم)
@@ -540,7 +540,7 @@ public class MainActivity extends Activity {
         addSpaceTo(middle,12);
 
         // 3. عنوان قسم التبويبات الكبيرة
-        TextView secTitle=tv("التبويبات والأقسام الرئيسية",12);
+        TextView secTitle=tv("الأقسام الرئيسية",13);
         secTitle.setTextColor(GREEN); secTitle.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         secTitle.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         middle.addView(secTitle,new LinearLayout.LayoutParams(-1,dp(24)));
