@@ -7225,8 +7225,8 @@ void notes(){ base("الملاحظات");
     }
 
     static class DB extends SQLiteOpenHelper{
-        static final String DB_NAME="alazzi_grocery_runtime_v4.db";
-        DB(Context c){super(c,DB_NAME,null,15);}
+        static final String DB_NAME="alazzi_grocery_runtime_v5.db";
+        DB(Context c){super(c,DB_NAME,null,1);}
         @Override public void onConfigure(SQLiteDatabase d){
             super.onConfigure(d);
             try{d.execSQL("PRAGMA busy_timeout=1500");}catch(Exception ignored){}
@@ -7255,30 +7255,7 @@ void notes(){ base("الملاحظات");
             d.execSQL("CREATE TABLE IF NOT EXISTS stock_movements(id INTEGER PRIMARY KEY AUTOINCREMENT,item_id INTEGER,item_name TEXT,qty REAL,unit_cost REAL,source_type TEXT,source_id INTEGER,created_at TEXT)");
             d.execSQL("CREATE TABLE IF NOT EXISTS transfers(id INTEGER PRIMARY KEY AUTOINCREMENT,amount REAL NOT NULL,sender_name TEXT,sender_phone TEXT,receiver_name TEXT,receiver_phone TEXT,date TEXT,note TEXT,review INTEGER DEFAULT 0)");
         }
-        public void onUpgrade(SQLiteDatabase d,int o,int n){
-            if(o<15){ create(d); }
-            if(o<6){try{d.execSQL("ALTER TABLE customers ADD COLUMN phone TEXT");}catch(Exception ignored){}}
-            if(o<7){try{d.execSQL("ALTER TABLE invoices ADD COLUMN paid REAL DEFAULT 0");}catch(Exception ignored){}}
-            if(o<2){try{d.execSQL("ALTER TABLE invoices ADD COLUMN date TEXT");}catch(Exception ignored){}}
-            if(o<5){d.execSQL("CREATE TABLE IF NOT EXISTS invoice_items(id INTEGER PRIMARY KEY AUTOINCREMENT,invoice_id INTEGER,name TEXT,qty REAL,total REAL,unit_cost REAL DEFAULT 0)");}
-            if(o<13){try{d.execSQL("ALTER TABLE invoice_items ADD COLUMN unit_cost REAL DEFAULT 0");}catch(Exception ignored){} d.execSQL("CREATE TABLE IF NOT EXISTS stock_movements(id INTEGER PRIMARY KEY AUTOINCREMENT,item_id INTEGER,item_name TEXT,qty REAL,unit_cost REAL,source_type TEXT,source_id INTEGER,created_at TEXT)");}
-            if(o<14){d.execSQL("CREATE TABLE IF NOT EXISTS transfers(id INTEGER PRIMARY KEY AUTOINCREMENT,amount REAL NOT NULL,sender_name TEXT,sender_phone TEXT,receiver_name TEXT,receiver_phone TEXT,date TEXT,note TEXT,review INTEGER DEFAULT 0)");}
-            if(o<8){try{d.execSQL("ALTER TABLE items ADD COLUMN cost REAL DEFAULT 0");}catch(Exception ignored){}try{d.execSQL("ALTER TABLE items ADD COLUMN sale REAL DEFAULT 0");}catch(Exception ignored){}}
-            if(o<9){d.execSQL("CREATE TABLE IF NOT EXISTS suppliers(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,phone TEXT)");d.execSQL("CREATE TABLE IF NOT EXISTS purchase_invoices(id INTEGER PRIMARY KEY AUTOINCREMENT,no TEXT,supplier TEXT,total REAL,paid REAL DEFAULT 0,date TEXT)");d.execSQL("CREATE TABLE IF NOT EXISTS purchase_items(id INTEGER PRIMARY KEY AUTOINCREMENT,purchase_id INTEGER,name TEXT,qty REAL,cost REAL,sale REAL,total REAL)");}
-            if(o<10){d.execSQL("CREATE TABLE IF NOT EXISTS note_pages(id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT,date TEXT)");d.execSQL("CREATE TABLE IF NOT EXISTS note_items(id INTEGER PRIMARY KEY AUTOINCREMENT,page_id INTEGER,side INTEGER,name TEXT,qty REAL,position INTEGER);");}
-            if(o<11){d.execSQL("CREATE TABLE IF NOT EXISTS scanned_invoices(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, file_name TEXT, category TEXT, notes TEXT, date TEXT, image_path TEXT);");}
-            if(o<12){d.execSQL("CREATE TABLE IF NOT EXISTS stock_movements(id INTEGER PRIMARY KEY AUTOINCREMENT,item_id INTEGER,item_name TEXT,qty REAL,unit_cost REAL,source_type TEXT,source_id INTEGER,created_at TEXT)");}
-        }
-        long addScannedInvoice(String name,String fileName,String category,String notes,String date,String imagePath){
-            ContentValues v=new ContentValues();
-            v.put("name",name);
-            v.put("file_name",fileName);
-            v.put("category",category);
-            v.put("notes",notes);
-            v.put("date",date);
-            v.put("image_path",imagePath);
-            return getWritableDatabase().insert("scanned_invoices",null,v);
-        }
+        public void onUpgrade(SQLiteDatabase d,int o,int n){ create(d); }
         Cursor scannedInvoices(String q,String category){
             String sel="";
             ArrayList<String> args=new ArrayList<>();
