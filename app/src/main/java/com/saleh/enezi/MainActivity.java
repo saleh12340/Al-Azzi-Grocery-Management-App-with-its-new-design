@@ -58,15 +58,26 @@ public class MainActivity extends Activity {
         getWindow().setStatusBarColor(DARK);
         getWindow().setNavigationBarColor(DARK);
         showStartupLoading();
-        try{
-            db=new DB(this);
-            BackupReceiver.schedule(this);
-            AppStorage.initializeAllDirectories(this);
-            home();
-        }catch(Throwable e){
-            android.util.Log.e("AlAzziStartup","Startup failed",e);
-            showStartupRecovery(e);
-        }
+        new Thread(() -> {
+            try{
+                DB localDb=new DB(this);
+                localDb.getWritableDatabase();
+                AppStorage.initializeAllDirectories(this);
+                try{ BackupReceiver.schedule(this); }catch(Throwable ignored){}
+                runOnUiThread(() -> {
+                    try{
+                        db=localDb;
+                        home();
+                    }catch(Throwable e){
+                        android.util.Log.e("AlAzziStartup","Home UI failed",e);
+                        showStartupRecovery(e);
+                    }
+                });
+            }catch(Throwable e){
+                android.util.Log.e("AlAzziStartup","Startup failed",e);
+                runOnUiThread(() -> showStartupRecovery(e));
+            }
+        }).start();
     }
 
     void showStartupLoading(){
