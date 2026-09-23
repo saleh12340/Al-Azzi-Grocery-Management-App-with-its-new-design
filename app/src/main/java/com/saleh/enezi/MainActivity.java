@@ -169,7 +169,7 @@ public class MainActivity extends Activity {
         learningPopup=new PopupWindow(box,Math.max(anchor.getWidth(),dp(220)),WindowManager.LayoutParams.WRAP_CONTENT,true);
         learningPopup.setBackgroundDrawable(rounded(CARD,dp(10)));learningPopup.setOutsideTouchable(true);learningPopup.setElevation(dp(8));learningPopup.showAsDropDown(anchor,0,dp(2));
     }
-{
+EditText numberField(String h){
         EditText e=field(h);
         e.setInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);
         e.setRawInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);
