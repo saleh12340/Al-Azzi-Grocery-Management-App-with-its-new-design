@@ -105,14 +105,15 @@ public class MainActivity extends Activity {
         fitInside(v,fitText(z),8f); return v;
     }
     Button button(String s){
-        Button b=new Button(this); b.setText(s); b.setTextSize(fitText(11)); b.setAllCaps(false); b.setMinHeight(0);
-        b.setMinimumHeight(0); b.setPadding(dp(5),dp(0),dp(5),dp(0)); b.setGravity(Gravity.CENTER); b.setStateListAnimator(null);
-        b.setIncludeFontPadding(true); b.setMaxLines(3); b.setEllipsize(null);
-        b.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); fitInside(b,12f,8f); return b;
+        Button b=new Button(this); b.setText(s); b.setTextSize(fitText(12)); b.setAllCaps(false); b.setMinHeight(0);
+        b.setMinimumHeight(0); b.setPadding(dp(8),dp(0),dp(8),dp(0)); b.setGravity(Gravity.CENTER); b.setStateListAnimator(null);
+        b.setIncludeFontPadding(true); b.setMaxLines(2); b.setEllipsize(null); b.setTextColor(TEXT);
+        b.setBackground(outlined(CARD,1,12)); b.setElevation(dp(1));
+        b.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); fitInside(b,13f,9f); return b;
     }
     EditText field(String h){
-        EditText e=new EditText(this); e.setHint(h); e.setTextSize(13); e.setSingleLine(true); e.setIncludeFontPadding(true); e.setMaxLines(1); fitInside(e,14f,9f);
-        e.setTextColor(TEXT); e.setHintTextColor(MUTED); e.setPadding(dp(7),dp(2),dp(7),dp(2)); e.setBackground(outlined(CARD,1,10)); e.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL); e.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); e.setTextDirection(View.TEXT_DIRECTION_RTL);
+        EditText e=new EditText(this); e.setHint(h); e.setTextSize(14); e.setSingleLine(true); e.setIncludeFontPadding(true); e.setMaxLines(1); fitInside(e,14f,9f);
+        e.setTextColor(TEXT); e.setHintTextColor(MUTED); e.setPadding(dp(10),dp(2),dp(10),dp(2)); e.setBackground(outlined(Color.rgb(252,254,253),dp(1),12)); e.setElevation(dp(1)); e.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL); e.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); e.setTextDirection(View.TEXT_DIRECTION_RTL);
         e.setSelectAllOnFocus(true); e.setOnClickListener(v -> e.selectAll());
         e.setOnFocusChangeListener((v,has)->{ if(has) e.postDelayed(() -> { e.selectAll(); },60); });
         return e;
@@ -131,9 +132,9 @@ public class MainActivity extends Activity {
         e.setRawInputType(InputType.TYPE_CLASS_PHONE);
         return e;
     }
-    void addField(EditText e){content.addView(e,new LinearLayout.LayoutParams(-1,dp(38))); addSpace(2);}
+    void addField(EditText e){content.addView(e,new LinearLayout.LayoutParams(-1,dp(46))); addSpace(5);}
     void addSpace(int h){Space s=new Space(this); content.addView(s,new LinearLayout.LayoutParams(1,dp(h)));}
-    TextView section(String s){TextView v=tv(s,11);v.setTextColor(GREEN);v.setTypeface(Typeface.DEFAULT,Typeface.BOLD);v.setSingleLine(true);v.setMaxLines(1);v.setEllipsize(null);v.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);v.setPadding(dp(5),0,dp(5),0);v.setBackground(outlined(CARD,1,8));fitInside(v,12f,8f);content.addView(v,new LinearLayout.LayoutParams(-1,dp(25)));addSpace(3);return v;}
+    TextView section(String s){TextView v=tv("  "+s,12);v.setTextColor(DARK);v.setTypeface(Typeface.DEFAULT,Typeface.BOLD);v.setSingleLine(true);v.setMaxLines(1);v.setEllipsize(null);v.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);v.setPadding(dp(10),0,dp(10),0);v.setBackground(outlined(Color.rgb(231,244,235),dp(1),12));fitInside(v,13f,9f);content.addView(v,new LinearLayout.LayoutParams(-1,dp(34)));addSpace(6);return v;}
 
     void base(String title){
         base(title,true);
@@ -144,7 +145,7 @@ public class MainActivity extends Activity {
             currentPage=title;
         }
         root=new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setBackgroundColor(BG); root.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        LinearLayout bar=new LinearLayout(this); bar.setGravity(Gravity.CENTER_VERTICAL); bar.setPadding(dp(8),dp(3),dp(8),dp(3)); bar.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{GREEN,DARK}));
+        LinearLayout bar=new LinearLayout(this); bar.setGravity(Gravity.CENTER_VERTICAL); bar.setPadding(dp(10),dp(5),dp(10),dp(5)); bar.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{GREEN,DARK}));
         Button back=button("‹");
         back.setTextColor(Color.WHITE); back.setTextSize(28); back.setBackgroundColor(Color.TRANSPARENT);
         back.setContentDescription("رجوع للشاشة السابقة"); back.setOnClickListener(v->goBack());
@@ -152,9 +153,9 @@ public class MainActivity extends Activity {
         TextView logo=tv("بقالة العزي للمواد الغذائية",18); logo.setTextColor(Color.WHITE); logo.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         bar.addView(logo,new LinearLayout.LayoutParams(0,dp(40),1));
         TextView pt=tv(title,13.5f); pt.setTextColor(Color.WHITE); pt.setGravity(Gravity.CENTER); pt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        bar.addView(pt,new LinearLayout.LayoutParams(dp(110),dp(38))); root.addView(bar,new LinearLayout.LayoutParams(-1,dp(48)));
+        bar.addView(pt,new LinearLayout.LayoutParams(dp(110),dp(38))); root.addView(bar,new LinearLayout.LayoutParams(-1,dp(58)));
         ScrollView sv=new ScrollView(this); sv.setFillViewport(true); sv.setClipToPadding(false);
-        content=new LinearLayout(this); content.setOrientation(LinearLayout.VERTICAL); content.setPadding(dp(6),dp(5),dp(6),dp(14)); content.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        content=new LinearLayout(this); content.setOrientation(LinearLayout.VERTICAL); content.setPadding(dp(10),dp(9),dp(10),dp(18)); content.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         if(!"الرئيسية".equals(title)){ TextView operationChip=tv("📌 "+title,10.5f); operationChip.setTextColor(GREEN); operationChip.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL); operationChip.setSingleLine(true); operationChip.setMaxLines(1); operationChip.setEllipsize(TextUtils.TruncateAt.END); operationChip.setPadding(dp(8),0,dp(8),0); operationChip.setBackground(outline(Color.rgb(226,244,232),8)); content.addView(operationChip,new LinearLayout.LayoutParams(-1,dp(24))); addSpace(2); }
         sv.addView(content); root.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
         bottom=new LinearLayout(this); bottom.setOrientation(LinearLayout.VERTICAL); bottom.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
@@ -170,7 +171,7 @@ public class MainActivity extends Activity {
         nav.setOrientation(LinearLayout.HORIZONTAL);
         nav.setGravity(Gravity.CENTER_VERTICAL);
         nav.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        nav.setPadding(dp(2),dp(3),dp(2),dp(3));
+        nav.setPadding(dp(4),dp(5),dp(4),dp(5));
         GradientDrawable bg=new GradientDrawable();
         bg.setColor(CARD);
         bg.setStroke(dp(1),Color.rgb(188,202,193));
@@ -187,7 +188,7 @@ public class MainActivity extends Activity {
             LinearLayout tab=new LinearLayout(this);
             tab.setOrientation(LinearLayout.VERTICAL);
             tab.setGravity(Gravity.CENTER);
-            tab.setPadding(0,dp(2),0,dp(2));
+            tab.setPadding(0,dp(4),0,dp(4));
             if(isActive){
                 GradientDrawable tabBg=new GradientDrawable();
                 tabBg.setColor(Color.rgb(224,243,230));
@@ -196,13 +197,13 @@ public class MainActivity extends Activity {
             }
             TextView iconTv=new TextView(this);
             iconTv.setText(icons[i]);
-            iconTv.setTextSize(18);
+            iconTv.setTextSize(21);
             iconTv.setGravity(Gravity.CENTER);
             tab.addView(iconTv,new LinearLayout.LayoutParams(-1,-2));
 
             TextView labelTv=new TextView(this);
             labelTv.setText(labels[i]);
-            labelTv.setTextSize(10f);
+            labelTv.setTextSize(10.5f);
             labelTv.setGravity(Gravity.CENTER);
             labelTv.setTextColor(isActive ? GREEN : Color.rgb(65,78,70));
             if(isActive) labelTv.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
@@ -218,11 +219,11 @@ public class MainActivity extends Activity {
                 else if(idx==5) notes();
                 else if(idx==6) transfers();
             });
-            LinearLayout.LayoutParams tlp=new LinearLayout.LayoutParams(0,dp(54),1);
+            LinearLayout.LayoutParams tlp=new LinearLayout.LayoutParams(0,dp(66),1);
             tlp.setMargins(dp(2),0,dp(2),0);
             nav.addView(tab,tlp);
         }
-        bottom.addView(nav,new LinearLayout.LayoutParams(-1,dp(56)));
+        bottom.addView(nav,new LinearLayout.LayoutParams(-1,dp(70)));
     }
     void navigate(String n){hideKeyboard(); if(n.equals("الرئيسية"))home();else if(n.equals("العملاء")||n.equals("الحسابات"))customers();else if(n.equals("الفواتير"))invoice();else if(n.equals("فواتير الشراء"))purchaseInvoices();else if(n.equals("المخزون"))inventory();else if(n.equals("ماسح الفواتير")||n.equals("الماسح الضوئي"))scanner();else if(n.equals("الحوالات"))transfers();else if(n.equals("الملاحظات"))notes();else reports();}
     void importContact(){
@@ -282,7 +283,7 @@ public class MainActivity extends Activity {
         bg.setCornerRadius(dp(12));
         bg.setStroke(dp(1), Color.rgb(230, 236, 232));
         card.setBackground(bg);
-        card.setElevation(dp(1));
+        card.setElevation(dp(3));
 
         TextView iconTv = new TextView(this);
         iconTv.setText(icon);
