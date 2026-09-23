@@ -7115,12 +7115,30 @@ void notes(){ base("الملاحظات");
     static class DB extends SQLiteOpenHelper{
         DB(Context c){super(c,"enezi.db",null,14);}
         public void onCreate(SQLiteDatabase d){create(d);}
+        @Override public void onOpen(SQLiteDatabase d){
+            super.onOpen(d);
+            try{create(d);}catch(Exception ignored){}
+            try{ensureColumn(d,"customers","phone","TEXT");}catch(Exception ignored){}
+            try{ensureColumn(d,"invoices","paid","REAL DEFAULT 0");}catch(Exception ignored){}
+            try{ensureColumn(d,"invoices","date","TEXT");}catch(Exception ignored){}
+            try{ensureColumn(d,"invoice_items","unit_cost","REAL DEFAULT 0");}catch(Exception ignored){}
+            try{ensureColumn(d,"items","cost","REAL DEFAULT 0");}catch(Exception ignored){}
+            try{ensureColumn(d,"items","sale","REAL DEFAULT 0");}catch(Exception ignored){}
+        }
+        void ensureColumn(SQLiteDatabase d,String table,String column,String definition){
+            Cursor c=null;
+            try{
+                c=d.rawQuery("PRAGMA table_info("+table+")",null);
+                while(c.moveToNext()) if(column.equalsIgnoreCase(c.getString(1))) return;
+            }finally{if(c!=null)c.close();}
+            d.execSQL("ALTER TABLE "+table+" ADD COLUMN "+column+" "+definition);
+        }
         void create(SQLiteDatabase d){
-            d.execSQL("CREATE TABLE customers(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,phone TEXT)");
-            d.execSQL("CREATE TABLE invoices(id INTEGER PRIMARY KEY AUTOINCREMENT,no TEXT,customer TEXT,total REAL,paid REAL DEFAULT 0,date TEXT)");
-            d.execSQL("CREATE TABLE transactions(id INTEGER PRIMARY KEY AUTOINCREMENT,customer_id INTEGER,amount REAL,details TEXT,type INTEGER,date TEXT)");
-            d.execSQL("CREATE TABLE items(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT,qty REAL,min_qty REAL,cost REAL DEFAULT 0,sale REAL DEFAULT 0)");
-            d.execSQL("CREATE TABLE invoice_items(id INTEGER PRIMARY KEY AUTOINCREMENT,invoice_id INTEGER,name TEXT,qty REAL,total REAL,unit_cost REAL DEFAULT 0)");
+            d.execSQL("CREATE TABLE IF NOT EXISTS customers(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,phone TEXT)");
+            d.execSQL("CREATE TABLE IF NOT EXISTS invoices(id INTEGER PRIMARY KEY AUTOINCREMENT,no TEXT,customer TEXT,total REAL,paid REAL DEFAULT 0,date TEXT)");
+            d.execSQL("CREATE TABLE IF NOT EXISTS transactions(id INTEGER PRIMARY KEY AUTOINCREMENT,customer_id INTEGER,amount REAL,details TEXT,type INTEGER,date TEXT)");
+            d.execSQL("CREATE TABLE IF NOT EXISTS items(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT,qty REAL,min_qty REAL,cost REAL DEFAULT 0,sale REAL DEFAULT 0)");
+            d.execSQL("CREATE TABLE IF NOT EXISTS invoice_items(id INTEGER PRIMARY KEY AUTOINCREMENT,invoice_id INTEGER,name TEXT,qty REAL,total REAL,unit_cost REAL DEFAULT 0)");
             d.execSQL("CREATE TABLE IF NOT EXISTS suppliers(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,phone TEXT)");
             d.execSQL("CREATE TABLE IF NOT EXISTS purchase_invoices(id INTEGER PRIMARY KEY AUTOINCREMENT,no TEXT,supplier TEXT,total REAL,paid REAL DEFAULT 0,date TEXT)");
             d.execSQL("CREATE TABLE IF NOT EXISTS purchase_items(id INTEGER PRIMARY KEY AUTOINCREMENT,purchase_id INTEGER,name TEXT,qty REAL,cost REAL,sale REAL,total REAL)");
