@@ -7275,6 +7275,16 @@ void notes(){ base("الملاحظات");
                 args.isEmpty()?null:args.toArray(new String[0]),
                 null,null,"datetime(date) DESC, id DESC");
         }
+        long addScannedInvoice(String name,String fileName,String category,String notes,String date,String imagePath){
+            ContentValues v=new ContentValues();
+            v.put("name",name==null?"":name);
+            v.put("file_name",fileName==null?"":fileName);
+            v.put("category",category==null?"عام":category);
+            v.put("notes",notes==null?"":notes);
+            v.put("date",date==null?now():date);
+            v.put("image_path",imagePath==null?"":imagePath);
+            return getWritableDatabase().insert("scanned_invoices",null,v);
+        }
         void deleteScannedInvoice(long id){
             if(id>0) getWritableDatabase().delete("scanned_invoices","id=?",new String[]{String.valueOf(id)});
         }
