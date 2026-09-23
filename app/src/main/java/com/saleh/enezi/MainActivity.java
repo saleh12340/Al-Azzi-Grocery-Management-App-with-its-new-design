@@ -48,7 +48,7 @@ public class MainActivity extends Activity {
     EditText customerNameInput, customerPhoneInput;
     static final int GREEN=Color.rgb(30,78,121), DARK=Color.rgb(15,42,68), GOLD=Color.rgb(214,158,52), BLUE=Color.rgb(37,99,235), RED=Color.rgb(207,61,61);
     static final int BG=Color.rgb(245,247,250), TEXT=Color.rgb(20,28,38), MUTED=Color.rgb(76,88,102), CARD=Color.WHITE;
-    DB db; LinearLayout root,content,bottom; TextView pageTitle; int textSize=16; String currentPage="الرئيسية"; ArrayDeque<String> pageStack=new ArrayDeque<>(); long currentNotePageId=-1; int noteFontSize=14; boolean noteScrollMode=true;
+    DB db; LinearLayout root,content,bottom; PopupWindow learningPopup; TextView pageTitle; int textSize=16; String currentPage="الرئيسية"; ArrayDeque<String> pageStack=new ArrayDeque<>(); long currentNotePageId=-1; int noteFontSize=14; boolean noteScrollMode=true;
     Uri cameraScanTempUri; Bitmap scanRawBitmap; String scanFilterMode="magic"; float scanRotation=0; String scanCategoryFilter="الكل"; String scanSearchQuery="";
     EditText transferSenderName,transferSenderPhone,transferReceiverName,transferReceiverPhone,transferContactNameTarget,transferContactPhoneTarget;
 
@@ -116,9 +116,60 @@ public class MainActivity extends Activity {
         e.setTextColor(TEXT); e.setHintTextColor(MUTED); e.setPadding(dp(10),dp(1),dp(10),dp(1)); e.setBackground(outlined(Color.WHITE,dp(1),10)); e.setElevation(dp(1)); e.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL); e.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); e.setTextDirection(View.TEXT_DIRECTION_RTL);
         e.setSelectAllOnFocus(true); e.setOnClickListener(v -> e.selectAll());
         e.setOnFocusChangeListener((v,has)->{ if(has) e.postDelayed(() -> { e.selectAll(); },60); });
+        attachLearning(e,h);
         return e;
     }
-    EditText numberField(String h){
+    String learningKind(String hint){
+        String h=hint==null?"":hint;
+        if(h.contains("رقم")||h.contains("هاتف")) return "phone";
+        if(h.contains("صنف")||h.contains("منتج")) return "item";
+        if(h.contains("عميل")) return "customer";
+        if(h.contains("مورد")) return "supplier";
+        if(h.contains("اسم")) return "name";
+        return "general";
+    }
+    void attachLearning(EditText e,String hint){
+        final String kind=learningKind(hint);
+        e.addTextChangedListener(new TextWatcher(){
+            public void beforeTextChanged(CharSequence s,int st,int c,int a){}
+            public void onTextChanged(CharSequence s,int st,int before,int count){
+                if(s!=null&&s.toString().trim().length()>=2)showLearningSuggestions(e,s.toString().trim(),kind);
+                else dismissLearningSuggestions();
+            }
+            public void afterTextChanged(Editable x){}
+        });
+        e.setOnFocusChangeListener((v,has)->{
+            if(!has){String value=e.getText().toString().trim();if(value.length()>=2)learnTypedValue(value,kind);dismissLearningSuggestions();}
+            else if(e.getText().toString().trim().length()>=2)showLearningSuggestions(e,e.getText().toString().trim(),kind);
+        });
+    }
+    void learnTypedValue(String value,String kind){
+        if(value==null||value.trim().length()<2)return;
+        android.content.SharedPreferences p=getSharedPreferences("learned_suggestions",MODE_PRIVATE);
+        java.util.HashSet<String> set=new java.util.HashSet<>(p.getStringSet(kind,new java.util.HashSet<String>()));
+        set.remove(value.trim());set.add(value.trim());
+        p.edit().putStringSet(kind,set).apply();
+    }
+    void dismissLearningSuggestions(){if(learningPopup!=null&&learningPopup.isShowing())learningPopup.dismiss();}
+    void showLearningSuggestions(EditText anchor,String query,String kind){
+        if(anchor==null||query.length()<2)return;
+        android.content.SharedPreferences p=getSharedPreferences("learned_suggestions",MODE_PRIVATE);
+        java.util.ArrayList<String> values=new java.util.ArrayList<>(p.getStringSet(kind,new java.util.HashSet<String>()));
+        java.util.Collections.sort(values,(a,b)->Integer.compare(b.length(),a.length()));
+        LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(dp(4),dp(4),dp(4),dp(4));box.setBackground(outlined(CARD,dp(1),10));
+        int n=0;
+        for(String value:values){
+            if(!value.startsWith(query)||n>=5)continue;
+            Button b=button(value);b.setTextSize(13);b.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+            b.setOnClickListener(v->{anchor.setText(value);anchor.setSelection(anchor.length());dismissLearningSuggestions();});
+            box.addView(b,new LinearLayout.LayoutParams(-1,dp(40)));n++;
+        }
+        if(n==0){dismissLearningSuggestions();return;}
+        dismissLearningSuggestions();
+        learningPopup=new PopupWindow(box,Math.max(anchor.getWidth(),dp(220)),WindowManager.LayoutParams.WRAP_CONTENT,true);
+        learningPopup.setBackgroundDrawable(rounded(CARD,dp(10)));learningPopup.setOutsideTouchable(true);learningPopup.setElevation(dp(8));learningPopup.showAsDropDown(anchor,0,dp(2));
+    }
+{
         EditText e=field(h);
         e.setInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);
         e.setRawInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);
