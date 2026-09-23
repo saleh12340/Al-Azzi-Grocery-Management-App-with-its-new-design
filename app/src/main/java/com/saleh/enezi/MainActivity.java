@@ -7206,7 +7206,11 @@ void notes(){ base("الملاحظات");
     }
 
     static class DB extends SQLiteOpenHelper{
-        DB(Context c){super(c,"enezi.db",null,14);}
+        DB(Context c){super(c,"alazzi_grocery.db",null,15);}
+        @Override public void onConfigure(SQLiteDatabase d){
+            super.onConfigure(d);
+            try{d.execSQL("PRAGMA busy_timeout=1500");}catch(Exception ignored){}
+        }
         public void onCreate(SQLiteDatabase d){create(d);}
         @Override public void onOpen(SQLiteDatabase d){
             super.onOpen(d);
@@ -7242,6 +7246,7 @@ void notes(){ base("الملاحظات");
             d.execSQL("CREATE TABLE IF NOT EXISTS transfers(id INTEGER PRIMARY KEY AUTOINCREMENT,amount REAL NOT NULL,sender_name TEXT,sender_phone TEXT,receiver_name TEXT,receiver_phone TEXT,date TEXT,note TEXT,review INTEGER DEFAULT 0)");
         }
         public void onUpgrade(SQLiteDatabase d,int o,int n){
+            if(o<15){ create(d); }
             if(o<6){try{d.execSQL("ALTER TABLE customers ADD COLUMN phone TEXT");}catch(Exception ignored){}}
             if(o<7){try{d.execSQL("ALTER TABLE invoices ADD COLUMN paid REAL DEFAULT 0");}catch(Exception ignored){}}
             if(o<2){try{d.execSQL("ALTER TABLE invoices ADD COLUMN date TEXT");}catch(Exception ignored){}}
