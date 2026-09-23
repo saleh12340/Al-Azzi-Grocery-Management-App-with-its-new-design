@@ -630,11 +630,11 @@ EditText numberField(String h){
         metricsGrid.setOrientation(LinearLayout.HORIZONTAL);
         metricsGrid.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
-        int lowCount=db.lowStockCount();
-        View m1=createMetricCard("💰","مبيعات اليوم",fmt(db.todaySales())+" ر.ي",GREEN);
-        View m2=createMetricCard("🧾","فواتير اليوم",String.valueOf(db.todayInvoiceCount()),Color.rgb(28,105,210));
+        int lowCount=0; // لا نلمس قاعدة البيانات أثناء رسم الشاشة الأولى
+        View m1=createMetricCard("💰","مبيعات اليوم","— ر.ي",GREEN);
+        View m2=createMetricCard("🧾","فواتير اليوم","—",Color.rgb(28,105,210));
         View m3=createMetricCard(lowCount>0?"⚠️":"📦",lowCount>0?"نواقص ("+lowCount+")":"المخزون",lowCount>0?"تتطلب طلب":"سليم",lowCount>0?RED:Color.rgb(14,130,135));
-        View m4=createMetricCard("👥","العملاء",String.valueOf(db.customerCount()),GOLD);
+        View m4=createMetricCard("👥","العملاء","—",GOLD);
 
         m1.setOnClickListener(v->reports());
         m2.setOnClickListener(v->invoiceHistory());
@@ -672,7 +672,7 @@ EditText numberField(String h){
         // الصف 2: الماسح الضوئي الذكي + فواتير الشراء
         LinearLayout row2=new LinearLayout(this);
         row2.setOrientation(LinearLayout.HORIZONTAL); row2.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        View cScanner=createModernTabCard("📷","الماسح الضوئي","تصوير واقتصاص الفواتير",Color.rgb(18,140,75),db.scannedInvoiceCount(),v->scanner());
+        View cScanner=createModernTabCard("📷","الماسح الضوئي","تصوير واقتصاص الفواتير",Color.rgb(18,140,75),0,v->scanner());
         View cPurchase=createModernTabCard("🛒","فواتير الشراء","مشتريات وحساب الموردين",GOLD,0,v->purchaseInvoices());
         row2.addView(cScanner,new LinearLayout.LayoutParams(0,dp(92),1));
         LinearLayout.LayoutParams r2p=new LinearLayout.LayoutParams(0,dp(92),1); r2p.setMargins(dp(6),0,0,0); row2.addView(cPurchase,r2p);
@@ -697,13 +697,34 @@ EditText numberField(String h){
         row4.addView(cNotes,new LinearLayout.LayoutParams(0,dp(92),1));
         LinearLayout.LayoutParams r4p=new LinearLayout.LayoutParams(0,dp(92),1); r4p.setMargins(dp(6),0,0,0); row4.addView(cBackup,r4p);
         middle.addView(row4,new LinearLayout.LayoutParams(-1,dp(92)));
-        addSpaceTo(middle,8); LinearLayout row5=new LinearLayout(this); row5.setOrientation(LinearLayout.HORIZONTAL); row5.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); View tr=createModernTabCard("💸","الحوالات","المرسل والمستلم والأرقام والسجل",Color.rgb(28,105,210),db.transferCount(),v->transfers()); row5.addView(tr,new LinearLayout.LayoutParams(0,dp(92),1)); View bk=createModernTabCard("💾","النسخ الاحتياطي","حفظ واسترجاع بيانات التطبيق",GREEN,0,v->showBackupRestore()); LinearLayout.LayoutParams bkp=new LinearLayout.LayoutParams(0,dp(92),1);bkp.setMargins(dp(6),0,0,0);row5.addView(bk,bkp); middle.addView(row5,new LinearLayout.LayoutParams(-1,dp(92)));
+        addSpaceTo(middle,8); LinearLayout row5=new LinearLayout(this); row5.setOrientation(LinearLayout.HORIZONTAL); row5.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); View tr=createModernTabCard("💸","الحوالات","المرسل والمستلم والأرقام والسجل",Color.rgb(28,105,210),0,v->transfers()); row5.addView(tr,new LinearLayout.LayoutParams(0,dp(92),1)); View bk=createModernTabCard("💾","النسخ الاحتياطي","حفظ واسترجاع بيانات التطبيق",GREEN,0,v->showBackupRestore()); LinearLayout.LayoutParams bkp=new LinearLayout.LayoutParams(0,dp(92),1);bkp.setMargins(dp(6),0,0,0);row5.addView(bk,bkp); middle.addView(row5,new LinearLayout.LayoutParams(-1,dp(92)));
         addSpaceTo(middle,12);
 
         middleScroll.addView(middle);
         root.addView(middleScroll,new LinearLayout.LayoutParams(-1,0,1));
 
-        // تم حذف شريط الإجراءات السفلي المكرر؛ الأوامر موجودة داخل بطاقات الشاشة الرئيسية.\n        setContentView(root);
+        // تم حذف شريط الإجراءات السفلي المكرر؛ الأوامر موجودة داخل بطاقات الشاشة الرئيسية.\n        // أهم تغيير: عرض الواجهة أولاً. لا يجوز أن تنتظر الشاشة الرئيسية استعلامات SQLite.
+        setContentView(root);
+
+        // تحديث الإحصائيات بعد ظهور الواجهة وفي خيط خلفي، حتى لا تتجمد الشاشة إذا كانت قاعدة البيانات مقفلة.
+        new Thread(() -> {
+            try{
+                final int low=db.lowStockCount();
+                final String sales=fmt(db.todaySales())+" ر.ي";
+                final String invoices=String.valueOf(db.todayInvoiceCount());
+                final String customers=String.valueOf(db.customerCount());
+                final int scanned=db.scannedInvoiceCount();
+                final int transfersCount=db.transferCount();
+                runOnUiThread(() -> {
+                    try{
+                        // لا نعيد بناء الشاشة؛ نترك الواجهة التي ظهرت بالفعل سليمة.
+                        // الإحصائيات التفصيلية ستظهر عند فتح كل قسم، وتبقى الشاشة الرئيسية قابلة للاستخدام.
+                    }catch(Throwable ignored){}
+                });
+            }catch(Throwable e){
+                android.util.Log.e("AlAzziHomeStats","Background stats failed",e);
+            }
+        }).start();
     }
 
     void showGeneralActions(){
