@@ -5477,12 +5477,45 @@ void notes(){ base("الملاحظات");
         content.addView(statsCard,new LinearLayout.LayoutParams(-1,-2));
         addSpace(6);
 
-        // زر إضافة فاتورة شراء جديدة
-        Button open=action("＋ تسجيل فاتورة شراء جديدة",GOLD);
-        open.setTextSize(13.5f);
-        open.setOnClickListener(v->newPurchaseInvoice());
-        content.addView(open,new LinearLayout.LayoutParams(-1,dp(42)));
-        addSpace(6);
+        // زر عائم لإضافة فاتورة شراء جديدة — بنفس أسلوب زر فاتورة البيع
+        if(root.getChildCount()>1){
+            View sv=root.getChildAt(1);
+            int svIdx=root.indexOfChild(sv);
+            if(svIdx>=0){
+                root.removeViewAt(svIdx);
+
+                FrameLayout frame=new FrameLayout(this);
+                frame.addView(sv,new FrameLayout.LayoutParams(-1,-1));
+
+                Button fab=new Button(this);
+                fab.setText("＋");
+                fab.setTextSize(26);
+                fab.setTextColor(Color.WHITE);
+                fab.setGravity(Gravity.CENTER);
+                fab.setIncludeFontPadding(false);
+
+                GradientDrawable fabBg=new GradientDrawable();
+                fabBg.setShape(GradientDrawable.OVAL);
+                fabBg.setColor(GOLD);
+                if(Build.VERSION.SDK_INT>=21){
+                    fab.setBackground(new android.graphics.drawable.RippleDrawable(
+                        android.content.res.ColorStateList.valueOf(Color.rgb(255,235,175)),fabBg,null));
+                }else{
+                    fab.setBackground(fabBg);
+                }
+                fab.setElevation(dp(8));
+                fab.setContentDescription("إضافة فاتورة شراء جديدة");
+                fab.setOnClickListener(v->newPurchaseInvoice());
+
+                FrameLayout.LayoutParams fp=new FrameLayout.LayoutParams(dp(54),dp(54));
+                fp.gravity=Gravity.BOTTOM|Gravity.LEFT;
+                fp.setMargins(dp(16),0,dp(16),dp(14));
+                frame.addView(fab,fp);
+
+                root.addView(frame,svIdx,new LinearLayout.LayoutParams(-1,0,1));
+                content.setPadding(dp(5),dp(4),dp(5),dp(74));
+            }
+        }
 
         // حقل البحث
         EditText search=field("🔍 بحث برقم الفاتورة أو اسم المورد...");
