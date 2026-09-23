@@ -584,7 +584,7 @@ public class MainActivity extends Activity {
         row4.addView(cNotes,new LinearLayout.LayoutParams(0,dp(92),1));
         LinearLayout.LayoutParams r4p=new LinearLayout.LayoutParams(0,dp(92),1); r4p.setMargins(dp(6),0,0,0); row4.addView(cGeneral,r4p);
         middle.addView(row4,new LinearLayout.LayoutParams(-1,dp(92)));
-        addSpaceTo(middle,8); LinearLayout row5=new LinearLayout(this); row5.setOrientation(LinearLayout.HORIZONTAL); row5.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); View tr=createModernTabCard("💸","الحوالات","المرسل والمستلم والأرقام والسجل",Color.rgb(28,105,210),db.transferCount(),v->transfers()); row5.addView(tr,new LinearLayout.LayoutParams(0,dp(92),1)); View bk=createModernTabCard("💾","النسخ الاحتياطي","حفظ واسترجاع بيانات التطبيق",GREEN,0,v->showBackupRestore()); LinearLayout bkp=new LinearLayout.LayoutParams(0,dp(92),1);bkp.setMargins(dp(6),0,0,0);row5.addView(bk,bkp); middle.addView(row5,new LinearLayout.LayoutParams(-1,dp(92)));
+        addSpaceTo(middle,8); LinearLayout row5=new LinearLayout(this); row5.setOrientation(LinearLayout.HORIZONTAL); row5.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); View tr=createModernTabCard("💸","الحوالات","المرسل والمستلم والأرقام والسجل",Color.rgb(28,105,210),db.transferCount(),v->transfers()); row5.addView(tr,new LinearLayout.LayoutParams(0,dp(92),1)); View bk=createModernTabCard("💾","النسخ الاحتياطي","حفظ واسترجاع بيانات التطبيق",GREEN,0,v->showBackupRestore()); LinearLayout.LayoutParams bkp=new LinearLayout.LayoutParams(0,dp(92),1);bkp.setMargins(dp(6),0,0,0);row5.addView(bk,bkp); middle.addView(row5,new LinearLayout.LayoutParams(-1,dp(92)));
         addSpaceTo(middle,12);
 
         middleScroll.addView(middle);
