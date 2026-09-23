@@ -3242,19 +3242,20 @@ public class MainActivity extends Activity {
 
     void shareTransferDirectToWhatsApp(String phone,String text){
         String p=normalizeWhatsAppPhone(phone);
-        if(p.isEmpty()){ shareText(text); return; }
+        if(p.isEmpty()){ Toast.makeText(this,"رقم واتساب غير صالح",Toast.LENGTH_SHORT).show(); return; }
         Uri uri=Uri.parse("https://wa.me/"+p+"?text="+Uri.encode(text));
-        Intent i=new Intent(Intent.ACTION_VIEW,uri);
         try{
+            Intent i=new Intent(Intent.ACTION_VIEW,uri);
             i.setPackage("com.whatsapp");
             startActivity(i);
         }catch(Exception e1){
             try{
+                Intent i=new Intent(Intent.ACTION_VIEW,uri);
                 i.setPackage("com.whatsapp.w4b");
                 startActivity(i);
             }catch(Exception e2){
                 try{
-                    i.setPackage(null);
+                    Intent i=new Intent(Intent.ACTION_VIEW,uri);
                     startActivity(i);
                 }catch(Exception e3){
                     shareText(text);
@@ -5200,6 +5201,16 @@ public class MainActivity extends Activity {
         f.addView(note,new LinearLayout.LayoutParams(-1,dp(40)));
         addSpaceTo(f,5);
 
+        TextView sugTitle=tv("💡 اقتراحات سريعة من الحوالات السابقة",11.5f);
+        sugTitle.setTextColor(GREEN);
+        sugTitle.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        f.addView(sugTitle,new LinearLayout.LayoutParams(-1,dp(24)));
+        LinearLayout suggestions=new LinearLayout(this);
+        suggestions.setOrientation(LinearLayout.VERTICAL);
+        suggestions.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        f.addView(suggestions,new LinearLayout.LayoutParams(-1,-2));
+        addSpaceTo(f,4);
+
         Button save=action("✓ حفظ الحوالة",GREEN);
         f.addView(save,new LinearLayout.LayoutParams(-1,dp(44)));
         content.addView(f,new LinearLayout.LayoutParams(-1,dp(255)));
@@ -5255,6 +5266,16 @@ public class MainActivity extends Activity {
                     // مشاركة الحوالة مباشرة إلى محادثة الرقم الثابت المحدد\n                    shareTransferDirectToWhatsApp("776425052",text);
                 });
 
+                Button copy=button("📋 نسخ النص");
+                copy.setTextColor(BLUE);
+                copy.setTextSize(11);
+                copy.setOnClickListener(v->{
+                    String text=fmt(am)+" صافي\\n"+"المستلم "+rn+"\\n"+rp2+"\\n"+"المرسل "+sn+"\\n"+sp;
+                    ClipboardManager cm=(ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
+                    cm.setPrimaryClip(ClipData.newPlainText("نص الحوالة",text));
+                    Toast.makeText(this,"تم نسخ نص الحوالة",Toast.LENGTH_SHORT).show();
+                });
+
                 Button de=button("🗑 حذف");
                 de.setTextColor(RED);
                 de.setOnClickListener(v->new AlertDialog.Builder(this)
@@ -5265,6 +5286,9 @@ public class MainActivity extends Activity {
                     .show());
 
                 acts.addView(sh,new LinearLayout.LayoutParams(0,dp(36),1));
+                LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(0,dp(36),1);
+                cp.setMargins(dp(5),0,0,0);
+                acts.addView(copy,cp);
                 LinearLayout.LayoutParams dl=new LinearLayout.LayoutParams(0,dp(36),1);
                 dl.setMargins(dp(5),0,0,0);
                 acts.addView(de,dl);
@@ -5275,6 +5299,48 @@ public class MainActivity extends Activity {
                 list.addView(row,lp);
             }
             c.close();
+
+            suggestions.removeAllViews();
+            Cursor sc=db.transfers();
+            int suggestionCount=0;
+            while(sc.moveToNext() && suggestionCount<6){
+                String ssn=sc.getString(2), ssp=sc.getString(3), srn=sc.getString(4), srp=sc.getString(5);
+                LinearLayout sr=card();
+                sr.setPadding(dp(7),dp(5),dp(7),dp(5));
+                TextView stx=tv("المستلم: "+srn+" — "+srp+"\\nالمرسل: "+ssn+" — "+ssp,10.5f);
+                stx.setTextColor(TEXT);
+                stx.setMaxLines(2);
+                Button use=button("استخدام");
+                use.setTextSize(10);
+                use.setTextColor(Color.WHITE);
+                use.setBackground(rounded(BLUE,dp(7)));
+                use.setOnClickListener(v->{
+                    transferReceiverName.setText(srn);
+                    transferReceiverPhone.setText(srp);
+                    transferSenderName.setText(ssn);
+                    transferSenderPhone.setText(ssp);
+                    transferReceiverName.requestFocus();
+                    transferReceiverName.selectAll();
+                });
+                LinearLayout rr=new LinearLayout(this);
+                rr.setOrientation(LinearLayout.HORIZONTAL);
+                rr.setGravity(Gravity.CENTER_VERTICAL);
+                rr.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+                rr.addView(stx,new LinearLayout.LayoutParams(0,dp(48),1));
+                rr.addView(use,new LinearLayout.LayoutParams(dp(68),dp(34)));
+                sr.addView(rr);
+                suggestions.addView(sr,new LinearLayout.LayoutParams(-1,dp(54)));
+                addSpaceTo(suggestions,2);
+                suggestionCount++;
+            }
+            sc.close();
+            if(suggestionCount==0){
+                TextView se=tv("ستظهر هنا بيانات الحوالات السابقة كاقتراحات سريعة.",10);
+                se.setTextColor(MUTED);
+                se.setGravity(Gravity.CENTER);
+                suggestions.addView(se,new LinearLayout.LayoutParams(-1,dp(28)));
+            }
+
             if(count==0){
                 TextView e=tv("لا توجد حوالات مسجلة بعد",11);
                 e.setTextColor(MUTED);
