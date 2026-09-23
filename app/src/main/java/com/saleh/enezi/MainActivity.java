@@ -48,7 +48,7 @@ public class MainActivity extends Activity {
     EditText customerNameInput, customerPhoneInput;
     static final int GREEN=Color.rgb(30,78,121), DARK=Color.rgb(15,42,68), GOLD=Color.rgb(214,158,52), BLUE=Color.rgb(37,99,235), RED=Color.rgb(207,61,61);
     static final int BG=Color.rgb(245,247,250), TEXT=Color.rgb(20,28,38), MUTED=Color.rgb(76,88,102), CARD=Color.WHITE;
-    DB db; LinearLayout root,content,bottom; PopupWindow learningPopup; TextView pageTitle; int textSize=16; String currentPage="الرئيسية"; ArrayDeque<String> pageStack=new ArrayDeque<>(); long currentNotePageId=-1; int noteFontSize=14; boolean noteScrollMode=true;
+    volatile boolean startupFinished=false; DB db; LinearLayout root,content,bottom; PopupWindow learningPopup; TextView pageTitle; int textSize=16; String currentPage="الرئيسية"; ArrayDeque<String> pageStack=new ArrayDeque<>(); long currentNotePageId=-1; int noteFontSize=14; boolean noteScrollMode=true;
     Uri cameraScanTempUri; Bitmap scanRawBitmap; String scanFilterMode="magic"; float scanRotation=0; String scanCategoryFilter="الكل"; String scanSearchQuery="";
     EditText transferSenderName,transferSenderPhone,transferReceiverName,transferReceiverPhone,transferContactNameTarget,transferContactPhoneTarget;
 
@@ -66,6 +66,8 @@ public class MainActivity extends Activity {
                 try{ BackupReceiver.schedule(this); }catch(Throwable ignored){}
                 runOnUiThread(() -> {
                     try{
+                        if(startupFinished) return;
+                        startupFinished=true;
                         db=localDb;
                         home();
                     }catch(Throwable e){
@@ -75,9 +77,15 @@ public class MainActivity extends Activity {
                 });
             }catch(Throwable e){
                 android.util.Log.e("AlAzziStartup","Startup failed",e);
-                runOnUiThread(() -> showStartupRecovery(e));
+                runOnUiThread(() -> { if(!startupFinished){ startupFinished=true; showStartupRecovery(e); } });
             }
         }).start();
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            if(!startupFinished){
+                startupFinished=true;
+                showStartupRecovery(new RuntimeException("Startup timeout"));
+            }
+        },10000);
     }
 
     void showStartupLoading(){
@@ -7206,22 +7214,12 @@ void notes(){ base("الملاحظات");
     }
 
     static class DB extends SQLiteOpenHelper{
-        DB(Context c){super(c,"alazzi_grocery.db",null,15);}
+        DB(Context c){super(c,"alazzi_grocery_v3.db",null,15);}
         @Override public void onConfigure(SQLiteDatabase d){
             super.onConfigure(d);
             try{d.execSQL("PRAGMA busy_timeout=1500");}catch(Exception ignored){}
         }
         public void onCreate(SQLiteDatabase d){create(d);}
-        @Override public void onOpen(SQLiteDatabase d){
-            super.onOpen(d);
-            try{create(d);}catch(Exception ignored){}
-            try{ensureColumn(d,"customers","phone","TEXT");}catch(Exception ignored){}
-            try{ensureColumn(d,"invoices","paid","REAL DEFAULT 0");}catch(Exception ignored){}
-            try{ensureColumn(d,"invoices","date","TEXT");}catch(Exception ignored){}
-            try{ensureColumn(d,"invoice_items","unit_cost","REAL DEFAULT 0");}catch(Exception ignored){}
-            try{ensureColumn(d,"items","cost","REAL DEFAULT 0");}catch(Exception ignored){}
-            try{ensureColumn(d,"items","sale","REAL DEFAULT 0");}catch(Exception ignored){}
-        }
         void ensureColumn(SQLiteDatabase d,String table,String column,String definition){
             Cursor c=null;
             try{
