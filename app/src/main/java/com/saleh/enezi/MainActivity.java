@@ -5131,8 +5131,12 @@ public class MainActivity extends Activity {
         transferReceiverPhone=phoneField("رقم المستلم *");
         transferSenderName=field("اسم المرسل *");
         transferSenderPhone=phoneField("رقم المرسل *");
-        EditText amount=numberField("الإجمالي / مبلغ الحوالة *");
+        EditText amount=numberField("مبلغ الحوالة *");
         EditText note=field("ملاحظة اختيارية");
+
+        // المبلغ أولاً، ثم المستلم، ثم المرسل. الملاحظة اختيارية ولا تدخل في النص الأساسي.
+        f.addView(amount,new LinearLayout.LayoutParams(-1,dp(44)));
+        addSpaceTo(f,5);
 
         // المستلم أولاً حسب ترتيب عملية الحوالة.
         LinearLayout receiver=new LinearLayout(this);
@@ -5174,7 +5178,6 @@ public class MainActivity extends Activity {
         f.addView(sender);
         addSpaceTo(f,5);
 
-        f.addView(amount,new LinearLayout.LayoutParams(-1,dp(40)));
         addSpaceTo(f,4);
         f.addView(note,new LinearLayout.LayoutParams(-1,dp(40)));
         addSpaceTo(f,5);
@@ -5228,12 +5231,9 @@ public class MainActivity extends Activity {
                 sh.setTextSize(12);
                 sh.setBackground(rounded(Color.rgb(0,145,70),dp(9)));
                 sh.setOnClickListener(v->{
-                    String text="حوالة من بقالة العزي للمواد الغذائية\n"+
-                            "المبلغ: "+fmt(am)+" ريال\n"+
-                            "المستلم: "+rn+" — "+rp2+"\n"+
-                            "المرسل: "+sn+" — "+sp+"\n"+
-                            "التاريخ: "+dt+
-                            ((nt==null||nt.trim().isEmpty())?"":"\nملاحظة: "+nt);
+                    String text=fmt(am)+" صافي\n"+
+                            "المستلم "+rn+"\n"+rp2+"\n"+
+                            "المرسل "+sn+"\n"+sp;
                     shareWhatsAppToCustomer(rp2,text,null);
                 });
 
