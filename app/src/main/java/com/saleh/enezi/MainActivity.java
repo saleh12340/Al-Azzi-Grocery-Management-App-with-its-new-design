@@ -4599,6 +4599,7 @@ EditText numberField(String h){
         addTxTitle.setTextColor(GREEN); addTxTitle.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         addTxBox.addView(addTxTitle,new LinearLayout.LayoutParams(-1,dp(22)));
 
+        // ترتيب مربعات الإدخال: نفس المقاس والمحاذاة، والمبلغ في اليمين والبيان في اليسار.
         LinearLayout txFields=new LinearLayout(this);
         txFields.setOrientation(LinearLayout.HORIZONTAL);
         txFields.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
@@ -4610,6 +4611,7 @@ EditText numberField(String h){
 
         EditText amountInput=numberField("المبلغ بالريال *");
         amountInput.setHint("اكتب المبلغ هنا");
+        amountInput.setGravity(Gravity.CENTER|Gravity.RIGHT);
         TextView amountWords=tv("",11.5f);
         amountWords.setTextColor(BLUE);
         amountWords.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
@@ -4628,10 +4630,23 @@ EditText numberField(String h){
             public void afterTextChanged(Editable e){}
         });
 
-        EditText detailsInput=field("البيان / ملاحظات (اختياري)");
+        // نضع البيان داخل حاوية بنفس ارتفاع عمود المبلغ حتى تبقى المربعات على خط واحد.
+        LinearLayout detailsCol=new LinearLayout(this);
+        detailsCol.setOrientation(LinearLayout.VERTICAL);
+        detailsCol.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        detailsCol.setPadding(dp(4),0,0,0);
+        EditText detailsInput=field("البيان / الملاحظات");
+        detailsInput.setGravity(Gravity.CENTER|Gravity.RIGHT);
+        detailsCol.addView(detailsInput,new LinearLayout.LayoutParams(-1,dp(40)));
+        TextView detailsHint=tv("اكتب تفاصيل الحركة هنا",10.5f);
+        detailsHint.setTextColor(Color.GRAY);
+        detailsHint.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+        detailsHint.setIncludeFontPadding(false);
+        detailsHint.setSingleLine(true);
+        detailsCol.addView(detailsHint,new LinearLayout.LayoutParams(-1,dp(25)));
+
         txFields.addView(amountCol,new LinearLayout.LayoutParams(0,dp(67),1f));
-        LinearLayout.LayoutParams dtlp=new LinearLayout.LayoutParams(0,dp(40),1.4f); dtlp.setMargins(dp(4),0,0,0);
-        txFields.addView(detailsInput,dtlp);
+        txFields.addView(detailsCol,new LinearLayout.LayoutParams(0,dp(67),1f));
         addTxBox.addView(txFields,new LinearLayout.LayoutParams(-1,dp(67)));
         addSpaceTo(addTxBox,6);
 
