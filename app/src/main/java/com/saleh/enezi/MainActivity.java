@@ -163,6 +163,20 @@ public class MainActivity extends Activity {
     GradientDrawable rounded(int color,float radius){ GradientDrawable g=new GradientDrawable(); g.setColor(color); g.setCornerRadius(radius); return g; }
     GradientDrawable outlined(int color,int stroke,float radius){ GradientDrawable g=rounded(color,radius); g.setStroke(stroke,Color.rgb(174,185,198)); return g; }
     float fitText(float z){return 15f;}
+    void normalizeAppText(View v){
+        if(v instanceof TextView){
+            TextView t=(TextView)v;
+            String x=t.getText()==null?"":t.getText().toString().trim();
+            if(!x.matches("[\\p{So}\\p{Cs}\\uFE0F\\u200D ]+")) t.setTextSize(15f);
+            t.setIncludeFontPadding(true);
+            t.setHorizontallyScrolling(false);
+        }
+        if(v instanceof ViewGroup){
+            ViewGroup g=(ViewGroup)v;
+            for(int i=0;i<g.getChildCount();i++) normalizeAppText(g.getChildAt(i));
+        }
+    }
+
     void fitInside(View v,float maxSp,float minSp){
         if(v instanceof TextView){
             TextView t=(TextView)v;
