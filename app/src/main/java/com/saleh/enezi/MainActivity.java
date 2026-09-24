@@ -1621,7 +1621,9 @@ EditText numberField(String h){
         box.addView(actions,new LinearLayout.LayoutParams(-1,dp(38)));
         dlg.setContentView(box);dlg.setCanceledOnTouchOutside(true);dlg.show();
         Window w=dlg.getWindow();if(w!=null){w.setBackgroundDrawableResource(android.R.color.transparent);w.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);w.setLayout((int)(getResources().getDisplayMetrics().widthPixels*.94f),(int)(getResources().getDisplayMetrics().heightPixels*.86f));w.setGravity(Gravity.CENTER);}
-    }\n\nvoid operationActions(long customerId,String customerName,long tid,String details,double amount,int type){
+    }
+
+void operationActions(long customerId,String customerName,long tid,String details,double amount,int type){
         String invNo=db.invoiceNoFromTransaction(details);ArrayList<String> choices=new ArrayList<>();
         if(!invNo.isEmpty()) choices.add("🧾 تعديل الفاتورة");
         else choices.add("✏ تعديل العملية");
