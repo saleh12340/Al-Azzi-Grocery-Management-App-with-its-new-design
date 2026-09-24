@@ -44,13 +44,14 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class MainActivity extends Activity {
-    static final int REQ_CONTACTS=4101, PICK_CONTACT=4102, REQ_CAMERA_SCAN=4103, REQ_GALLERY_SCAN=4104, REQ_PERM_CAMERA=4105;
+    static final int REQ_CONTACTS=4101, PICK_CONTACT=4102, REQ_CAMERA_SCAN=4103, REQ_GALLERY_SCAN=4104, REQ_PERM_CAMERA=4105, REQ_AUDIO=5110, REQ_VOICE_SEARCH=5111, REQ_VOICE_DETAIL=5112;
     EditText customerNameInput, customerPhoneInput;
     static final int GREEN=Color.rgb(30,78,121), DARK=Color.rgb(15,42,68), GOLD=Color.rgb(214,158,52), BLUE=Color.rgb(37,99,235), RED=Color.rgb(207,61,61);
     static final int BG=Color.rgb(245,247,250), TEXT=Color.rgb(20,28,38), MUTED=Color.rgb(76,88,102), CARD=Color.WHITE;
     volatile boolean startupFinished=false; DB db; LinearLayout root,content,bottom; PopupWindow learningPopup; TextView pageTitle; int textSize=16; String currentPage="الرئيسية"; ArrayDeque<String> pageStack=new ArrayDeque<>(); long currentNotePageId=-1; int noteFontSize=14; boolean noteScrollMode=true;
     Uri cameraScanTempUri; Bitmap scanRawBitmap; String scanFilterMode="magic"; float scanRotation=0; String scanCategoryFilter="الكل"; String scanSearchQuery="";
     EditText transferSenderName,transferSenderPhone,transferReceiverName,transferReceiverPhone,transferContactNameTarget,transferContactPhoneTarget;
+    EditText activeVoiceField;
 
     @Override public void onCreate(Bundle b){
         super.onCreate(b);
@@ -546,6 +547,38 @@ EditText numberField(String h){
         if(Build.VERSION.SDK_INT>=23 && checkSelfPermission("android.permission.READ_CONTACTS")!=PackageManager.PERMISSION_GRANTED){ requestPermissions(new String[]{"android.permission.READ_CONTACTS"},REQ_CONTACTS); return; }
         try{ Intent i=new Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI); startActivityForResult(i,PICK_CONTACT); }catch(Exception e){ Toast.makeText(this,"تعذر فتح جهات الاتصال",Toast.LENGTH_SHORT).show(); }
     }
+    void startVoiceInput(EditText target,String prompt,int requestCode){
+        if(target==null)return;
+        activeVoiceField=target;
+        if(Build.VERSION.SDK_INT>=23&&checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED){
+            target.setTag(requestCode==REQ_VOICE_DETAIL?"detailVoice":"searchVoice");
+            requestPermissions(new String[]{android.Manifest.permission.RECORD_AUDIO},REQ_AUDIO); return;
+        }
+        try{
+            Intent i=new Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+            i.putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE,"ar-YE");
+            i.putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL,android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+            i.putExtra(android.speech.RecognizerIntent.EXTRA_MAX_RESULTS,5);
+            i.putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT,prompt);
+            startActivityForResult(i,requestCode);
+        }catch(Exception e){Toast.makeText(this,"الإدخال الصوتي غير متاح على هذا الجهاز",Toast.LENGTH_SHORT).show();}
+    }
+    @Override public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] grantResults){
+        super.onRequestPermissionsResult(requestCode,permissions,grantResults);
+        if(requestCode==REQ_AUDIO){
+            if(grantResults.length>0&&grantResults[0]==PackageManager.PERMISSION_GRANTED&&activeVoiceField!=null){
+                boolean detail=activeVoiceField.getTag()!=null&&"detailVoice".equals(activeVoiceField.getTag());
+                startVoiceInput(activeVoiceField,detail?"تحدث بالبيان أو تفاصيل العملية":"تحدث باسم العميل أو رقم الهاتف",detail?REQ_VOICE_DETAIL:REQ_VOICE_SEARCH);
+            }else Toast.makeText(this,"يلزم السماح بالميكروفون لاستخدام الإدخال الصوتي",Toast.LENGTH_SHORT).show();
+        }
+    }
+    void addVoiceButton(LinearLayout container,EditText target,int requestCode,String prompt){
+        Button mic=button("🎙"); mic.setContentDescription("إدخال صوتي"); mic.setTextSize(14); mic.setPadding(0,0,0,0);
+        mic.setTextColor(GREEN); mic.setBackground(outlined(CARD,dp(1),10));
+        mic.setOnClickListener(v->{target.setTag(requestCode==REQ_VOICE_DETAIL?"detailVoice":"searchVoice");startVoiceInput(target,prompt,requestCode);});
+        LinearLayout.LayoutParams mp=new LinearLayout.LayoutParams(dp(42),dp(42));mp.setMargins(dp(4),0,0,0);container.addView(mic,mp);
+    }
+
     @Override protected void onActivityResult(int requestCode,int resultCode,Intent data){
         super.onActivityResult(requestCode,resultCode,data);
         if(requestCode==PICK_CONTACT&&resultCode==RESULT_OK&&data!=null){
@@ -561,6 +594,13 @@ EditText numberField(String h){
                 }
             }catch(Exception e){Toast.makeText(this,"تعذر قراءة بيانات جهة الاتصال",Toast.LENGTH_SHORT).show();}
             finally{if(c!=null)c.close();}
+        }else if((requestCode==REQ_VOICE_SEARCH||requestCode==REQ_VOICE_DETAIL)&&resultCode==RESULT_OK&&data!=null){
+            ArrayList<String> results=data.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS);
+            if(activeVoiceField!=null&&results!=null&&!results.isEmpty()){
+                String spoken=results.get(0)==null?"":results.get(0).trim();
+                if(!spoken.isEmpty()){activeVoiceField.setText(spoken);activeVoiceField.setSelection(activeVoiceField.length());}
+            }
+            activeVoiceField=null;
         }else if(requestCode==8801&&resultCode==RESULT_OK&&data!=null&&data.getData()!=null){
             try{
                 if(db!=null)db.close();
@@ -7244,10 +7284,13 @@ void account(long id,String name){
         // إدخال حركة مختصر.
         LinearLayout add=new LinearLayout(this); add.setOrientation(LinearLayout.HORIZONTAL); add.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         EditText amount=numberField("المبلغ");
-        EditText detail=field("البيان");
-        amount.setTextSize(10); detail.setTextSize(10);
-        add.addView(amount,new LinearLayout.LayoutParams(0,dp(34),.8f));
-        LinearLayout.LayoutParams dd=new LinearLayout.LayoutParams(0,dp(34),1.3f);dd.setMargins(dp(3),0,0,0);add.addView(detail,dd);
+        EditText detail=field("البيان / تفاصيل العملية");
+        amount.setTextSize(10); detail.setTextSize(11);
+        add.addView(amount,new LinearLayout.LayoutParams(0,dp(40),.8f));
+        LinearLayout detailBox=new LinearLayout(this);detailBox.setOrientation(LinearLayout.HORIZONTAL);detailBox.setGravity(Gravity.CENTER_VERTICAL);
+        detailBox.addView(detail,new LinearLayout.LayoutParams(0,dp(40),1));
+        addVoiceButton(detailBox,detail,REQ_VOICE_DETAIL,"تحدث بالبيان أو تفاصيل العملية");
+        LinearLayout.LayoutParams dd=new LinearLayout.LayoutParams(0,dp(42),1.7f);dd.setMargins(dp(4),0,0,0);add.addView(detailBox,dd);
         content.addView(add,new LinearLayout.LayoutParams(-1,dp(35)));
 
         LinearLayout addBtns=new LinearLayout(this); addBtns.setOrientation(LinearLayout.HORIZONTAL); addBtns.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
@@ -7330,7 +7373,7 @@ void customers(){
         search.setTextSize(10);search.setSingleLine(true);search.setPadding(dp(7),0,dp(7),0);search.setBackground(glassFill(Color.argb(170,255,255,255)));
         searchBar.addView(search,new LinearLayout.LayoutParams(0,dp(34),1));
         Button mic=button("🎙");mic.setTextSize(10);mic.setPadding(0,0,0,0);mic.setTextColor(Color.WHITE);mic.setBackground(glassFill(Color.argb(120,255,255,255)));
-        mic.setOnClickListener(v->{try{Intent i=new Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH);i.putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE,"ar");i.putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT,"ابحث باسم العميل");startActivityForResult(i,5101);}catch(Exception e){Toast.makeText(this,"البحث الصوتي غير متاح",Toast.LENGTH_SHORT).show();}});
+        mic.setOnClickListener(v->{search.setTag("searchVoice");startVoiceInput(search,"تحدث باسم العميل أو رقم الهاتف",REQ_VOICE_SEARCH);});
         LinearLayout.LayoutParams mp=new LinearLayout.LayoutParams(dp(34),dp(34));mp.setMargins(dp(3),0,0,0);searchBar.addView(mic,mp);
         Button plus=button("+");plus.setTextSize(17);plus.setTextColor(Color.WHITE);plus.setBackground(rounded(Color.rgb(16,181,111),dp(17)));plus.setPadding(0,0,0,0);plus.setOnClickListener(v->showCustomerCreatePopup());
         LinearLayout.LayoutParams pp=new LinearLayout.LayoutParams(dp(34),dp(34));pp.setMargins(dp(3),0,0,0);searchBar.addView(plus,pp);
