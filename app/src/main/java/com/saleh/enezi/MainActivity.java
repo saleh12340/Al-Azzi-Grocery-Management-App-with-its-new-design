@@ -189,7 +189,7 @@ public class MainActivity extends Activity {
 
     GradientDrawable rounded(int color,float radius){ GradientDrawable g=new GradientDrawable(); g.setColor(color); g.setCornerRadius(radius); return g; }
     GradientDrawable outlined(int color,int stroke,float radius){ GradientDrawable g=rounded(color,radius); g.setStroke(stroke,Color.rgb(174,185,198)); return g; }
-    float fitText(float z){return 15f;}
+    float fitText(float z){return 16f;}
     void normalizeAppText(View v){
         if(v instanceof TextView){
             TextView t=(TextView)v;
@@ -210,9 +210,18 @@ public class MainActivity extends Activity {
             t.setIncludeFontPadding(true);
             t.setHorizontallyScrolling(false);
             t.setEllipsize(null);
-            t.setBreakStrategy(android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY);
-            if(android.os.Build.VERSION.SDK_INT>=26){
-                t.setAutoSizeTextTypeUniformWithConfiguration(15,15,1,android.util.TypedValue.COMPLEX_UNIT_SP);
+            if(android.os.Build.VERSION.SDK_INT>=23){
+                try{t.setBreakStrategy(android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY);}catch(Throwable ignored){}
+            }
+            float size=Math.max(16f,maxSp);
+            if(android.os.Build.VERSION.SDK_INT>=26 && maxSp>minSp){
+                try{
+                    int min=Math.max(16,Math.round(minSp));
+                    int max=Math.max(min+1,Math.round(maxSp));
+                    t.setAutoSizeTextTypeUniformWithConfiguration(min,max,1,android.util.TypedValue.COMPLEX_UNIT_SP);
+                }catch(IllegalArgumentException ignored){t.setTextSize(size);}
+            }else{
+                t.setTextSize(size);
             }
         }
     }
