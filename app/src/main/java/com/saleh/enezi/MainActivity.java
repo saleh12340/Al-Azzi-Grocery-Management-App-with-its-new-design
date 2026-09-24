@@ -5740,10 +5740,10 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
             File file=createPurchaseInvoicePdf(no,supplier,lines,total,date);
             String text=purchaseReceiptText(no,supplier,lines,total,date);
             DocumentCenter.sharePdf(this,file,text,"مشاركة فاتورة شراء PDF");
-            return;
-            /*
-        }*/
+        }catch(Exception e){
+            Toast.makeText(this,"تعذر مشاركة فاتورة شراء PDF",Toast.LENGTH_SHORT).show();
         }
+    }
 
 
     void sharePurchaseInvoiceImage(long id,String no,String supplier,double total,String date){
