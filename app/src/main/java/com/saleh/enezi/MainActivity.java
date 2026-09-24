@@ -62,7 +62,7 @@ public class MainActivity extends Activity {
         startupFinished=true;
         try{ home(); }catch(Throwable e){
             android.util.Log.e("AlAzziStartup","Initial UI failed",e);
-            showStartupRecovery(e);
+            showSafeHome(e);
         }
 
         // فتح قاعدة البيانات يتم خارج خيط الواجهة.
@@ -84,6 +84,33 @@ public class MainActivity extends Activity {
                     Toast.LENGTH_LONG).show());
             }
         }).start();
+    }
+
+    void showSafeHome(Throwable error){
+        currentPage="الرئيسية"; pageStack.clear();
+        LinearLayout box=new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL); box.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        box.setBackgroundColor(BG); box.setPadding(dp(12),dp(12),dp(12),dp(12));
+        TextView head=tv("بقالة العزي للمواد الغذائية",21);
+        head.setTextColor(Color.WHITE); head.setGravity(Gravity.CENTER); head.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        head.setBackground(rounded(DARK,dp(14)));
+        box.addView(head,new LinearLayout.LayoutParams(-1,dp(64)));
+        addSafeHomeButton(box,"🧾 فواتير البيع",v->invoiceHistory());
+        addSafeHomeButton(box,"👥 العملاء والحسابات",v->customers());
+        addSafeHomeButton(box,"🛒 فواتير الشراء",v->purchaseInvoices());
+        addSafeHomeButton(box,"📦 المخزون والأصناف",v->inventory());
+        addSafeHomeButton(box,"📊 التقارير",v->reports());
+        addSafeHomeButton(box,"📝 الملاحظات",v->notes());
+        addSafeHomeButton(box,"💸 الحوالات",v->transfers());
+        TextView status=tv("تم تشغيل وضع الواجهة الآمن.\nسبب الخطأ: "+(error==null?"غير معروف":error.getClass().getSimpleName()),12);
+        status.setTextColor(MUTED); status.setGravity(Gravity.CENTER);
+        box.addView(status,new LinearLayout.LayoutParams(-1,dp(58)));
+        setContentView(box);
+    }
+    void addSafeHomeButton(LinearLayout box,String label,View.OnClickListener click){
+        Button b=button(label); b.setTextSize(16); b.setTextColor(TEXT);
+        b.setBackground(outlined(CARD,dp(1),12)); b.setOnClickListener(click);
+        LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,dp(52)); p.setMargins(0,dp(6),0,0); box.addView(b,p);
     }
 
     void showStartupRecovery(Throwable error){
@@ -190,7 +217,7 @@ public class MainActivity extends Activity {
         }
     }
     TextView tv(String s,float z){
-        TextView v=new TextView(this); v.setText(s); v.setTextSize(fitText(z)); v.setTextColor(TEXT);
+        TextView v=new TextView(this); v.setText(s); v.setTextSize(fitText(z*1.10f)); v.setTextColor(TEXT);
         v.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL); v.setPadding(dp(4),dp(1),dp(4),dp(1));
         v.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); v.setTextDirection(View.TEXT_DIRECTION_RTL);
         fitInside(v,fitText(z),8f); return v;
@@ -5223,14 +5250,14 @@ EditText numberField(String h){
         amountTitle.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         form.addView(amountTitle,new LinearLayout.LayoutParams(-1,dp(34)));
 
-        TextView amountHelp=tv("اكتب المبلغ هنا — مثال: 2,500 ريال يمني",15);
+        TextView amountHelp=tv("المبلغ بالريال اليمني — اكتب الرقم هنا، مثال: 2,500",16);
         amountHelp.setTextColor(BLUE);
         amountHelp.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         amountHelp.setPadding(dp(4),0,dp(4),0);
         form.addView(amountHelp,new LinearLayout.LayoutParams(-1,dp(34)));
 
-        EditText amount=numberField("المبلغ — مثال: 2,500 ريال");
-        amount.setTextSize(15);
+        EditText amount=numberField("المبلغ بالريال — مثال 2,500");
+        amount.setTextSize(18);
         amount.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         amount.setPadding(dp(14),0,dp(14),0);
         amount.setHintTextColor(MUTED);
@@ -5260,8 +5287,8 @@ EditText numberField(String h){
 
         form.addView(transferReceiverPhone,new LinearLayout.LayoutParams(-1,dp(58)));
         addSpaceTo(form,6);
-        Button rc=button("📇 اختيار رقم المستلم من جهات الاتصال");
-        rc.setTextSize(18);
+        Button rc=button("📇 اختيار رقم المستلم");
+        rc.setTextSize(15);
         rc.setTextColor(BLUE);
         rc.setContentDescription("اختيار رقم المستلم من جهات الاتصال");
         rc.setOnClickListener(v->{transferContactNameTarget=transferReceiverName;transferContactPhoneTarget=transferReceiverPhone;openTransferContactPicker();});
@@ -5280,8 +5307,8 @@ EditText numberField(String h){
 
         form.addView(transferSenderPhone,new LinearLayout.LayoutParams(-1,dp(58)));
         addSpaceTo(form,6);
-        Button pc=button("📇 اختيار رقم المرسل من جهات الاتصال");
-        pc.setTextSize(18);
+        Button pc=button("📇 اختيار رقم المرسل");
+        pc.setTextSize(15);
         pc.setTextColor(BLUE);
         pc.setContentDescription("اختيار رقم المرسل من جهات الاتصال");
         pc.setOnClickListener(v->{transferContactNameTarget=transferSenderName;transferContactPhoneTarget=transferSenderPhone;openTransferContactPicker();});
@@ -5365,22 +5392,22 @@ EditText numberField(String h){
 
                 LinearLayout receiverBox=card();
                 receiverBox.setPadding(dp(8),dp(5),dp(8),dp(5));
-                TextView rr=tv("المستلم\n"+rn+"\n"+rp2,18);
+                TextView rr=tv("المستلم: "+(rn==null||rn.isEmpty()?"—":rn)+"\nالهاتف: "+(rp2==null||rp2.isEmpty()?"—":rp2),16);
                 rr.setMaxLines(3);
                 rr.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
                 rr.setBreakStrategy(android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY);
-                receiverBox.addView(rr,new LinearLayout.LayoutParams(-1,dp(78)));
-                row.addView(receiverBox,new LinearLayout.LayoutParams(-1,dp(90)));
+                receiverBox.addView(rr,new LinearLayout.LayoutParams(-1,dp(62)));
+                row.addView(receiverBox,new LinearLayout.LayoutParams(-1,dp(74)));
                 addSpaceTo(row,6);
 
                 LinearLayout senderBox=card();
                 senderBox.setPadding(dp(8),dp(5),dp(8),dp(5));
-                TextView sr=tv("المرسل\n"+sn+"\n"+sp,18);
+                TextView sr=tv("المرسل: "+(sn==null||sn.isEmpty()?"—":sn)+"\nالهاتف: "+(sp==null||sp.isEmpty()?"—":sp),16);
                 sr.setMaxLines(3);
                 sr.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
                 sr.setBreakStrategy(android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY);
-                senderBox.addView(sr,new LinearLayout.LayoutParams(-1,dp(78)));
-                row.addView(senderBox,new LinearLayout.LayoutParams(-1,dp(90)));
+                senderBox.addView(sr,new LinearLayout.LayoutParams(-1,dp(62)));
+                row.addView(senderBox,new LinearLayout.LayoutParams(-1,dp(74)));
                 addSpaceTo(row,6);
 
                 TextView dateOut=tv("التاريخ والوقت: "+dt,13);
