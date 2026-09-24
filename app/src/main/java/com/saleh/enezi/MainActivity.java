@@ -1003,7 +1003,6 @@ EditText numberField(String h){
 
         if(edit){
             customer.setText(db.invoiceCustomer(invoiceId));
-            updateCustHint.run();
         }
 
         // قسم إدخال الصنف: الحفاظ التام على ترتيب مربعات الإدخال (الإجمالي، الكمية، اسم الصنف)
@@ -2861,12 +2860,11 @@ void notes(){ base("الملاحظات");
         entry.addView(fields,new LinearLayout.LayoutParams(-1,dp(52)));
         spaceTo(entry,4);
 
-        entry.addView(itemHint,new LinearLayout.LayoutParams(-1,dp(22)));
         spaceTo(entry,4);
 
         Button add=action("＋ إضافة الصنف إلى صندوق الفاتورة",GOLD);
         add.setTextSize(12.5f);
-        entry.addView(add,new LinearLayout.LayoutParams(-1,dp(52)));
+        entry.addView(add,new LinearLayout.LayoutParams(-1,dp(34)));
 
         content.addView(entry,new LinearLayout.LayoutParams(-1,-2));
         addSpace(6);
