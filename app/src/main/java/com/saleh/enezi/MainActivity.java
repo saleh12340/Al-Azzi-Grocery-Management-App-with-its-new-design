@@ -194,7 +194,7 @@ public class MainActivity extends Activity {
 
     GradientDrawable rounded(int color,float radius){ GradientDrawable g=new GradientDrawable(); g.setColor(color); g.setCornerRadius(radius); return g; }
     GradientDrawable outlined(int color,int stroke,float radius){ GradientDrawable g=rounded(color,radius); g.setStroke(stroke,Color.rgb(174,185,198)); return g; }
-    float fitText(float z){return 16f;}
+    float fitText(float z){return Math.max(8f, z);}
     void normalizeAppText(View v){
         if(v instanceof TextView){
             TextView t=(TextView)v;
@@ -202,6 +202,11 @@ public class MainActivity extends Activity {
             if(!x.matches("[\\p{So}\\p{Cs}\\uFE0F\\u200D ]+")) t.setTextSize(15f);
             t.setIncludeFontPadding(true);
             t.setHorizontallyScrolling(false);
+            t.setEllipsize(null);
+            if(Build.VERSION.SDK_INT>=28){
+                try{t.setFallbackLineSpacing(true);}catch(Throwable ignored){}
+                try{t.setElegantTextHeight(true);}catch(Throwable ignored){}
+            }
         }
         if(v instanceof ViewGroup){
             ViewGroup g=(ViewGroup)v;
@@ -218,10 +223,10 @@ public class MainActivity extends Activity {
             if(android.os.Build.VERSION.SDK_INT>=23){
                 try{t.setBreakStrategy(android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY);}catch(Throwable ignored){}
             }
-            float size=Math.max(16f,maxSp);
+            float size=Math.max(Math.max(8f,minSp),maxSp);
             if(android.os.Build.VERSION.SDK_INT>=26 && maxSp>minSp){
                 try{
-                    int min=Math.max(16,Math.round(minSp));
+                    int min=Math.max(8,Math.round(minSp));
                     int max=Math.max(min+1,Math.round(maxSp));
                     t.setAutoSizeTextTypeUniformWithConfiguration(min,max,1,android.util.TypedValue.COMPLEX_UNIT_SP);
                 }catch(IllegalArgumentException ignored){t.setTextSize(size);}
@@ -232,41 +237,42 @@ public class MainActivity extends Activity {
     }
     void autoFitText(TextView t,float maxSp,float minSp,float stepSp){
         if(t==null)return;
-        t.setSingleLine(true);
-        t.setMaxLines(1);
+        t.setSingleLine(false);
+        t.setMaxLines(2);
         t.setEllipsize(null);
         t.setHorizontallyScrolling(false);
         t.setIncludeFontPadding(true);
-        final float max=Math.max(minSp,maxSp), min=Math.max(7f,minSp), step=Math.max(0.5f,stepSp);
-        t.setTextSize(max);
-        t.post(()->{
+        if(Build.VERSION.SDK_INT>=28){
+            try{t.setFallbackLineSpacing(true);}catch(Throwable ignored){}
+            try{t.setElegantTextHeight(true);}catch(Throwable ignored){}
+        }
+        if(Build.VERSION.SDK_INT>=26){
             try{
-                int available=t.getWidth()-t.getPaddingLeft()-t.getPaddingRight();
-                if(available<=0)return;
-                float size=max;
-                TextPaint p=t.getPaint();
-                while(size>min){
-                    p.setTextSize(spToPx(size));
-                    if(p.measureText(t.getText().toString())<=available)break;
-                    size-=step;
-                }
-                t.setTextSize(Math.max(min,size));
+                int min=Math.max(8,Math.round(minSp));
+                int max=Math.max(min+1,Math.round(maxSp));
+                int step=Math.max(1,Math.round(stepSp<=0?1:stepSp));
+                t.setAutoSizeTextTypeUniformWithConfiguration(min,max,step,android.util.TypedValue.COMPLEX_UNIT_SP);
             }catch(Throwable ignored){}
-        });
+        }else{
+            t.setTextSize(Math.max(minSp,maxSp));
+        }
     }
     float spToPx(float sp){return sp*getResources().getDisplayMetrics().scaledDensity;}
     TextView tv(String s,float z){
         TextView v=new TextView(this); v.setText(s); v.setTextSize(fitText(z*1.10f)); v.setTextColor(TEXT);
-        v.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL); v.setPadding(dp(4),dp(1),dp(4),dp(1));
+        v.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL); v.setPadding(dp(5),dp(2),dp(5),dp(2));
         v.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); v.setTextDirection(View.TEXT_DIRECTION_RTL);
+        if(Build.VERSION.SDK_INT>=28){try{v.setFallbackLineSpacing(true);}catch(Throwable ignored){} try{v.setElegantTextHeight(true);}catch(Throwable ignored){}}
         fitInside(v,fitText(z),8f); return v;
     }
     Button button(String s){
         Button b=new Button(this);
         b.setText(s); b.setTextSize(15); b.setAllCaps(false); b.setMinHeight(0); b.setMinimumHeight(0);
-        b.setPadding(dp(10),0,dp(10),0); b.setGravity(Gravity.CENTER);
-        b.setStateListAnimator(null); b.setIncludeFontPadding(false); b.setMaxLines(2);
-        b.setEllipsize(TextUtils.TruncateAt.END); b.setTextColor(TEXT);
+        b.setPadding(dp(8),dp(3),dp(8),dp(3)); b.setGravity(Gravity.CENTER);
+        b.setStateListAnimator(null); b.setIncludeFontPadding(true); b.setMaxLines(2);
+        b.setEllipsize(null); b.setHorizontallyScrolling(false);
+        if(Build.VERSION.SDK_INT>=28){try{b.setFallbackLineSpacing(true);}catch(Throwable ignored){} try{b.setElegantTextHeight(true);}catch(Throwable ignored){}}
+        b.setTextColor(TEXT);
         GradientDrawable bg=new GradientDrawable();
         bg.setColor(CARD); bg.setCornerRadius(dp(11)); bg.setStroke(dp(1),Color.rgb(213,223,234));
         b.setBackground(bg); b.setElevation(dp(1));
@@ -433,7 +439,7 @@ EditText numberField(String h){
         logo.setTextColor(Color.WHITE); logo.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         TextView pt=tv(title,18);
         pt.setTextColor(Color.WHITE); pt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        pt.setSingleLine(true); pt.setEllipsize(TextUtils.TruncateAt.END);
+        pt.setSingleLine(false); pt.setMaxLines(2); pt.setEllipsize(null);
         titleBox.addView(logo,new LinearLayout.LayoutParams(-1,dp(22)));
         titleBox.addView(pt,new LinearLayout.LayoutParams(-1,dp(28)));
         bar.addView(titleBox,new LinearLayout.LayoutParams(0,dp(52),1));
@@ -709,8 +715,9 @@ EditText numberField(String h){
         titleTv.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         titleTv.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
         titleTv.setPadding(dp(8), 0, dp(4), 0);
-        titleTv.setSingleLine(true);
-        titleTv.setEllipsize(TextUtils.TruncateAt.END);
+        titleTv.setSingleLine(false);
+        titleTv.setMaxLines(2);
+        titleTv.setEllipsize(null);
         fitInside(titleTv, 13.5f, 10f);
         topRow.addView(titleTv, new LinearLayout.LayoutParams(0, dp(34), 1));
 
@@ -737,8 +744,9 @@ EditText numberField(String h){
         subTv.setTextColor(MUTED);
         subTv.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
         subTv.setPadding(dp(4), dp(2), dp(4), 0);
-        subTv.setSingleLine(true);
-        subTv.setEllipsize(TextUtils.TruncateAt.END);
+        subTv.setSingleLine(false);
+        subTv.setMaxLines(2);
+        subTv.setEllipsize(null);
         fitInside(subTv, 11f, 8.5f);
         card.addView(subTv, new LinearLayout.LayoutParams(-1, dp(24)));
 
@@ -7192,10 +7200,22 @@ void printTextBluetooth(String text,int requestedWidth){
     TextView denseText(String s,float max,float min,int color){
         TextView t=tv(s,max);
         t.setTextColor(color);
-        t.setSingleLine(true);
-        t.setMaxLines(1);
+        t.setSingleLine(false);
+        t.setMaxLines(2);
         t.setEllipsize(null);
-        autoFitText(t,max,min,0.25f);
+        t.setHorizontallyScrolling(false);
+        t.setIncludeFontPadding(true);
+        if(Build.VERSION.SDK_INT>=28){
+            try{t.setFallbackLineSpacing(true);}catch(Throwable ignored){}
+            try{t.setElegantTextHeight(true);}catch(Throwable ignored){}
+        }
+        if(Build.VERSION.SDK_INT>=26){
+            try{
+                int lo=Math.max(8,Math.round(min));
+                int hi=Math.max(lo+1,Math.round(max));
+                t.setAutoSizeTextTypeUniformWithConfiguration(lo,hi,1,android.util.TypedValue.COMPLEX_UNIT_SP);
+            }catch(Throwable ignored){}
+        }
         return t;
     }
     GradientDrawable glassFill(int color){
