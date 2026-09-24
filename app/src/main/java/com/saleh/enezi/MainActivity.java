@@ -584,134 +584,55 @@ EditText numberField(String h){
     void home(){
         currentPage="الرئيسية";
         pageStack.clear();
+        try{
+            LinearLayout r=new LinearLayout(this);
+            r.setOrientation(LinearLayout.VERTICAL);
+            r.setBackgroundColor(BG);
+            r.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
-        root=new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(BG);
-        root.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+            LinearLayout h=new LinearLayout(this);
+            h.setOrientation(LinearLayout.VERTICAL);
+            h.setGravity(Gravity.CENTER);
+            h.setPadding(dp(12),dp(8),dp(12),dp(8));
+            h.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                    new int[]{GREEN,DARK}));
+            TextView t=tv("بقالة العزي للمواد الغذائية",20);
+            t.setTextColor(Color.WHITE);
+            t.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+            t.setGravity(Gravity.CENTER);
+            h.addView(t,new LinearLayout.LayoutParams(-1,dp(36)));
+            TextView p=tv("نظام المبيعات والحسابات والمخزون والحوالات",15);
+            p.setTextColor(Color.WHITE);
+            p.setGravity(Gravity.CENTER);
+            h.addView(p,new LinearLayout.LayoutParams(-1,dp(28)));
+            r.addView(h,new LinearLayout.LayoutParams(-1,dp(82)));
 
-        // الرأس: ثابت بتصميم عصري وأنيق
-        LinearLayout header=new LinearLayout(this);
-        header.setOrientation(LinearLayout.HORIZONTAL);
-        header.setGravity(Gravity.CENTER_VERTICAL);
-        header.setPadding(dp(12),dp(8),dp(12),dp(8));
-        header.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        GradientDrawable headerBg=new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{Color.rgb(20,95,50), Color.rgb(15,65,35)});
-        header.setBackground(headerBg);
-        header.setElevation(dp(3));
+            ScrollView sv=new ScrollView(this);
+            LinearLayout grid=new LinearLayout(this);
+            grid.setOrientation(LinearLayout.VERTICAL);
+            grid.setPadding(dp(10),dp(12),dp(10),dp(20));
+            grid.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
-        LinearLayout titleBox=new LinearLayout(this);
-        titleBox.setOrientation(LinearLayout.VERTICAL);
-        titleBox.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
-        
-        TextView title=tv("بقالة العزي للمواد الغذائية",19);
-        title.setTextColor(Color.WHITE); title.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        title.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
-        
-        TextView phone=tv("776425052  •  نظام إدارة الفواتير والحسابات",10.5f);
-        phone.setTextColor(Color.rgb(215,235,220)); phone.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
-        
-        titleBox.addView(title,new LinearLayout.LayoutParams(-1,dp(28)));
-        titleBox.addView(phone,new LinearLayout.LayoutParams(-1,dp(20)));
-        header.addView(titleBox,new LinearLayout.LayoutParams(0,dp(50),1));
+            TextView sec=tv("الأقسام الرئيسية",17);
+            sec.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+            sec.setTextColor(GREEN);
+            grid.addView(sec,new LinearLayout.LayoutParams(-1,dp(40)));
 
-        Button headCalc=new Button(this);
-        headCalc.setText("🧮");
-        headCalc.setTextSize(18);
-        headCalc.setGravity(Gravity.CENTER);
-        headCalc.setTextColor(Color.WHITE);
-        GradientDrawable hcBg=new GradientDrawable();
-        hcBg.setColor(Color.argb(45,255,255,255));
-        hcBg.setCornerRadius(dp(12));
-        headCalc.setBackground(hcBg);
-        headCalc.setOnClickListener(v->showQuickCalculator(0));
-        header.addView(headCalc,new LinearLayout.LayoutParams(dp(44),dp(44)));
+            addSafeHomeButton(grid,"🧾 فواتير البيع",v->invoiceHistory());
+            addSafeHomeButton(grid,"👥 العملاء والحسابات",v->customers());
+            addSafeHomeButton(grid,"🛒 فواتير الشراء",v->purchaseInvoices());
+            addSafeHomeButton(grid,"📦 المخزون والأصناف",v->inventory());
+            addSafeHomeButton(grid,"📊 التقارير",v->reports());
+            addSafeHomeButton(grid,"📝 الملاحظات",v->notes());
+            addSafeHomeButton(grid,"💸 الحوالات",v->transfers());
 
-        root.addView(header,new LinearLayout.LayoutParams(-1,dp(74)));
-
-        // الوسط: شريط التمرير لمحتويات الصفحة الرئيسية
-        ScrollView middleScroll=new ScrollView(this);
-        middleScroll.setFillViewport(true);
-        middleScroll.setClipToPadding(false);
-        LinearLayout middle=new LinearLayout(this);
-        middle.setOrientation(LinearLayout.VERTICAL);
-        middle.setPadding(dp(10),dp(12),dp(10),dp(18));
-        middle.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-
-        // تم حذف بطاقات التقارير/الإحصائيات من أعلى الشاشة الرئيسية بناءً على طلب المستخدم.
-        // 3. عنوان قسم التبويبات الكبيرة
-        TextView secTitle=tv("الأقسام الرئيسية",13);
-        secTitle.setTextColor(GREEN); secTitle.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        secTitle.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
-        middle.addView(secTitle,new LinearLayout.LayoutParams(-1,dp(24)));
-        addSpaceTo(middle,4);
-
-        // 4. شبكة التبويبات الكبيرة العصرية (2 كرت بكل صف)
-        // الصف 1: العملاء والحسابات + سجل فواتير البيع
-        LinearLayout row1=new LinearLayout(this);
-        row1.setOrientation(LinearLayout.HORIZONTAL); row1.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        View cAccounts=createModernTabCard("👥","العملاء والحسابات","كشوفات الحسابات والديون",GREEN,0,v->customers());
-        View cInvoices=createModernTabCard("🧾","سجل فواتير البيع","عرض وطباعة ومشاركة",Color.rgb(28,105,210),0,v->invoiceHistory());
-        row1.addView(cAccounts,new LinearLayout.LayoutParams(0,dp(92),1));
-        LinearLayout.LayoutParams r1p=new LinearLayout.LayoutParams(0,dp(92),1); r1p.setMargins(dp(6),0,0,0); row1.addView(cInvoices,r1p);
-        middle.addView(row1,new LinearLayout.LayoutParams(-1,dp(92)));
-        addSpaceTo(middle,8);
-
-        // الصف 2: الماسح الضوئي الذكي + فواتير الشراء
-        LinearLayout row2=new LinearLayout(this);
-        row2.setOrientation(LinearLayout.HORIZONTAL); row2.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        View cScanner=createModernTabCard("📷","الماسح الضوئي","تصوير واقتصاص الفواتير",Color.rgb(18,140,75),0,v->scanner());
-        View cPurchase=createModernTabCard("🛒","فواتير الشراء","مشتريات وحساب الموردين",GOLD,0,v->purchaseInvoices());
-        row2.addView(cScanner,new LinearLayout.LayoutParams(0,dp(92),1));
-        LinearLayout.LayoutParams r2p=new LinearLayout.LayoutParams(0,dp(92),1); r2p.setMargins(dp(6),0,0,0); row2.addView(cPurchase,r2p);
-        middle.addView(row2,new LinearLayout.LayoutParams(-1,dp(92)));
-        addSpaceTo(middle,8);
-
-        // الصف 3: المخزون والأصناف + التقارير المالية
-        LinearLayout row3=new LinearLayout(this);
-        row3.setOrientation(LinearLayout.HORIZONTAL); row3.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        View cInventory=createModernTabCard("📦","المخزون والأصناف","متابعة البضاعة والأسعار",Color.rgb(14,130,135),0,v->inventory());
-        View cReports=createModernTabCard("📊","التقارير المالية","الأرباح وحركة الصندوق",Color.rgb(115,55,175),0,v->reports());
-        row3.addView(cInventory,new LinearLayout.LayoutParams(0,dp(92),1));
-        LinearLayout.LayoutParams r3p=new LinearLayout.LayoutParams(0,dp(92),1); r3p.setMargins(dp(6),0,0,0); row3.addView(cReports,r3p);
-        middle.addView(row3,new LinearLayout.LayoutParams(-1,dp(92)));
-        addSpaceTo(middle,8);
-
-        // الصف 4: دفتر الملاحظات + الحوالات — بدون تكرار النسخ الاحتياطي
-        LinearLayout row4=new LinearLayout(this);
-        row4.setOrientation(LinearLayout.HORIZONTAL); row4.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        View cNotes=createModernTabCard("📝","دفتر الملاحظات","مسودات وقوائم الطلبيات",Color.rgb(55,95,150),0,v->notes());
-        View tr=createModernTabCard("💸","الحوالات","المرسل والمستلم والأرقام والسجل",Color.rgb(28,105,210),0,v->transfers());
-        row4.addView(cNotes,new LinearLayout.LayoutParams(0,dp(92),1));
-        LinearLayout.LayoutParams trp=new LinearLayout.LayoutParams(0,dp(92),1); trp.setMargins(dp(6),0,0,0); row4.addView(tr,trp);
-        middle.addView(row4,new LinearLayout.LayoutParams(-1,dp(92)));
-        addSpaceTo(middle,12);
-
-        middleScroll.addView(middle);
-        root.addView(middleScroll,new LinearLayout.LayoutParams(-1,0,1));
-
-        // تم حذف شريط الإجراءات السفلي المكرر؛ الأوامر موجودة داخل بطاقات الشاشة الرئيسية.\n        // أهم تغيير: عرض الواجهة أولاً. لا يجوز أن تنتظر الشاشة الرئيسية استعلامات SQLite.
-        setContentView(root);
-
-        // تحديث الإحصائيات بعد ظهور الواجهة وفي خيط خلفي، حتى لا تتجمد الشاشة إذا كانت قاعدة البيانات مقفلة.
-        new Thread(() -> {
-            try{
-                final int low=db==null?0:db.lowStockCount();
-                final String sales=fmt(db.todaySales())+" ر.ي";
-                final String invoices=String.valueOf(db.todayInvoiceCount());
-                final String customers=String.valueOf(db.customerCount());
-                final int scanned=db.scannedInvoiceCount();
-                final int transfersCount=db.transferCount();
-                runOnUiThread(() -> {
-                    try{
-                        // لا نعيد بناء الشاشة؛ نترك الواجهة التي ظهرت بالفعل سليمة.
-                        // الإحصائيات التفصيلية ستظهر عند فتح كل قسم، وتبقى الشاشة الرئيسية قابلة للاستخدام.
-                    }catch(Throwable ignored){}
-                });
-            }catch(Throwable e){
-                android.util.Log.e("AlAzziHomeStats","Background stats failed",e);
-            }
-        }).start();
+            sv.addView(grid);
+            r.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
+            setContentView(r);
+        }catch(Throwable e){
+            android.util.Log.e("AlAzziHome","Home UI failed",e);
+            showSafeHomeFallback(e);
+        }
     }
 
     void showGeneralActions(){
