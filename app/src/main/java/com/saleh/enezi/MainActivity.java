@@ -226,7 +226,13 @@ public class MainActivity extends Activity {
             t.setMinLines(1);
         }
         ViewGroup.LayoutParams own=t.getLayoutParams();
-        if(own!=null && own.height>0 && own.height<=dp(140)){ own.height=ViewGroup.LayoutParams.WRAP_CONTENT; t.setLayoutParams(own); }
+        // الأزرار لها ارتفاع تصميمي مقصود؛ لا نحوله إلى WRAP_CONTENT لأن ذلك يعيد
+        // الارتفاع الافتراضي الكبير لزر Android ويملأ شاشة الفاتورة.
+        if(!(t instanceof Button) && !(t instanceof EditText) && !(t instanceof AutoCompleteTextView)
+                && own!=null && own.height>0 && own.height<=dp(140)){
+            own.height=ViewGroup.LayoutParams.WRAP_CONTENT;
+            t.setLayoutParams(own);
+        }
         View p=t;
         for(int level=0;level<6 && p.getParent() instanceof ViewGroup;level++){
             ViewGroup parent=(ViewGroup)p.getParent();
@@ -426,14 +432,14 @@ EditText numberField(String h){
     }
     void addSpace(int h){Space s=new Space(this); content.addView(s,new LinearLayout.LayoutParams(1,dp(h)));}
     TextView section(String s){
-        TextView v=tv("  "+s,15); v.setTextColor(DARK); v.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        TextView v=tv("  "+s,13.5f); v.setTextColor(DARK); v.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         v.setSingleLine(true); v.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         v.setPadding(dp(12),0,dp(12),0);
         GradientDrawable bg=new GradientDrawable();
         bg.setColor(Color.rgb(235,242,249)); bg.setCornerRadius(dp(12));
         bg.setStroke(dp(1),Color.rgb(211,223,236)); v.setBackground(bg);
-        fitInside(v,15f,13f);
-        content.addView(v,new LinearLayout.LayoutParams(-1,dp(50)));
+        fitInside(v,14f,11f);
+        content.addView(v,new LinearLayout.LayoutParams(-1,dp(38)));
         addSpace(5); return v;
     }
 
@@ -471,7 +477,7 @@ EditText numberField(String h){
         logo.setTextColor(Color.WHITE); logo.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         TextView pt=tv(title,18);
         pt.setTextColor(Color.WHITE); pt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        pt.setSingleLine(false); pt.setMaxLines(2); pt.setEllipsize(null);
+        pt.setSingleLine(true); pt.setMaxLines(1); pt.setEllipsize(null); fitInside(pt,17f,13f);
         titleBox.addView(logo,new LinearLayout.LayoutParams(-1,-2));
         titleBox.addView(pt,new LinearLayout.LayoutParams(-1,-2));
         bar.addView(titleBox,new LinearLayout.LayoutParams(0,-2,1));
@@ -491,7 +497,7 @@ EditText numberField(String h){
         content.setPadding(dp(8),dp(6),dp(8),dp(14));
         content.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
-        if(!"الرئيسية".equals(title)){
+        if(!"الرئيسية".equals(title) && !title.contains("فاتورة جديدة") && !title.contains("تعديل الفاتورة")){
             LinearLayout pageHero=new LinearLayout(this);
             pageHero.setOrientation(LinearLayout.VERTICAL);
             pageHero.setPadding(dp(12),dp(6),dp(12),dp(6));
@@ -887,7 +893,7 @@ EditText numberField(String h){
         LinearLayout invFooter=new LinearLayout(this);
         invFooter.setOrientation(LinearLayout.VERTICAL);
         invFooter.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        invFooter.setPadding(dp(10),dp(5),dp(10),dp(6));
+        invFooter.setPadding(dp(6),dp(2),dp(6),dp(3));
         GradientDrawable ifBg=new GradientDrawable();
         ifBg.setColor(CARD);
         ifBg.setStroke(dp(1),Color.rgb(215,225,218));
@@ -909,7 +915,7 @@ EditText numberField(String h){
         fSummary.addView(fRemainTv,new LinearLayout.LayoutParams(0,-2,1f));
 
         invFooter.addView(fSummary,new LinearLayout.LayoutParams(-1,-2));
-        spaceTo(invFooter,4);
+        spaceTo(invFooter,2);
 
         LinearLayout fButtons=new LinearLayout(this);
         fButtons.setOrientation(LinearLayout.HORIZONTAL);
@@ -918,21 +924,21 @@ EditText numberField(String h){
 
         Button fSave=action(edit?"💾 حفظ التعديل":"💾 حفظ الفاتورة",GREEN);
         fSave.setTextSize(13.5f);
-        fButtons.addView(fSave,new LinearLayout.LayoutParams(0,dp(36),1.5f));
+        fButtons.addView(fSave,new LinearLayout.LayoutParams(0,dp(32),1.5f));
 
         Button fPrint=button("🖨️ طباعة ومعاينة");
         fPrint.setTextColor(GREEN); fPrint.setBackground(outline(Color.rgb(240,248,242),10));
         fPrint.setTextSize(12f);
-        LinearLayout.LayoutParams fpp=new LinearLayout.LayoutParams(0,dp(36),1.1f); fpp.setMargins(dp(5),0,0,0);
+        LinearLayout.LayoutParams fpp=new LinearLayout.LayoutParams(0,dp(32),1.1f); fpp.setMargins(dp(5),0,0,0);
         fButtons.addView(fPrint,fpp);
 
         Button fClear=button("🧹 مسح");
         fClear.setTextColor(MUTED); fClear.setBackground(outline(CARD,10));
         fClear.setTextSize(11.5f);
-        LinearLayout.LayoutParams fcp=new LinearLayout.LayoutParams(0,dp(36),0.7f); fcp.setMargins(dp(5),0,0,0);
+        LinearLayout.LayoutParams fcp=new LinearLayout.LayoutParams(0,dp(32),0.7f); fcp.setMargins(dp(5),0,0,0);
         fButtons.addView(fClear,fcp);
 
-        invFooter.addView(fButtons,new LinearLayout.LayoutParams(-1,dp(38)));
+        invFooter.addView(fButtons,new LinearLayout.LayoutParams(-1,dp(34)));
 
         // أزرار طريقة البيع/السداد في الشريط السفلي الثابت
         LinearLayout payModes=new LinearLayout(this);
@@ -944,12 +950,12 @@ EditText numberField(String h){
         Button creditMode=button("⏳ آجل");
         Button calcMode=button("🧮 حاسبة الصرف");
         cashMode.setTextSize(11.5f); creditMode.setTextSize(11.5f); calcMode.setTextSize(11.5f);
-        payModes.addView(cashMode,new LinearLayout.LayoutParams(0,dp(36),1));
-        LinearLayout.LayoutParams cmlpFooter=new LinearLayout.LayoutParams(0,dp(36),1); cmlpFooter.setMargins(dp(4),0,0,0);
+        payModes.addView(cashMode,new LinearLayout.LayoutParams(0,dp(30),1));
+        LinearLayout.LayoutParams cmlpFooter=new LinearLayout.LayoutParams(0,dp(30),1); cmlpFooter.setMargins(dp(4),0,0,0);
         payModes.addView(creditMode,cmlpFooter);
-        LinearLayout.LayoutParams clmlpFooter=new LinearLayout.LayoutParams(0,dp(36),1.1f); clmlpFooter.setMargins(dp(4),0,0,0);
+        LinearLayout.LayoutParams clmlpFooter=new LinearLayout.LayoutParams(0,dp(30),1.1f); clmlpFooter.setMargins(dp(4),0,0,0);
         payModes.addView(calcMode,clmlpFooter);
-        invFooter.addView(payModes,new LinearLayout.LayoutParams(-1,dp(38)));
+        invFooter.addView(payModes,new LinearLayout.LayoutParams(-1,dp(32)));
 
         bottom.addView(invFooter,new LinearLayout.LayoutParams(-1,-2));
 
@@ -1007,7 +1013,7 @@ EditText numberField(String h){
 
         // قسم إدخال الصنف: الحفاظ التام على ترتيب مربعات الإدخال (الإجمالي، الكمية، اسم الصنف)
         LinearLayout entry=card();
-        entry.setPadding(dp(4),dp(3),dp(4),dp(3));
+        entry.setPadding(dp(4),dp(2),dp(4),dp(2));
 
         LinearLayout line=new LinearLayout(this);
         line.setOrientation(LinearLayout.HORIZONTAL);
@@ -1055,7 +1061,7 @@ EditText numberField(String h){
         // صندوق عرض الفاتورة (الحفاظ على الهيكل وتنسيق العرض)
         section("صندوق عرض الفاتورة");
         LinearLayout invoiceBox=card();
-        invoiceBox.setPadding(dp(4),dp(3),dp(4),dp(3));
+        invoiceBox.setPadding(dp(4),dp(2),dp(4),dp(2));
 
         LinearLayout table=new LinearLayout(this);
         table.setOrientation(LinearLayout.VERTICAL);
@@ -1073,7 +1079,7 @@ EditText numberField(String h){
             hv.setTextColor(GREEN); hv.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
             hv.setGravity(Gravity.CENTER); hv.setSingleLine(true);
             hv.setBackgroundColor(Color.TRANSPARENT);
-            head.addView(hv,new LinearLayout.LayoutParams(0,dp(26),weights[i]));
+            head.addView(hv,new LinearLayout.LayoutParams(0,dp(24),weights[i]));
         }
         table.addView(head,new LinearLayout.LayoutParams(-1,-2));
         spaceTo(table,4);
@@ -1089,7 +1095,7 @@ EditText numberField(String h){
         TextView boxTotal=tv("الإجمالي: 0 ريال",18);
         boxTotal.setTextColor(GREEN); boxTotal.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         boxTotal.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
-        boxTotal.setPadding(dp(6),dp(3),dp(6),dp(3));
+        boxTotal.setPadding(dp(6),dp(2),dp(6),dp(2));
         GradientDrawable btBg=new GradientDrawable();
         btBg.setColor(Color.rgb(255,249,230));
         btBg.setCornerRadius(dp(12));
@@ -1107,9 +1113,9 @@ EditText numberField(String h){
         paidTitle.setTextColor(TEXT); paidTitle.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         EditText paid=numberField("0");
         paid.setText(edit?fmt(origPaid):"0"); paid.setTextSize(13.5f); paid.setSelectAllOnFocus(true);
-        paidRow.addView(paidTitle,new LinearLayout.LayoutParams(0,dp(34),1));
-        paidRow.addView(paid,new LinearLayout.LayoutParams(dp(118),dp(34)));
-        invoiceBox.addView(paidRow,new LinearLayout.LayoutParams(-1,-2));
+        paidRow.addView(paidTitle,new LinearLayout.LayoutParams(0,dp(32),1));
+        paidRow.addView(paid,new LinearLayout.LayoutParams(dp(112),dp(32)));
+        invoiceBox.addView(paidRow,new LinearLayout.LayoutParams(-1,dp(32)));
         spaceTo(invoiceBox,4);
 
         // أزرار طريقة السداد موجودة في الشريط السفلي الثابت.
@@ -1133,23 +1139,30 @@ EditText numberField(String h){
         remainingLabel.setTextColor(RED); remainingLabel.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         remainingLabel.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         remainingLabel.setPadding(dp(10),0,dp(10),0);
-        invoiceBox.addView(remainingLabel,new LinearLayout.LayoutParams(-1,dp(24)));
+        invoiceBox.addView(remainingLabel,new LinearLayout.LayoutParams(-1,dp(22)));
 
         content.addView(invoiceBox,new LinearLayout.LayoutParams(-1,-2));
         space(5);
         final ArrayList<Line> lines=new ArrayList<>();
         if(edit){Cursor c=db.invoiceLines(invoiceId);while(c.moveToNext())lines.add(new Line(c.getString(1),c.getDouble(2),c.getDouble(3)));c.close();}
 
-        TextView customerBalance=tv("رصيد العميل: 0 ريال",11.5f);
-        customerBalance.setTextColor(GREEN); customerBalance.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
-        customerBalance.setPadding(dp(10),dp(4),dp(10),dp(4));
-        customerBalance.setBackground(outline(Color.rgb(241,247,242),10));
-        content.addView(customerBalance,new LinearLayout.LayoutParams(-1,-2));
-        addSpace(3);
+        LinearLayout infoStrip=new LinearLayout(this);
+        infoStrip.setOrientation(LinearLayout.HORIZONTAL);
+        infoStrip.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        infoStrip.setGravity(Gravity.CENTER_VERTICAL);
+        TextView customerBalance=tv("رصيد العميل: 0 ريال",10.5f);
+        customerBalance.setTextColor(GREEN); customerBalance.setGravity(Gravity.CENTER);
+        customerBalance.setPadding(dp(5),dp(2),dp(5),dp(2));
+        customerBalance.setBackground(outline(Color.rgb(241,247,242),8));
+        infoStrip.addView(customerBalance,new LinearLayout.LayoutParams(0,dp(28),1.05f));
 
-        TextView paymentMode=tv("نوع السداد: نقدي",10.5f);
-        paymentMode.setTextColor(MUTED); paymentMode.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
-        content.addView(paymentMode,new LinearLayout.LayoutParams(-1,-2));
+        TextView paymentMode=tv("نوع السداد: نقدي",9.5f);
+        paymentMode.setTextColor(MUTED); paymentMode.setGravity(Gravity.CENTER);
+        paymentMode.setPadding(dp(5),dp(2),dp(5),dp(2));
+        LinearLayout.LayoutParams pmlp=new LinearLayout.LayoutParams(0,dp(28),1.35f);
+        pmlp.setMargins(dp(4),0,0,0);
+        infoStrip.addView(paymentMode,pmlp);
+        content.addView(infoStrip,new LinearLayout.LayoutParams(-1,dp(30)));
         addSpace(3);
 
         cashMode.setOnClickListener(v->{
@@ -1242,7 +1255,7 @@ EditText numberField(String h){
                     .setNegativeButton("إلغاء",null).show();
             }
         });
-        content.setPadding(dp(4),dp(3),dp(4),dp(18));
+        content.setPadding(dp(4),dp(2),dp(4),dp(10));
 
         item.setOnEditorActionListener((v,a,e)->{add.performClick();return true;});
         customer.addTextChangedListener(new android.text.TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int c,int a){}public void onTextChanged(CharSequence s,int st,int b,int c){redraw[0].run();}public void afterTextChanged(android.text.Editable e){}});
