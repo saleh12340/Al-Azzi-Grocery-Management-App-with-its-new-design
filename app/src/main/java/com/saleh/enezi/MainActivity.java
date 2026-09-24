@@ -162,7 +162,7 @@ public class MainActivity extends Activity {
 
     GradientDrawable rounded(int color,float radius){ GradientDrawable g=new GradientDrawable(); g.setColor(color); g.setCornerRadius(radius); return g; }
     GradientDrawable outlined(int color,int stroke,float radius){ GradientDrawable g=rounded(color,radius); g.setStroke(stroke,Color.rgb(174,185,198)); return g; }
-    float fitText(float z){return Math.max(14f,Math.min(z,27f));}
+    float fitText(float z){return Math.max(15f,Math.min(z,30f));}
     void fitInside(View v,float maxSp,float minSp){
         if(v instanceof TextView){
             TextView t=(TextView)v;
@@ -182,14 +182,14 @@ public class MainActivity extends Activity {
         fitInside(v,fitText(z),8f); return v;
     }
     Button button(String s){
-        Button b=new Button(this); b.setText(s); b.setTextSize(fitText(19)); b.setAllCaps(false); b.setMinHeight(0);
+        Button b=new Button(this); b.setText(s); b.setTextSize(fitText(21)); b.setAllCaps(false); b.setMinHeight(0);
         b.setMinimumHeight(0); b.setPadding(dp(8),dp(0),dp(8),dp(0)); b.setGravity(Gravity.CENTER); b.setStateListAnimator(null);
         b.setIncludeFontPadding(true); b.setMaxLines(2); b.setEllipsize(null); b.setTextColor(TEXT);
         b.setBackground(outlined(CARD,dp(1),10)); b.setElevation(dp(2));
-        b.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); fitInside(b,19f,13f); return b;
+        b.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); fitInside(b,21f,14f); return b;
     }
     EditText field(String h){
-        EditText e=new EditText(this); e.setHint(h); e.setTextSize(20); e.setSingleLine(true); e.setIncludeFontPadding(true); e.setMaxLines(1); fitInside(e,22f,14f);
+        EditText e=new EditText(this); e.setHint(h); e.setTextSize(22); e.setSingleLine(true); e.setIncludeFontPadding(true); e.setMaxLines(1); fitInside(e,24f,15f);
         e.setTextColor(TEXT); e.setHintTextColor(MUTED); e.setPadding(dp(10),dp(1),dp(10),dp(1)); e.setBackground(outlined(Color.WHITE,dp(1),10)); e.setElevation(dp(1)); e.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL); e.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); e.setTextDirection(View.TEXT_DIRECTION_RTL);
         e.setSelectAllOnFocus(true); e.setOnClickListener(v -> e.selectAll());
         e.setOnFocusChangeListener((v,has)->{ if(has) e.postDelayed(() -> { e.selectAll(); },60); });
@@ -251,9 +251,9 @@ public class MainActivity extends Activity {
         int n=0;
         for(String value:values){
             if(!value.startsWith(query)||n>=5)continue;
-            Button b=button(value);b.setTextSize(13);b.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+            Button b=button(value);b.setTextSize(18);b.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
             b.setOnClickListener(v->{anchor.setText(value);anchor.setSelection(anchor.length());dismissLearningSuggestions();});
-            box.addView(b,new LinearLayout.LayoutParams(-1,dp(40)));n++;
+            box.addView(b,new LinearLayout.LayoutParams(-1,dp(50)));n++;
         }
         if(n==0){dismissLearningSuggestions();return;}
         dismissLearningSuggestions();
@@ -5215,8 +5215,8 @@ EditText numberField(String h){
         amountHelp.setPadding(dp(4),0,dp(4),0);
         form.addView(amountHelp,new LinearLayout.LayoutParams(-1,dp(34)));
 
-        EditText amount=numberField("المبلغ بالريال");
-        amount.setTextSize(25);
+        EditText amount=numberField("مثال: 2,500 ريال");
+        amount.setTextSize(27);
         amount.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         amount.setPadding(dp(14),0,dp(14),0);
         amount.setHintTextColor(MUTED);
@@ -5244,19 +5244,14 @@ EditText numberField(String h){
         form.addView(transferReceiverName,new LinearLayout.LayoutParams(-1,dp(56)));
         addSpaceTo(form,6);
 
-        LinearLayout receiverPhoneRow=new LinearLayout(this);
-        receiverPhoneRow.setOrientation(LinearLayout.HORIZONTAL);
-        receiverPhoneRow.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        receiverPhoneRow.setGravity(Gravity.CENTER_VERTICAL);
-        receiverPhoneRow.addView(transferReceiverPhone,new LinearLayout.LayoutParams(0,dp(56),1));
-        Button rc=button("📇 اختيار من جهات الاتصال");
-        rc.setTextSize(15);
+        form.addView(transferReceiverPhone,new LinearLayout.LayoutParams(-1,dp(58)));
+        addSpaceTo(form,6);
+        Button rc=button("📇 اختيار رقم المستلم من جهات الاتصال");
+        rc.setTextSize(18);
+        rc.setTextColor(BLUE);
         rc.setContentDescription("اختيار رقم المستلم من جهات الاتصال");
         rc.setOnClickListener(v->{transferContactNameTarget=transferReceiverName;transferContactPhoneTarget=transferReceiverPhone;openTransferContactPicker();});
-        LinearLayout.LayoutParams rcp=new LinearLayout.LayoutParams(dp(150),dp(50));
-        rcp.setMargins(dp(7),0,0,0);
-        receiverPhoneRow.addView(rc,rcp);
-        form.addView(receiverPhoneRow,new LinearLayout.LayoutParams(-1,dp(58)));
+        form.addView(rc,new LinearLayout.LayoutParams(-1,dp(50)));
         addSpaceTo(form,12);
 
         TextView senderTitle=tv("المرسل",17);
@@ -5269,19 +5264,14 @@ EditText numberField(String h){
         form.addView(transferSenderName,new LinearLayout.LayoutParams(-1,dp(56)));
         addSpaceTo(form,6);
 
-        LinearLayout senderPhoneRow=new LinearLayout(this);
-        senderPhoneRow.setOrientation(LinearLayout.HORIZONTAL);
-        senderPhoneRow.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        senderPhoneRow.setGravity(Gravity.CENTER_VERTICAL);
-        senderPhoneRow.addView(transferSenderPhone,new LinearLayout.LayoutParams(0,dp(56),1));
-        Button pc=button("📇 اختيار من جهات الاتصال");
-        pc.setTextSize(15);
+        form.addView(transferSenderPhone,new LinearLayout.LayoutParams(-1,dp(58)));
+        addSpaceTo(form,6);
+        Button pc=button("📇 اختيار رقم المرسل من جهات الاتصال");
+        pc.setTextSize(18);
+        pc.setTextColor(BLUE);
         pc.setContentDescription("اختيار رقم المرسل من جهات الاتصال");
         pc.setOnClickListener(v->{transferContactNameTarget=transferSenderName;transferContactPhoneTarget=transferSenderPhone;openTransferContactPicker();});
-        LinearLayout.LayoutParams pcp=new LinearLayout.LayoutParams(dp(150),dp(50));
-        pcp.setMargins(dp(7),0,0,0);
-        senderPhoneRow.addView(pc,pcp);
-        form.addView(senderPhoneRow,new LinearLayout.LayoutParams(-1,dp(58)));
+        form.addView(pc,new LinearLayout.LayoutParams(-1,dp(50)));
         addSpaceTo(form,12);
 
         LinearLayout actions=new LinearLayout(this);
