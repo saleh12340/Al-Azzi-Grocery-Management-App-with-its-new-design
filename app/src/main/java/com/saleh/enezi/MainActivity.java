@@ -162,7 +162,7 @@ public class MainActivity extends Activity {
 
     GradientDrawable rounded(int color,float radius){ GradientDrawable g=new GradientDrawable(); g.setColor(color); g.setCornerRadius(radius); return g; }
     GradientDrawable outlined(int color,int stroke,float radius){ GradientDrawable g=rounded(color,radius); g.setStroke(stroke,Color.rgb(174,185,198)); return g; }
-    float fitText(float z){return Math.max(15f,Math.min(z,30f));}
+    float fitText(float z){return Math.max(16f,Math.min(z,32f));}
     void fitInside(View v,float maxSp,float minSp){
         if(v instanceof TextView){
             TextView t=(TextView)v;
@@ -250,7 +250,7 @@ public class MainActivity extends Activity {
         LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(dp(4),dp(4),dp(4),dp(4));box.setBackground(outlined(CARD,dp(1),10));
         int n=0;
         for(String value:values){
-            if(!value.startsWith(query)||n>=5)continue;
+            String q=query.trim().toLowerCase(java.util.Locale.ROOT); String vv=value.trim().toLowerCase(java.util.Locale.ROOT); if(!vv.contains(q)||n>=5)continue;
             Button b=button(value);b.setTextSize(18);b.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
             b.setOnClickListener(v->{anchor.setText(value);anchor.setSelection(anchor.length());dismissLearningSuggestions();});
             box.addView(b,new LinearLayout.LayoutParams(-1,dp(50)));n++;
@@ -5194,7 +5194,7 @@ EditText numberField(String h){
         title.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         content.addView(title,new LinearLayout.LayoutParams(-1,dp(44)));
 
-        TextView intro=tv("إدخال الحوالة ومراجعة سجل العمليات — جميع الحقول بعرض الشاشة",14);
+        TextView intro=tv("إدخال الحوالة ومراجعة سجل العمليات — الحقول والأزرار بعرض الشاشة",16);
         intro.setTextColor(MUTED);
         intro.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         content.addView(intro,new LinearLayout.LayoutParams(-1,dp(38)));
@@ -5209,14 +5209,14 @@ EditText numberField(String h){
         amountTitle.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         form.addView(amountTitle,new LinearLayout.LayoutParams(-1,dp(34)));
 
-        TextView amountHelp=tv("اكتب المبلغ بالأرقام، مثل: 2500 أو 2,500 ريال",14);
+        TextView amountHelp=tv("المبلغ بالريال اليمني — مثال: 2,500",16);
         amountHelp.setTextColor(BLUE);
         amountHelp.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         amountHelp.setPadding(dp(4),0,dp(4),0);
         form.addView(amountHelp,new LinearLayout.LayoutParams(-1,dp(34)));
 
-        EditText amount=numberField("مثال: 2,500 ريال");
-        amount.setTextSize(27);
+        EditText amount=numberField("المبلغ — مثال: 2,500 ريال");
+        amount.setTextSize(30);
         amount.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         amount.setPadding(dp(14),0,dp(14),0);
         amount.setHintTextColor(MUTED);
@@ -5231,10 +5231,10 @@ EditText numberField(String h){
                 }catch(Exception ignored){}
             }
         });
-        form.addView(amount,new LinearLayout.LayoutParams(-1,dp(66)));
+        form.addView(amount,new LinearLayout.LayoutParams(-1,dp(72)));
         addSpaceTo(form,12);
 
-        TextView receiverTitle=tv("المستلم",17);
+        TextView receiverTitle=tv("المستلم",20);
         receiverTitle.setTextColor(GREEN);
         receiverTitle.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         form.addView(receiverTitle,new LinearLayout.LayoutParams(-1,dp(34)));
@@ -5254,7 +5254,7 @@ EditText numberField(String h){
         form.addView(rc,new LinearLayout.LayoutParams(-1,dp(50)));
         addSpaceTo(form,12);
 
-        TextView senderTitle=tv("المرسل",17);
+        TextView senderTitle=tv("المرسل",20);
         senderTitle.setTextColor(GREEN);
         senderTitle.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         form.addView(senderTitle,new LinearLayout.LayoutParams(-1,dp(34)));
@@ -5299,12 +5299,12 @@ EditText numberField(String h){
         content.addView(form,new LinearLayout.LayoutParams(-1,-2));
         addSpace(14);
 
-        TextView st=tv("سجل الحوالات",19);
+        TextView st=tv("سجل الحوالات",22);
         st.setTextColor(GREEN);
         st.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         content.addView(st,new LinearLayout.LayoutParams(-1,dp(38)));
 
-        TextView stHint=tv("الأحمر = تحتاج مراجعة وتجهيز • الأزرق = مجهزة",14);
+        TextView stHint=tv("🔴 تحتاج مراجعة وتجهيز  •  🔵 مجهزة",16);
         stHint.setTextColor(MUTED);
         content.addView(stHint,new LinearLayout.LayoutParams(-1,dp(32)));
 
@@ -5351,22 +5351,22 @@ EditText numberField(String h){
 
                 LinearLayout receiverBox=card();
                 receiverBox.setPadding(dp(8),dp(5),dp(8),dp(5));
-                TextView rr=tv("المستلم\n"+rn+"\n"+rp2,16);
+                TextView rr=tv("المستلم\n"+rn+"\n"+rp2,18);
                 rr.setMaxLines(3);
                 rr.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
                 rr.setBreakStrategy(android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY);
                 receiverBox.addView(rr,new LinearLayout.LayoutParams(-1,dp(78)));
-                row.addView(receiverBox,new LinearLayout.LayoutParams(-1,dp(80)));
+                row.addView(receiverBox,new LinearLayout.LayoutParams(-1,dp(90)));
                 addSpaceTo(row,6);
 
                 LinearLayout senderBox=card();
                 senderBox.setPadding(dp(8),dp(5),dp(8),dp(5));
-                TextView sr=tv("المرسل\n"+sn+"\n"+sp,16);
+                TextView sr=tv("المرسل\n"+sn+"\n"+sp,18);
                 sr.setMaxLines(3);
                 sr.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
                 sr.setBreakStrategy(android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY);
                 senderBox.addView(sr,new LinearLayout.LayoutParams(-1,dp(78)));
-                row.addView(senderBox,new LinearLayout.LayoutParams(-1,dp(80)));
+                row.addView(senderBox,new LinearLayout.LayoutParams(-1,dp(90)));
                 addSpaceTo(row,6);
 
                 TextView dateOut=tv("التاريخ والوقت: "+dt,13);
