@@ -6825,6 +6825,71 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
     Bitmap receiptBitmap(String text){ return receiptBitmap(text,384); }
 
 
+Bitmap receiptBitmap(String text,int targetWidth){
+        final int width=384;
+        final int margin=14;
+        final int black=Color.BLACK;
+        final int gray=Color.rgb(80,80,80);
+        final int green=Color.rgb(20,105,55);
+        final int lineH=24;
+        String[] ls=text.split("\n",-1);
+        int rows=0;
+        for(String s:ls) if(s.contains(" | ") || s.contains(" × ")) rows++;
+        int height=160+rows*lineH+ls.length*18;
+        Bitmap b=Bitmap.createBitmap(width,Math.max(260,height),Bitmap.Config.ARGB_8888);
+        Canvas canvas=new Canvas(b);canvas.drawColor(Color.WHITE);
+
+        Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);
+        p.setTypeface(Typeface.create("sans",Typeface.NORMAL));
+        p.setColor(black);
+        p.setTextAlign(Paint.Align.CENTER);
+
+        p.setTypeface(Typeface.create("sans",Typeface.BOLD));
+        p.setTextSize(19);p.setColor(green);canvas.drawText("بقالة العزي للمواد الغذائية",width/2,80,p);
+
+        int y=108;
+        for(String line:ls){
+            if(line==null||line.trim().isEmpty()){y+=8;continue;}
+            String l=line.trim();
+            if(l.equals("بقالة العزي للمواد الغذائية")||l.equals("🛒 *بقالة العزي للمواد الغذائية*")||l.equals("🧾 *بقالة العزي للمواد الغذائية*")) continue;
+            if(l.startsWith("━━")||l.startsWith("──")||l.equals("------------------------------")){
+                p.setColor(Color.LTGRAY);canvas.drawLine(margin,y,width-margin,y,p);y+=12;continue;
+            }
+            if(l.contains(" | ")){
+                String[] q=l.split(" \\| ",-1);
+                if(q.length>=3){
+                    p.setTypeface(Typeface.create("sans",Typeface.NORMAL));p.setTextSize(11.5f);p.setColor(black);
+                    String item=q[0].trim().replace("▪️","").trim();
+                    if(item.length()>17)item=item.substring(0,17)+"…";
+                    p.setTextAlign(Paint.Align.RIGHT);canvas.drawText(item,width-margin,y,p);
+                    p.setTextAlign(Paint.Align.CENTER);canvas.drawText(q[1].trim(),width/2,y,p);
+                    p.setTextAlign(Paint.Align.LEFT);canvas.drawText(q[2].trim(),margin,y,p);
+                    y+=lineH;continue;
+                }
+            }
+            if(l.startsWith("▪️")&&l.contains("=")){
+                p.setTypeface(Typeface.create("sans",Typeface.NORMAL));p.setTextSize(11.5f);p.setColor(black);
+                p.setTextAlign(Paint.Align.RIGHT);canvas.drawText(l,width-margin,y,p);y+=20;continue;
+            }
+            if(l.startsWith("الإجمالي")||l.startsWith("💰 *إجمالي")||l.startsWith("رصيدكم")){
+                p.setTypeface(Typeface.create("sans",Typeface.BOLD));p.setTextSize(14);p.setColor(green);
+                p.setTextAlign(Paint.Align.CENTER);canvas.drawText(l.replace("*",""),width/2,y+4,p);y+=24;continue;
+            }
+            p.setTypeface(Typeface.create("sans",Typeface.NORMAL));p.setTextSize(11);p.setColor(gray);
+            p.setTextAlign(Paint.Align.CENTER);canvas.drawText(l.replace("*",""),width/2,y,p);y+=18;
+        }
+        Bitmap out=Bitmap.createBitmap(b,0,0,width,Math.min(y+16,b.getHeight()));
+        if(targetWidth!=width) out=Bitmap.createScaledBitmap(out,targetWidth,Math.max(1,Math.round(out.getHeight()*targetWidth/(float)width)),true);
+        return out;
+    }
+
+Uri saveReceiptBitmap(Bitmap bitmap,String no)throws Exception{
+        File dir=new File(getCacheDir(),"receipts");if(!dir.exists())dir.mkdirs();
+        File file=new File(dir,"invoice_"+no+"_"+System.currentTimeMillis()+".png");
+        try(FileOutputStream out=new FileOutputStream(file)){bitmap.compress(Bitmap.CompressFormat.PNG,100,out);out.flush();}
+        return FileProvider.getUriForFile(this,getPackageName()+".fileprovider",file);
+    }
+
     void shareReceiptImageAndText(String no,String customer,ArrayList<Line> lines,double total,double paid){
         try{
             long cid=customer==null||customer.trim().isEmpty()?-1:db.customerIdByName(customer.trim());
@@ -6839,8 +6904,32 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
             shareText(invoiceWhatsAppText(no,customer,lines,total,paid,cid>0?db.balance(cid):0,db.now()));
         }
     }
+    String pendingPrintNo="",pendingPrintCustomer="";ArrayList<Line> pendingPrintLines;double pendingPrintTotal;
+
 
     void printTextBluetooth(String text){ printTextBluetooth(text,384); }
+
+void printTextBluetooth(String text,int requestedWidth){
+        final int printWidth=(requestedWidth>=576?576:384);
+        if(Build.VERSION.SDK_INT>=31&&checkSelfPermission("android.permission.BLUETOOTH_CONNECT")!=PackageManager.PERMISSION_GRANTED){
+            pendingPrintText=text; pendingPrintWidth=printWidth; requestPermissions(new String[]{"android.permission.BLUETOOTH_CONNECT"},5102);return;
+        }
+        BluetoothAdapter adapter=BluetoothAdapter.getDefaultAdapter();
+        if(adapter==null){Toast.makeText(this,"هذا الجهاز لا يدعم البلوتوث",Toast.LENGTH_LONG).show();return;}
+        if(!adapter.isEnabled()){Toast.makeText(this,"فعّل البلوتوث ثم أعد الضغط على الطباعة",Toast.LENGTH_LONG).show();return;}
+        Set<BluetoothDevice> paired=adapter.getBondedDevices();
+        if(paired==null||paired.isEmpty()){Toast.makeText(this,"لا توجد طابعة مقترنة. اقترن بالطابعة من إعدادات البلوتوث أولاً.",Toast.LENGTH_LONG).show();return;}
+        BluetoothDevice[] devices=paired.toArray(new BluetoothDevice[0]);String[] names=new String[devices.length];
+        for(int i=0;i<devices.length;i++)names[i]=(devices[i].getName()==null?"طابعة بلوتوث":devices[i].getName())+"\n"+devices[i].getAddress();
+        new AlertDialog.Builder(this).setTitle("اختر عرض الطباعة")
+            .setItems(new String[]{"58mm — إيصال مضغوط","80mm — إيصال عريض"},(d,choice)->{
+                int width=choice==1?576:384;
+                new AlertDialog.Builder(this).setTitle("اختر طابعة البلوتوث").setItems(names,(d2,w)->{
+                    Bitmap bitmap=receiptBitmap(text,width);
+                    new Thread(()->sendBitmapToBluetooth(devices[w],bitmap)).start();
+                }).setNegativeButton("إلغاء",null).show();
+            }).setNegativeButton("إلغاء",null).show();
+    }
 
     void sendBitmapToBluetooth(BluetoothDevice device,Bitmap bitmap){
         BluetoothSocket socket=null;OutputStream out=null;
@@ -7378,6 +7467,295 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
     }
 
 
+void customers(){
+        base("الحسابات والعملاء");
+
+        // 1. Statistics Cards (Summary of accounts)
+        LinearLayout statsBar=new LinearLayout(this);
+        statsBar.setOrientation(LinearLayout.HORIZONTAL);
+        statsBar.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+
+        double totalDebts=db.totalDebts();
+        double totalCredits=db.totalCredits();
+        int totalCustomers=db.customerCount();
+        int debtorCount=db.debtorCustomersCount();
+
+        // Card 1: Total Debts (عليه)
+        LinearLayout debtCard=new LinearLayout(this);
+        debtCard.setOrientation(LinearLayout.VERTICAL);
+        debtCard.setGravity(Gravity.CENTER);
+        debtCard.setPadding(dp(4),dp(6),dp(4),dp(6));
+        GradientDrawable dcBg=new GradientDrawable();
+        dcBg.setColor(Color.rgb(255,242,242));
+        dcBg.setCornerRadius(dp(12));
+        dcBg.setStroke(dp(1),Color.rgb(245,195,195));
+        debtCard.setBackground(dcBg);
+        TextView dcLbl=tv("إجمالي ما عليهم",9.5f); dcLbl.setTextColor(RED); dcLbl.setGravity(Gravity.CENTER);
+        TextView dcVal=tv(fmt(totalDebts)+" ر.ي",12); dcVal.setTextColor(RED); dcVal.setTypeface(Typeface.DEFAULT,Typeface.BOLD); dcVal.setGravity(Gravity.CENTER);
+        debtCard.addView(dcLbl,new LinearLayout.LayoutParams(-1,dp(16)));
+        debtCard.addView(dcVal,new LinearLayout.LayoutParams(-1,dp(20)));
+        statsBar.addView(debtCard,new LinearLayout.LayoutParams(0,dp(50),1.2f));
+
+        // Card 2: Total Credits (له)
+        LinearLayout credCard=new LinearLayout(this);
+        credCard.setOrientation(LinearLayout.VERTICAL);
+        credCard.setGravity(Gravity.CENTER);
+        credCard.setPadding(dp(4),dp(6),dp(4),dp(6));
+        GradientDrawable ccBg=new GradientDrawable();
+        ccBg.setColor(Color.rgb(240,248,255));
+        ccBg.setCornerRadius(dp(12));
+        ccBg.setStroke(dp(1),Color.rgb(190,220,245));
+        credCard.setBackground(ccBg);
+        TextView ccLbl=tv("إجمالي ما لهم",9.5f); ccLbl.setTextColor(BLUE); ccLbl.setGravity(Gravity.CENTER);
+        TextView ccVal=tv(fmt(totalCredits)+" ر.ي",12); ccVal.setTextColor(BLUE); ccVal.setTypeface(Typeface.DEFAULT,Typeface.BOLD); ccVal.setGravity(Gravity.CENTER);
+        credCard.addView(ccLbl,new LinearLayout.LayoutParams(-1,dp(16)));
+        credCard.addView(ccVal,new LinearLayout.LayoutParams(-1,dp(20)));
+        LinearLayout.LayoutParams ccp=new LinearLayout.LayoutParams(0,dp(50),1.2f); ccp.setMargins(dp(4),0,0,0);
+        statsBar.addView(credCard,ccp);
+
+        // Card 3: Customers Count
+        LinearLayout countCard=new LinearLayout(this);
+        countCard.setOrientation(LinearLayout.VERTICAL);
+        countCard.setGravity(Gravity.CENTER);
+        countCard.setPadding(dp(4),dp(6),dp(4),dp(6));
+        GradientDrawable cntBg=new GradientDrawable();
+        cntBg.setColor(Color.rgb(243,248,244));
+        cntBg.setCornerRadius(dp(12));
+        cntBg.setStroke(dp(1),Color.rgb(195,230,205));
+        countCard.setBackground(cntBg);
+        TextView cntLbl=tv("عدد العملاء",9.5f); cntLbl.setTextColor(GREEN); cntLbl.setGravity(Gravity.CENTER);
+        TextView cntVal=tv(totalCustomers+" ("+debtorCount+" مدين)",11f); cntVal.setTextColor(GREEN); cntVal.setTypeface(Typeface.DEFAULT,Typeface.BOLD); cntVal.setGravity(Gravity.CENTER);
+        countCard.addView(cntLbl,new LinearLayout.LayoutParams(-1,dp(16)));
+        countCard.addView(cntVal,new LinearLayout.LayoutParams(-1,dp(20)));
+        LinearLayout.LayoutParams cntp=new LinearLayout.LayoutParams(0,dp(50),1.1f); cntp.setMargins(dp(4),0,0,0);
+        statsBar.addView(countCard,cntp);
+
+        content.addView(statsBar,new LinearLayout.LayoutParams(-1,dp(54)));
+        addSpace(8);
+
+        // 2. Compact customer actions: creation is now a dedicated popup.
+        LinearLayout customerToolbar=new LinearLayout(this);
+        customerToolbar.setOrientation(LinearLayout.HORIZONTAL);
+        customerToolbar.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        customerToolbar.setGravity(Gravity.CENTER_VERTICAL);
+
+        Button addCustomerBtn=button("＋ إضافة عميل جديد");
+        addCustomerBtn.setTextColor(Color.WHITE);
+        addCustomerBtn.setBackground(rounded(GREEN,dp(11)));
+        addCustomerBtn.setOnClickListener(v->showCustomerCreatePopup());
+        customerToolbar.addView(addCustomerBtn,new LinearLayout.LayoutParams(0,dp(44),1));
+
+        Button contactBtn=button("👥 من جهات الاتصال");
+        contactBtn.setTextColor(GREEN);
+        contactBtn.setBackground(outline(Color.rgb(241,247,242),10));
+        contactBtn.setOnClickListener(v->{
+            showCustomerCreatePopup();
+            new Handler(Looper.getMainLooper()).postDelayed(this::importContact,220);
+        });
+        LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(0,dp(44),1);
+        cp.setMargins(dp(5),0,0,0);
+        customerToolbar.addView(contactBtn,cp);
+        content.addView(customerToolbar,new LinearLayout.LayoutParams(-1,dp(46)));
+        addSpace(6);
+
+        // 3. Search Bar + Filter Tabs
+        section("قائمة حسابات العملاء");
+
+        EditText search=field("🔍 ابحث عن اسم العميل أو رقم الهاتف...");
+        addField(search);
+        addSpace(4);
+
+        final int[] filterMode=new int[]{0}; // 0: all, 1: with debt, 2: settled/credit
+        LinearLayout filterTabs=new LinearLayout(this);
+        filterTabs.setOrientation(LinearLayout.HORIZONTAL);
+        filterTabs.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+
+        Button tabAll=button("الكل ("+totalCustomers+")");
+        Button tabDebtors=button("عليهم ديون ("+debtorCount+")");
+        Button tabSettled=button("خالص / دائن");
+
+        final Runnable[] refreshList=new Runnable[1];
+
+        Runnable updateTabStyles=()->{
+            tabAll.setBackground(filterMode[0]==0?rounded(GREEN,dp(8)):outline(CARD,8));
+            tabAll.setTextColor(filterMode[0]==0?Color.WHITE:MUTED);
+            tabDebtors.setBackground(filterMode[0]==1?rounded(RED,dp(8)):outline(CARD,8));
+            tabDebtors.setTextColor(filterMode[0]==1?Color.WHITE:MUTED);
+            tabSettled.setBackground(filterMode[0]==2?rounded(BLUE,dp(8)):outline(CARD,8));
+            tabSettled.setTextColor(filterMode[0]==2?Color.WHITE:MUTED);
+        };
+
+        tabAll.setOnClickListener(v->{filterMode[0]=0; updateTabStyles.run(); refreshList[0].run();});
+        tabDebtors.setOnClickListener(v->{filterMode[0]=1; updateTabStyles.run(); refreshList[0].run();});
+        tabSettled.setOnClickListener(v->{filterMode[0]=2; updateTabStyles.run(); refreshList[0].run();});
+
+        filterTabs.addView(tabAll,new LinearLayout.LayoutParams(0,dp(34),1));
+        LinearLayout.LayoutParams tdp=new LinearLayout.LayoutParams(0,dp(34),1.2f); tdp.setMargins(dp(4),0,0,0);
+        filterTabs.addView(tabDebtors,tdp);
+        LinearLayout.LayoutParams tsp=new LinearLayout.LayoutParams(0,dp(34),1.1f); tsp.setMargins(dp(4),0,0,0);
+        filterTabs.addView(tabSettled,tsp);
+        content.addView(filterTabs,new LinearLayout.LayoutParams(-1,dp(36)));
+        addSpace(6);
+
+        updateTabStyles.run();
+
+        // 4. Customer List Container
+        LinearLayout list=new LinearLayout(this);
+        list.setOrientation(LinearLayout.VERTICAL);
+        content.addView(list);
+
+        refreshList[0]=()->{
+            list.removeAllViews();
+            Cursor c=db.customers(search.getText().toString().trim());
+            int displayedCount=0;
+            while(c.moveToNext()){
+                long id=c.getLong(0);
+                String n=c.getString(1);
+                String phoneStr=c.getString(2);
+                double bal=db.balance(id);
+
+                if(filterMode[0]==1 && bal<=0.005) continue;
+                if(filterMode[0]==2 && bal>0.005) continue;
+
+                displayedCount++;
+
+                LinearLayout card=new LinearLayout(this);
+                card.setOrientation(LinearLayout.HORIZONTAL);
+                card.setGravity(Gravity.CENTER_VERTICAL);
+                card.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+                card.setPadding(dp(10),dp(8),dp(10),dp(8));
+                card.setBackground(outlined(CARD,1,12));
+                card.setElevation(dp(1));
+
+                // Avatar Icon with Initial Letter
+                TextView avatar=new TextView(this);
+                String initial=n.trim().isEmpty()?"👤":n.trim().substring(0,1);
+                avatar.setText(initial);
+                avatar.setTextSize(15);
+                avatar.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+                avatar.setGravity(Gravity.CENTER);
+                avatar.setTextColor(GREEN);
+                GradientDrawable avBg=new GradientDrawable();
+                avBg.setColor(Color.rgb(238,247,240));
+                avBg.setCornerRadius(dp(20));
+                avBg.setStroke(dp(1),Color.rgb(190,225,200));
+                avatar.setBackground(avBg);
+                card.addView(avatar,new LinearLayout.LayoutParams(dp(40),dp(40)));
+
+                // Info Column (Name + Phone / Transaction Count)
+                LinearLayout info=new LinearLayout(this);
+                info.setOrientation(LinearLayout.VERTICAL);
+                info.setPadding(dp(8),0,dp(6),0);
+
+                TextView nameTv=tv(n,14.5f);
+                nameTv.setTextColor(GREEN); nameTv.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+                nameTv.setMaxLines(1);
+                info.addView(nameTv,new LinearLayout.LayoutParams(-1,dp(22)));
+
+                int txCount=db.transactionCount(id);
+                String subInfo="📊 "+txCount+" حركة"+(phoneStr!=null&&!phoneStr.trim().isEmpty()?"  •  📱 "+phoneStr:"");
+                TextView subTv=tv(subInfo,10.5f);
+                subTv.setTextColor(MUTED); subTv.setMaxLines(1);
+                info.addView(subTv,new LinearLayout.LayoutParams(-1,dp(18)));
+
+                card.addView(info,new LinearLayout.LayoutParams(0,dp(42),1));
+
+                // Balance Badge Column
+                LinearLayout balCol=new LinearLayout(this);
+                balCol.setOrientation(LinearLayout.VERTICAL);
+                balCol.setGravity(Gravity.CENTER);
+                balCol.setPadding(dp(6),dp(2),dp(6),dp(2));
+                GradientDrawable bBadgeBg=new GradientDrawable();
+                bBadgeBg.setCornerRadius(dp(8));
+                if(bal>0.005){
+                    bBadgeBg.setColor(Color.rgb(255,240,240));
+                    bBadgeBg.setStroke(dp(1),Color.rgb(245,190,190));
+                }else if(bal<-0.005){
+                    bBadgeBg.setColor(Color.rgb(240,248,255));
+                    bBadgeBg.setStroke(dp(1),Color.rgb(190,220,245));
+                }else{
+                    bBadgeBg.setColor(Color.rgb(242,248,243));
+                    bBadgeBg.setStroke(dp(1),Color.rgb(200,230,205));
+                }
+                balCol.setBackground(bBadgeBg);
+
+                TextView balText=tv(balanceText(bal),11.5f);
+                balText.setTextColor(balanceColor(bal));
+                balText.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+                balText.setGravity(Gravity.CENTER);
+                balCol.addView(balText,new LinearLayout.LayoutParams(-2,-2));
+
+                card.addView(balCol,new LinearLayout.LayoutParams(-2,dp(36)));
+
+                // Quick Action Icons: WhatsApp / Call / Options
+                LinearLayout qActions=new LinearLayout(this);
+                qActions.setOrientation(LinearLayout.HORIZONTAL);
+                qActions.setGravity(Gravity.CENTER_VERTICAL);
+                qActions.setPadding(dp(4),0,0,0);
+
+                if(phoneStr!=null&&!phoneStr.trim().isEmpty()){
+                    String pClean=phoneStr.replaceAll("[^0-9+]","");
+                    Button callBtn=button("📞");
+                    callBtn.setTextSize(12);
+                    callBtn.setBackgroundColor(Color.TRANSPARENT);
+                    callBtn.setOnClickListener(v->{
+                        try{startActivity(new Intent(Intent.ACTION_DIAL,Uri.parse("tel:"+pClean)));}catch(Exception ignored){}
+                    });
+                    qActions.addView(callBtn,new LinearLayout.LayoutParams(dp(32),dp(36)));
+
+                    Button waBtn=button("💬");
+                    waBtn.setTextSize(12);
+                    waBtn.setBackgroundColor(Color.TRANSPARENT);
+                    waBtn.setOnClickListener(v->{
+                        shareWhatsAppToCustomer(phoneStr,"السلام عليكم أخي "+n+"\nتحية طيبة من بقالة العزي للمواد الغذائية\nرصيد حسابكم الحالي: "+balanceText(bal),null);
+                    });
+                    qActions.addView(waBtn,new LinearLayout.LayoutParams(dp(32),dp(36)));
+                }
+
+                Button optBtn=button("⋮");
+                optBtn.setTextSize(16);
+                optBtn.setTextColor(MUTED);
+                optBtn.setBackgroundColor(Color.TRANSPARENT);
+                optBtn.setOnClickListener(v->customerActions(id,n));
+                qActions.addView(optBtn,new LinearLayout.LayoutParams(dp(26),dp(36)));
+
+                card.addView(qActions,new LinearLayout.LayoutParams(-2,dp(36)));
+
+                // فتح حساب العميل أصبح نافذة منبثقة حتى تبقى قائمة العملاء ثابتة وواضحة.
+                card.setOnClickListener(v->account(id,n));
+                card.setOnLongClickListener(v->{customerActions(id,n); return true;});
+
+                LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);
+                lp.setMargins(0,0,0,dp(6));
+                list.addView(card,lp);
+            }
+            c.close();
+
+            if(displayedCount==0){
+                LinearLayout emptyBox=card();
+                emptyBox.setOrientation(LinearLayout.VERTICAL);
+                emptyBox.setPadding(dp(16),dp(16),dp(16),dp(16));
+                emptyBox.setGravity(Gravity.CENTER);
+                TextView ei=tv("👥",28); ei.setGravity(Gravity.CENTER);
+                emptyBox.addView(ei,new LinearLayout.LayoutParams(-1,dp(36)));
+                TextView em=tv("لا يوجد عملاء مطابقين للبحث",13);
+                em.setTextColor(MUTED); em.setGravity(Gravity.CENTER);
+                emptyBox.addView(em,new LinearLayout.LayoutParams(-1,dp(24)));
+                list.addView(emptyBox,new LinearLayout.LayoutParams(-1,-2));
+            }
+        };
+
+
+
+        search.addTextChangedListener(new android.text.TextWatcher(){
+            public void beforeTextChanged(CharSequence s,int st,int c,int a){}
+            public void onTextChanged(CharSequence s,int st,int b,int c){refreshList[0].run();}
+            public void afterTextChanged(android.text.Editable e){}
+        });
+
+        refreshList[0].run();
+    }
+
     void customerActions(long id,String name){
         String[] choices={"✏ تعديل بيانات العميل","📄 كشف الحساب PDF + واتساب","📞 اتصال بالعميل","🗑 حذف حساب العميل"};
         new AlertDialog.Builder(this).setTitle("حساب: "+name).setItems(choices,(d,w)->{
@@ -7405,6 +7783,13 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
                 db.updateCustomer(id,oldName,n,p); customers();
                 Toast.makeText(this,"تم تعديل بيانات العميل",Toast.LENGTH_SHORT).show();
             }).show();
+    }
+
+void shareReceiptImageAndText(String no,String customer,ArrayList<Line> lines,double total){
+        double paid=0;
+        long iid=db.invoiceIdByNo(no);
+        if(iid>0) paid=db.invoicePaid(iid);
+        shareReceiptImageAndText(no,customer,lines,total,paid);
     }
 
 }
