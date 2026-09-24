@@ -7472,3 +7472,23 @@ LinearLayout glassStat(String label,String value,int accent){
     void editCustomer(long id,String oldName){
         EditText name=field("اسم العميل"); name.setText(oldName);
         EditText phone=phoneField("رقم الهاتف"); phone.setText(db.phoneByName(oldName));
+        LinearLayout box=new LinearLayout(this); box.setOrientation(LinearLayout.VERTICAL); box.setPadding(dp(8),dp(4),dp(8),dp(4));
+        box.addView(name,new LinearLayout.LayoutParams(-1,dp(40))); spaceInside(box,5); box.addView(phone,new LinearLayout.LayoutParams(-1,dp(40)));
+        new AlertDialog.Builder(this).setTitle("تعديل بيانات العميل").setView(box)
+            .setNegativeButton("إلغاء",null)
+            .setPositiveButton("حفظ",(d,w)->{
+                String n=name.getText().toString().trim(), p=phone.getText().toString().trim();
+                if(n.isEmpty()){Toast.makeText(this,"اسم العميل مطلوب",Toast.LENGTH_SHORT).show();return;}
+                db.updateCustomer(id,oldName,n,p); customers();
+                Toast.makeText(this,"تم تعديل بيانات العميل",Toast.LENGTH_SHORT).show();
+            }).show();
+    }
+
+void shareReceiptImageAndText(String no,String customer,ArrayList<Line> lines,double total){
+        double paid=0;
+        long iid=db.invoiceIdByNo(no);
+        if(iid>0) paid=db.invoicePaid(iid);
+        shareReceiptImageAndText(no,customer,lines,total,paid);
+    }
+
+}
