@@ -7647,10 +7647,11 @@ void customers(){
                 name.setTextColor(DARK); name.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
                 name.setSingleLine(true); name.setMaxLines(1); name.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
                 name.setEllipsize(null);
-                autoFitText(name,16f,9f,0.8f);
+                name.setPadding(0,0,0,0);
+                autoFitText(name,16f,8f,0.5f);
                 info.addView(name,new LinearLayout.LayoutParams(-1,dp(32)));
 
-                String subText=db.transactionCount(id)+" حركة"+(phone!=null&&!phone.trim().isEmpty()?"  •  "+phone.trim():"");
+                String subText=db.transactionCount(id)+" حركة";
                 TextView subTv=tv(subText,11);
                 subTv.setTextColor(MUTED); subTv.setMaxLines(1);
                 fitInside(subTv,11,9);
