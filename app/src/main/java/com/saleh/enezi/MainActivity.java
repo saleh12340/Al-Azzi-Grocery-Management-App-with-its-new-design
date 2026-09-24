@@ -86,28 +86,6 @@ public class MainActivity extends Activity {
         }).start();
     }
 
-    void showStartupLoading(){
-        LinearLayout box=new LinearLayout(this);
-        box.setOrientation(LinearLayout.VERTICAL);
-        box.setGravity(Gravity.CENTER);
-        box.setPadding(dp(24),dp(24),dp(24),dp(24));
-        box.setBackgroundColor(BG);
-        TextView title=new TextView(this);
-        title.setText("بقالة العزي للمواد الغذائية");
-        title.setTextSize(22);
-        title.setTextColor(DARK);
-        title.setGravity(Gravity.CENTER);
-        title.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        box.addView(title,new LinearLayout.LayoutParams(-1,dp(55)));
-        TextView msg=new TextView(this);
-        msg.setText("جاري تشغيل التطبيق وتجهيز البيانات...");
-        msg.setTextSize(15);
-        msg.setTextColor(MUTED);
-        msg.setGravity(Gravity.CENTER);
-        box.addView(msg,new LinearLayout.LayoutParams(-1,dp(55)));
-        setContentView(box);
-    }
-
     void showStartupRecovery(Throwable error){
         LinearLayout box=new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
@@ -662,7 +640,7 @@ EditText numberField(String h){
         LinearLayout row4=new LinearLayout(this);
         row4.setOrientation(LinearLayout.HORIZONTAL); row4.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         View cNotes=createModernTabCard("📝","دفتر الملاحظات","مسودات وقوائم الطلبيات",Color.rgb(55,95,150),0,v->notes());
-        View tr=createModernTabCard("💸","الحوالات","المرسل والمستلم والأرقام والسجل",Color.rgb(28,105,210),db==null?0:db.transferCount(),v->transfers());
+        View tr=createModernTabCard("💸","الحوالات","المرسل والمستلم والأرقام والسجل",Color.rgb(28,105,210),0,v->transfers());
         row4.addView(cNotes,new LinearLayout.LayoutParams(0,dp(92),1));
         LinearLayout.LayoutParams trp=new LinearLayout.LayoutParams(0,dp(92),1); trp.setMargins(dp(6),0,0,0); row4.addView(tr,trp);
         middle.addView(row4,new LinearLayout.LayoutParams(-1,dp(92)));
@@ -1343,7 +1321,7 @@ EditText numberField(String h){
     void add(View v,int h){content.addView(v,new LinearLayout.LayoutParams(-1,dp(Math.max(42,h-12))));space(4);}
     void space(int h){addSpace(dp(h));}
     void spaceInside(LinearLayout p,int h){Space x=new Space(this);p.addView(x,new LinearLayout.LayoutParams(1,dp(h)));}
-    Button action(String text,int color){Button b=button(text);b.setTextColor(Color.WHITE);b.setTextSize(16);b.setBackground(rounded(color,dp(14)));return b;}
+    Button action(String text,int color){Button b=button(text);b.setTextColor(Color.WHITE);b.setTextSize(17);b.setBackground(rounded(color,dp(14)));return b;}
     Button btn(String text){Button b=button(text);b.setTextColor(TEXT);b.setBackground(outline(CARD,14));return b;}
     static class Line{String name;double qty,total;Line(String n,double q,double t){name=n;qty=q;total=t;}}
     void addRow(LinearLayout parent,Line l,double running,double baseBal,ArrayList<Line> all){
@@ -5220,8 +5198,8 @@ EditText numberField(String h){
         transferSenderPhone=phoneField("رقم المرسل *");
         TextView amountLabel=tv("المبلغ",17); amountLabel.setTextColor(DARK); amountLabel.setTypeface(Typeface.DEFAULT,Typeface.BOLD); f.addView(amountLabel,new LinearLayout.LayoutParams(-1,dp(30)));
         TextView amountHint=tv("أدخل مبلغ الحوالة بالأرقام — مثال: 2500",14); amountHint.setTextColor(MUTED); f.addView(amountHint,new LinearLayout.LayoutParams(-1,dp(30)));
-        EditText amount=numberField("مبلغ الحوالة");
-        amount.setTextSize(23);
+        EditText amount=numberField("المبلغ (ريال)");
+        amount.setTextSize(24);
         amount.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         amount.setPadding(dp(14),0,dp(14),0);
         amount.setBackground(outlined(Color.rgb(248,250,253),dp(2),12));
@@ -5229,22 +5207,22 @@ EditText numberField(String h){
         amount.setOnFocusChangeListener((v,has)->{
             if(!has){try{double a=Double.parseDouble(amount.getText().toString().replace(",","").trim());if(a>0)amount.setText(fmt(a));}catch(Exception ignored){}}
         });
-        f.addView(amount,new LinearLayout.LayoutParams(-1,dp(54))); addSpaceTo(f,8);
+        f.addView(amount,new LinearLayout.LayoutParams(-1,dp(60))); addSpaceTo(f,10);
 
         TextView rlabel=tv("بيانات المستلم",14); rlabel.setTextColor(GREEN); rlabel.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         f.addView(rlabel,new LinearLayout.LayoutParams(-1,dp(30)));
         f.addView(transferReceiverName,new LinearLayout.LayoutParams(-1,dp(52))); addSpaceTo(f,5);
         LinearLayout receiverPhoneRow=new LinearLayout(this); receiverPhoneRow.setOrientation(LinearLayout.HORIZONTAL); receiverPhoneRow.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        receiverPhoneRow.addView(transferReceiverPhone,new LinearLayout.LayoutParams(0,dp(52),1));
+        receiverPhoneRow.addView(transferReceiverPhone,new LinearLayout.LayoutParams(0,dp(54),1));
         Button rc=button("📇 جهات الاتصال"); rc.setTextSize(15); rc.setOnClickListener(v->{transferContactNameTarget=transferReceiverName;transferContactPhoneTarget=transferReceiverPhone;openTransferContactPicker();});
-        LinearLayout.LayoutParams rcl=new LinearLayout.LayoutParams(dp(132),dp(46)); rcl.setMargins(dp(6),0,0,0); receiverPhoneRow.addView(rc,rcl);
+        LinearLayout.LayoutParams rcl=new LinearLayout.LayoutParams(dp(118),dp(46)); rcl.setMargins(dp(6),0,0,0); receiverPhoneRow.addView(rc,rcl);
         f.addView(receiverPhoneRow,new LinearLayout.LayoutParams(-1,dp(58))); addSpaceTo(f,8);
 
         TextView slabel=tv("بيانات المرسل",14); slabel.setTextColor(GREEN); slabel.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         f.addView(slabel,new LinearLayout.LayoutParams(-1,dp(30)));
         f.addView(transferSenderName,new LinearLayout.LayoutParams(-1,dp(52))); addSpaceTo(f,5);
         LinearLayout senderPhoneRow=new LinearLayout(this); senderPhoneRow.setOrientation(LinearLayout.HORIZONTAL); senderPhoneRow.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        senderPhoneRow.addView(transferSenderPhone,new LinearLayout.LayoutParams(0,dp(52),1));
+        senderPhoneRow.addView(transferSenderPhone,new LinearLayout.LayoutParams(0,dp(54),1));
         Button pc=button("📇 جهات الاتصال"); pc.setTextSize(15); pc.setOnClickListener(v->{transferContactNameTarget=transferSenderName;transferContactPhoneTarget=transferSenderPhone;openTransferContactPicker();});
         LinearLayout.LayoutParams pcl=new LinearLayout.LayoutParams(dp(132),dp(46)); pcl.setMargins(dp(6),0,0,0); senderPhoneRow.addView(pc,pcl);
         f.addView(senderPhoneRow,new LinearLayout.LayoutParams(-1,dp(58))); addSpaceTo(f,8);
@@ -5270,8 +5248,8 @@ EditText numberField(String h){
                 LinearLayout row=card();
                 GradientDrawable rowBg=new GradientDrawable(); rowBg.setColor(rev!=0?Color.rgb(255,244,244):Color.rgb(241,249,244)); rowBg.setCornerRadius(dp(12)); rowBg.setStroke(dp(1),rev!=0?Color.rgb(230,150,150):Color.rgb(145,205,165)); row.setBackground(rowBg);
                 TextView h=tv("💸 "+fmt(am)+" ريال",16); h.setTextColor(rev!=0?RED:GREEN); h.setTypeface(Typeface.DEFAULT,Typeface.BOLD); row.addView(h,new LinearLayout.LayoutParams(-1,dp(28)));
-                TextView rr=tv("المستلم: "+rn+"\n"+rp2,17); rr.setMaxLines(2); rr.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL); row.addView(rr,new LinearLayout.LayoutParams(-1,dp(46)));
-                TextView sr=tv("المرسل: "+sn+"\n"+sp,17); sr.setMaxLines(2); sr.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL); row.addView(sr,new LinearLayout.LayoutParams(-1,dp(46)));
+                TextView rr=tv("المستلم: "+rn+"\n"+rp2,18); rr.setMaxLines(2); rr.setEllipsize(TextUtils.TruncateAt.END); rr.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL); row.addView(rr,new LinearLayout.LayoutParams(-1,dp(46)));
+                TextView sr=tv("المرسل: "+sn+"\n"+sp,18); sr.setMaxLines(2); sr.setEllipsize(TextUtils.TruncateAt.END); sr.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL); row.addView(sr,new LinearLayout.LayoutParams(-1,dp(46)));
                 row.addView(tv(dt,11),new LinearLayout.LayoutParams(-1,dp(22)));
                 TextView status=tv(rev!=0?"🔴 غير مجهزة — تحتاج مراجعة":"🔵 مجهزة وجاهزة",12); status.setTextColor(rev!=0?RED:BLUE); status.setTypeface(Typeface.DEFAULT,Typeface.BOLD); row.addView(status,new LinearLayout.LayoutParams(-1,dp(25)));
 
