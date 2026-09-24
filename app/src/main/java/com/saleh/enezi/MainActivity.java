@@ -1629,7 +1629,7 @@ EditText numberField(String h){
         TextView amtVal=tv((isDebit?"عليه: ":"له: ")+fmt(amount)+" ريال",19);
         amtVal.setTextColor(isDebit?RED:GREEN); amtVal.setTypeface(Typeface.DEFAULT,Typeface.BOLD); amtVal.setGravity(Gravity.CENTER);
         amtVal.setIncludeFontPadding(false); amtVal.setMaxLines(2); amtVal.setEllipsize(TextUtils.TruncateAt.END);
-        amtVal.setPadding(dp(8),dp(4),dp(8),dp(4)); amtVal.setBackground(outline(CARD,1,8));
+        amtVal.setPadding(dp(8),dp(4),dp(8),dp(4)); amtVal.setBackground(outlined(CARD,1,dp(8)));
         amountCard.addView(amtVal,new LinearLayout.LayoutParams(-1,dp(38)));
         box.addView(amountCard,new LinearLayout.LayoutParams(-1,dp(78)));
         addSpaceTo(box,6);
@@ -4719,7 +4719,7 @@ EditText numberField(String h){
                 amtValTv.setGravity(Gravity.CENTER); amtValTv.setIncludeFontPadding(false);
                 amtValTv.setMaxLines(2); amtValTv.setEllipsize(TextUtils.TruncateAt.END);
                 amtValTv.setPadding(dp(7),dp(5),dp(7),dp(5));
-                amtValTv.setBackground(outline(isDebit?Color.rgb(255,243,243):Color.rgb(240,249,242),1,8));
+                amtValTv.setBackground(outlined(isDebit?Color.rgb(255,243,243):Color.rgb(240,249,242),dp(1),dp(8)));
                 amtCol.addView(amtValTv,new LinearLayout.LayoutParams(dp(108),dp(44)));
 
                 r.addView(amtCol,new LinearLayout.LayoutParams(-2,-2));
@@ -4824,12 +4824,12 @@ EditText numberField(String h){
         v.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         v.setPadding(dp(title?9:7),dp(5),dp(title?9:7),dp(5));
         v.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); v.setTextDirection(View.TEXT_DIRECTION_RTL);
-        v.setBackground(outline(title?Color.rgb(239,247,242):Color.rgb(248,250,252),1,title?9:8));
+        v.setBackground(outlined(title?Color.rgb(239,247,242):Color.rgb(248,250,252),dp(1),dp(title?9:8)));
         if(title)v.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
     }
     void styleDisplayValue(TextView v,float size,int color){
         styleDisplayText(v,size,false); v.setTextColor(color);
-        v.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL); v.setBackground(outline(CARD,1,8));
+        v.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL); v.setBackground(outlined(CARD,1,dp(8)));
     }
     void styleDisplayRow(LinearLayout row){
         if(row==null)return; row.setPadding(dp(7),dp(5),dp(7),dp(5));
@@ -4841,7 +4841,7 @@ EditText numberField(String h){
         v.setMaxLines(2); v.setEllipsize(TextUtils.TruncateAt.END);
         v.setGravity(Gravity.CENTER_VERTICAL|Gravity.RIGHT); v.setPadding(dp(7),dp(5),dp(7),dp(5));
         v.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); v.setTextDirection(View.TEXT_DIRECTION_RTL);
-        v.setBackground(outline(header?Color.rgb(238,247,241):Color.WHITE,1,7));
+        v.setBackground(outlined(header?Color.rgb(238,247,241):Color.WHITE,dp(1),dp(7)));
         if(header)v.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
     }
 
