@@ -115,7 +115,7 @@ public class MainActivity extends Activity {
     void addSafeHomeButton(LinearLayout box,String label,View.OnClickListener click){
         Button b=button(label); b.setTextSize(16); b.setTextColor(TEXT);
         b.setBackground(outlined(CARD,dp(1),12)); b.setOnClickListener(click);
-        LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,dp(52)); p.setMargins(0,dp(6),0,0); box.addView(b,p);
+        LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2); p.setMargins(0,dp(6),0,0); b.setMinHeight(dp(52)); box.addView(b,p);
     }
 
     void showStartupRecovery(Throwable error){
@@ -203,7 +203,7 @@ public class MainActivity extends Activity {
                 if(t.getTextSize()<spToPx(16f)) t.setTextSize(16f);
             }
             t.setIncludeFontPadding(true); t.setHorizontallyScrolling(false); t.setEllipsize(null);
-            if(!(t instanceof EditText)){ t.setSingleLine(false); t.setMaxLines(6); t.setMinLines(1); }
+            if(!(t instanceof EditText)){ t.setSingleLine(false); t.setMaxLines(Integer.MAX_VALUE); t.setMinLines(1); }
             if(Build.VERSION.SDK_INT>=23){try{t.setBreakStrategy(android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY);}catch(Throwable ignored){}}
             if(Build.VERSION.SDK_INT>=28){try{t.setFallbackLineSpacing(true);}catch(Throwable ignored){} try{t.setElegantTextHeight(true);}catch(Throwable ignored){}}
             t.postDelayed(()->expandForText(t),25);
@@ -222,16 +222,18 @@ public class MainActivity extends Activity {
         t.setEllipsize(null);
         if(!(t instanceof EditText)){
             t.setSingleLine(false);
-            t.setMaxLines(8);
+            t.setMaxLines(Integer.MAX_VALUE);
             t.setMinLines(1);
         }
+        ViewGroup.LayoutParams own=t.getLayoutParams();
+        if(own!=null && own.height>0 && own.height<=dp(140)){ own.height=ViewGroup.LayoutParams.WRAP_CONTENT; t.setLayoutParams(own); }
         View p=t;
-        for(int level=0;level<5 && p.getParent() instanceof ViewGroup;level++){
+        for(int level=0;level<6 && p.getParent() instanceof ViewGroup;level++){
             ViewGroup parent=(ViewGroup)p.getParent();
             ViewGroup.LayoutParams lp=parent.getLayoutParams();
             // معظم البطاقات والصفوف القديمة كانت بارتفاع ثابت 14-84dp.
             // تحويلها إلى WRAP_CONTENT يمنع قص الكلمات والتداخل.
-            if(lp!=null && lp.height>0 && lp.height<=dp(84)){
+            if(lp!=null && lp.height>0 && lp.height<=dp(140)){
                 lp.height=ViewGroup.LayoutParams.WRAP_CONTENT;
                 parent.setLayoutParams(lp);
             }
@@ -254,9 +256,9 @@ public class MainActivity extends Activity {
     void fitInside(View v,float maxSp,float minSp){
         if(v instanceof TextView){
             TextView t=(TextView)v; t.setIncludeFontPadding(true); t.setHorizontallyScrolling(false);
-            t.setEllipsize(null); t.setSingleLine(false); t.setMaxLines(6); t.setMinLines(1);
+            t.setEllipsize(null); t.setSingleLine(false); t.setMaxLines(Integer.MAX_VALUE); t.setMinLines(1);
             if(android.os.Build.VERSION.SDK_INT>=23){try{t.setBreakStrategy(android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY);}catch(Throwable ignored){}}
-            t.setTextSize(Math.max(16f,Math.max(minSp,maxSp)));
+            t.setTextSize(16f);
             t.postDelayed(()->expandForText(t),35);
         }
     }
@@ -264,7 +266,7 @@ public class MainActivity extends Activity {
     void autoFitText(TextView t,float maxSp,float minSp,float stepSp){
         if(t==null)return;
         t.setSingleLine(false);
-        t.setMaxLines(2);
+        t.setMaxLines(Integer.MAX_VALUE);
         t.setEllipsize(null);
         t.setHorizontallyScrolling(false);
         t.setIncludeFontPadding(true);
@@ -295,7 +297,7 @@ public class MainActivity extends Activity {
         Button b=new Button(this);
         b.setText(s); b.setTextSize(15); b.setAllCaps(false); b.setMinHeight(0); b.setMinimumHeight(0);
         b.setPadding(dp(10),dp(5),dp(10),dp(5)); b.setGravity(Gravity.CENTER);
-        b.setStateListAnimator(null); b.setIncludeFontPadding(true); b.setMaxLines(2);
+        b.setStateListAnimator(null); b.setIncludeFontPadding(true); b.setMaxLines(Integer.MAX_VALUE);
         b.setEllipsize(null); b.setHorizontallyScrolling(false);
         if(Build.VERSION.SDK_INT>=28){try{b.setFallbackLineSpacing(true);}catch(Throwable ignored){} try{b.setElegantTextHeight(true);}catch(Throwable ignored){}}
         b.setTextColor(TEXT);
@@ -383,9 +385,9 @@ public class MainActivity extends Activity {
         int n=0;
         for(String value:values){
             String q=query.trim().toLowerCase(java.util.Locale.ROOT); String vv=value.trim().toLowerCase(java.util.Locale.ROOT); if(!vv.contains(q)||n>=5)continue;
-            Button b=button(value);b.setTextSize(15);b.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);b.setMaxLines(1);b.setEllipsize(TextUtils.TruncateAt.END);
+            Button b=button(value);b.setTextSize(16);b.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);b.setMaxLines(Integer.MAX_VALUE);b.setEllipsize(null);b.setSingleLine(false);
             b.setOnClickListener(v->{anchor.setText(value);anchor.setSelection(anchor.length());dismissLearningSuggestions();});
-            box.addView(b,new LinearLayout.LayoutParams(-1,dp(50)));n++;
+            box.addView(b,new LinearLayout.LayoutParams(-1,-2));n++;
         }
         if(n==0){dismissLearningSuggestions();return;}
         dismissLearningSuggestions();
@@ -466,9 +468,9 @@ EditText numberField(String h){
         TextView pt=tv(title,18);
         pt.setTextColor(Color.WHITE); pt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         pt.setSingleLine(false); pt.setMaxLines(2); pt.setEllipsize(null);
-        titleBox.addView(logo,new LinearLayout.LayoutParams(-1,dp(22)));
-        titleBox.addView(pt,new LinearLayout.LayoutParams(-1,dp(28)));
-        bar.addView(titleBox,new LinearLayout.LayoutParams(0,dp(52),1));
+        titleBox.addView(logo,new LinearLayout.LayoutParams(-1,-2));
+        titleBox.addView(pt,new LinearLayout.LayoutParams(-1,-2));
+        bar.addView(titleBox,new LinearLayout.LayoutParams(0,-2,1));
 
         TextView badge=tv("إدارة",11);
         badge.setTextColor(Color.WHITE); badge.setGravity(Gravity.CENTER);
@@ -476,7 +478,7 @@ EditText numberField(String h){
         badgeBg.setColor(Color.argb(55,255,255,255)); badgeBg.setCornerRadius(dp(18));
         badge.setBackground(badgeBg);
         bar.addView(badge,new LinearLayout.LayoutParams(dp(56),dp(34)));
-        root.addView(bar,new LinearLayout.LayoutParams(-1,dp(66)));
+        root.addView(bar,new LinearLayout.LayoutParams(-1,-2));
 
         ScrollView sv=new ScrollView(this);
         sv.setFillViewport(true); sv.setClipToPadding(false);
@@ -499,7 +501,7 @@ EditText numberField(String h){
             heroSub.setTextColor(MUTED);
             pageHero.addView(heroTitle,new LinearLayout.LayoutParams(-1,dp(25)));
             pageHero.addView(heroSub,new LinearLayout.LayoutParams(-1,dp(20)));
-            content.addView(pageHero,new LinearLayout.LayoutParams(-1,dp(50)));
+            content.addView(pageHero,new LinearLayout.LayoutParams(-1,-2));
             addSpace(5);
         }
 
@@ -519,6 +521,7 @@ EditText numberField(String h){
         if(bottom==null) return;
         bottom.removeAllViews();
         LinearLayout nav=new LinearLayout(this);
+        nav.setTag("fixedNavigation");
         nav.setOrientation(LinearLayout.HORIZONTAL);
         nav.setGravity(Gravity.CENTER_VERTICAL);
         nav.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
@@ -621,10 +624,9 @@ EditText numberField(String h){
                 c=getContentResolver().query(data.getData(),new String[]{ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,ContactsContract.CommonDataKinds.Phone.NUMBER},null,null,null);
                 if(c!=null&&c.moveToFirst()){
                     String n=c.getString(0),p=c.getString(1);
-                    if(customerNameInput!=null)customerNameInput.setText(n==null?"":n);
                     if(customerPhoneInput!=null)customerPhoneInput.setText(p==null?"":p);
                     if(customerNameInput!=null)customerNameInput.requestFocus();
-                    Toast.makeText(this,"تم استيراد اسم العميل ورقم الهاتف",Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this,"تم استيراد رقم الهاتف",Toast.LENGTH_SHORT).show();
                 }
             }catch(Exception e){Toast.makeText(this,"تعذر قراءة بيانات جهة الاتصال",Toast.LENGTH_SHORT).show();}
             finally{if(c!=null)c.close();}
@@ -687,8 +689,9 @@ EditText numberField(String h){
         valTv.setTextColor(color);
         valTv.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         valTv.setGravity(Gravity.CENTER);
-        valTv.setSingleLine(true);
-        valTv.setEllipsize(TextUtils.TruncateAt.END);
+        valTv.setSingleLine(false);
+        valTv.setMaxLines(Integer.MAX_VALUE);
+        valTv.setEllipsize(null);
         fitInside(valTv, 12f, 8.5f);
         card.addView(valTv, new LinearLayout.LayoutParams(-1, dp(20)));
 
@@ -697,7 +700,8 @@ EditText numberField(String h){
         lblTv.setTextSize(9.5f);
         lblTv.setTextColor(MUTED);
         lblTv.setGravity(Gravity.CENTER);
-        lblTv.setSingleLine(true);
+        lblTv.setSingleLine(false);
+        lblTv.setMaxLines(Integer.MAX_VALUE);
         fitInside(lblTv, 10f, 7.5f);
         card.addView(lblTv, new LinearLayout.LayoutParams(-1, dp(15)));
 
@@ -763,7 +767,7 @@ EditText numberField(String h){
             topRow.addView(badge, new LinearLayout.LayoutParams(dp(22), dp(20)));
         }
 
-        card.addView(topRow, new LinearLayout.LayoutParams(-1, dp(44)));
+        card.addView(topRow, new LinearLayout.LayoutParams(-1, -2));
 
         // Subtitle
         TextView subTv = new TextView(this);
@@ -776,7 +780,7 @@ EditText numberField(String h){
         subTv.setMaxLines(2);
         subTv.setEllipsize(null);
         fitInside(subTv, 11f, 8.5f);
-        card.addView(subTv, new LinearLayout.LayoutParams(-1, dp(24)));
+        card.addView(subTv, new LinearLayout.LayoutParams(-1, -2));
 
         card.setOnClickListener(onClick);
         return card;
@@ -970,7 +974,7 @@ EditText numberField(String h){
         metaRow.addView(no,new LinearLayout.LayoutParams(0,dp(42),0.75f));
 
         AutoCompleteTextView customer=new AutoCompleteTextView(this);
-        customer.setHint("اسم العميل"); customer.setTextSize(13.5f); customer.setSingleLine(true);
+        customer.setHint("اسم العميل"); customer.setTextSize(16f); customer.setSingleLine(true);
         customer.setTextColor(TEXT); customer.setHintTextColor(MUTED);
         customer.setPadding(dp(10),dp(4),dp(10),dp(4));
         GradientDrawable custBg=new GradientDrawable();
@@ -1048,7 +1052,7 @@ EditText numberField(String h){
         EditText total=numberField("الإجمالي");
         EditText qty=numberField("الكمية");
         AutoCompleteTextView item=new AutoCompleteTextView(this);
-        item.setHint("اسم الصنف / التفاصيل"); item.setTextSize(13); item.setSingleLine(true); item.setTextColor(TEXT); item.setHintTextColor(MUTED);
+        item.setHint("اسم الصنف / التفاصيل"); item.setTextSize(16); item.setSingleLine(true); item.setTextColor(TEXT); item.setHintTextColor(MUTED);
         item.setPadding(dp(8),dp(4),dp(8),dp(4)); item.setBackground(outlined(CARD,1,10)); item.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         item.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); item.setTextDirection(View.TEXT_DIRECTION_RTL); item.setSelectAllOnFocus(true);
         item.setOnClickListener(v->item.selectAll());
@@ -2269,7 +2273,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
         amountHelp.setPadding(dp(4),0,dp(4),0);
         form.addView(amountHelp,new LinearLayout.LayoutParams(-1,dp(46)));
 
-        EditText amount=numberField("المبلغ بالريال — مثال 2,500");
+        EditText amount=numberField("أدخل المبلغ");
         amount.setTextSize(18);
         amount.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         amount.setPadding(dp(14),0,dp(14),0);
@@ -2394,13 +2398,13 @@ void operationActions(long customerId,String customerName,long tid,String detail
                 amountOut.setTextColor(rev!=0?RED:GREEN);
                 amountOut.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
                 amountOut.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
-                top.addView(amountOut,new LinearLayout.LayoutParams(0,dp(42),1));
+                top.addView(amountOut,new LinearLayout.LayoutParams(0,-2,1));
 
                 TextView status=tv(rev!=0?"🔴 تحتاج مراجعة":"🔵 مجهزة",14);
                 status.setTextColor(rev!=0?RED:BLUE);
                 status.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
                 status.setGravity(Gravity.CENTER);
-                top.addView(status,new LinearLayout.LayoutParams(dp(120),dp(38)));
+                top.addView(status,new LinearLayout.LayoutParams(0,-2,0.75f));
                 row.addView(top,new LinearLayout.LayoutParams(-1,dp(44)));
 
                 LinearLayout receiverBox=card();
@@ -2409,8 +2413,8 @@ void operationActions(long customerId,String customerName,long tid,String detail
                 rr.setMaxLines(3);
                 rr.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
                 rr.setBreakStrategy(android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY);
-                receiverBox.addView(rr,new LinearLayout.LayoutParams(-1,dp(62)));
-                row.addView(receiverBox,new LinearLayout.LayoutParams(-1,dp(74)));
+                receiverBox.addView(rr,new LinearLayout.LayoutParams(-1,-2));
+                row.addView(receiverBox,new LinearLayout.LayoutParams(-1,-2));
                 spaceTo(row,6);
 
                 LinearLayout senderBox=card();
@@ -2419,8 +2423,8 @@ void operationActions(long customerId,String customerName,long tid,String detail
                 sr.setMaxLines(3);
                 sr.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
                 sr.setBreakStrategy(android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY);
-                senderBox.addView(sr,new LinearLayout.LayoutParams(-1,dp(62)));
-                row.addView(senderBox,new LinearLayout.LayoutParams(-1,dp(74)));
+                senderBox.addView(sr,new LinearLayout.LayoutParams(-1,-2));
+                row.addView(senderBox,new LinearLayout.LayoutParams(-1,-2));
                 spaceTo(row,6);
 
                 TextView dateOut=tv("التاريخ والوقت: "+dt,13);
@@ -2436,7 +2440,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
                 sh.setTextSize(14);
                 sh.setBackground(rounded(Color.rgb(0,145,70),dp(9)));
                 String transferText=fmt(am)+" صافي\nالمستلم: "+rn+"\n"+rp2+"\nالمرسل: "+sn+"\n"+sp;
-                sh.setOnClickListener(v->shareTransferDirectToWhatsApp("776425052",transferText));
+                sh.setOnClickListener(v->shareTransferDirectToWhatsApp(rp2,transferText));
 
                 Button copy=button("📋 نسخ");
                 copy.setTextColor(BLUE);
@@ -2832,7 +2836,7 @@ void notes(){ base("الملاحظات");
         meta.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
         AutoCompleteTextView supplier=new AutoCompleteTextView(this);
-        supplier.setHint("اسم المورد"); supplier.setTextSize(13); supplier.setSingleLine(true);
+        supplier.setHint("اسم المورد"); supplier.setTextSize(16); supplier.setSingleLine(true);
         supplier.setTextColor(TEXT); supplier.setHintTextColor(MUTED);
         supplier.setPadding(dp(8),dp(3),dp(8),dp(3)); supplier.setBackground(outline(CARD,10));
         supplier.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
@@ -3211,7 +3215,7 @@ void notes(){ base("الملاحظات");
 
             // Live Search Box
             EditText searchInput=field("🔍 بحث حسب اسم العميل، المورد، الصنف، أو رقم الفاتورة...");
-            searchInput.setTextSize(12f); searchInput.setSingleLine(true);
+            searchInput.setTextSize(16f); searchInput.setSingleLine(true);
             searchInput.setBackground(outline(CARD,10));
             searchInput.setPadding(dp(10),dp(4),dp(10),dp(4));
             content.addView(searchInput,new LinearLayout.LayoutParams(-1,dp(50)));
@@ -4074,8 +4078,7 @@ void notes(){ base("الملاحظات");
         catButtons[0].setBackgroundColor(GREEN);
         fields.addView(catRow,new LinearLayout.LayoutParams(-1,dp(50)));
 
-        EditText notesInput=field("ملاحظات إضافية (اختياري)");
-        fields.addView(tv("ملاحظات:",12),new LinearLayout.LayoutParams(-1,dp(20)));
+        EditText notesInput=null;
         fields.addView(notesInput,new LinearLayout.LayoutParams(-1,dp(50)));
 
         // Save & Share Buttons
@@ -7407,7 +7410,7 @@ void customers(){
         // البحث هو العنصر الأول، تماماً كالتصميم المرجعي.
         LinearLayout searchBar=new LinearLayout(this);searchBar.setOrientation(LinearLayout.HORIZONTAL);searchBar.setGravity(Gravity.CENTER_VERTICAL);searchBar.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         EditText search=field("ابحث باسم العميل أو الرقم...");
-        search.setTextSize(10);search.setSingleLine(true);search.setPadding(dp(7),0,dp(7),0);search.setBackground(glassFill(Color.argb(170,255,255,255)));
+        search.setTextSize(16);search.setSingleLine(true);search.setPadding(dp(7),0,dp(7),0);search.setBackground(glassFill(Color.argb(170,255,255,255)));
         searchBar.addView(search,new LinearLayout.LayoutParams(0,dp(46),1));
         Button mic=button("🎙");mic.setTextSize(10);mic.setPadding(0,0,0,0);mic.setTextColor(Color.WHITE);mic.setBackground(glassFill(Color.argb(120,255,255,255)));
         mic.setOnClickListener(v->{search.setTag("searchVoice");startVoiceInput(search,"تحدث باسم العميل أو رقم الهاتف",REQ_VOICE_SEARCH);});
