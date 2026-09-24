@@ -7269,7 +7269,7 @@ void account(long id,String name){
         for(int i=0;i<toolBtns.length;i++){LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(0,dp(29),1);if(i>0)p.setMargins(dp(3),0,0,0);tools.addView(toolBtns[i],p);}
         content.addView(tools,new LinearLayout.LayoutParams(-1,dp(30)));
 
-        TextView title=denseText("عمليات العميل",10,8f,Color.WHITE);title.setGravity(Gravity.CENTER_RIGHT);
+        TextView title=denseText("عمليات العميل",10,8f,Color.WHITE);title.setGravity(Gravity.RIGHT | Gravity.CENTER_VERTICAL);
         content.addView(title,new LinearLayout.LayoutParams(-1,dp(22)));
 
         LinearLayout list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);content.addView(list,new LinearLayout.LayoutParams(-1,-2));
