@@ -7514,9 +7514,9 @@ void customers(){
         stats.setGravity(Gravity.CENTER_VERTICAL);
         stats.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         stats.addView(glassStat("عليهم",fmt(totalDebts)+" ر.ي",RED),new LinearLayout.LayoutParams(0,dp(68),1));
-        LinearLayout s1=new LinearLayout.LayoutParams(0,dp(68),1); s1.setMargins(dp(6),0,0,0);
+        LinearLayout.LayoutParams s1=new LinearLayout.LayoutParams(0,dp(68),1); s1.setMargins(dp(6),0,0,0);
         stats.addView(glassStat("لهم",fmt(totalCredits)+" ر.ي",BLUE),s1);
-        LinearLayout s2=new LinearLayout.LayoutParams(0,dp(68),1); s2.setMargins(dp(6),0,0,0);
+        LinearLayout.LayoutParams s2=new LinearLayout.LayoutParams(0,dp(68),1); s2.setMargins(dp(6),0,0,0);
         stats.addView(glassStat("العملاء",String.valueOf(totalCustomers),GREEN),s2);
         content.addView(stats,new LinearLayout.LayoutParams(-1,dp(70)));
         addSpace(7);
