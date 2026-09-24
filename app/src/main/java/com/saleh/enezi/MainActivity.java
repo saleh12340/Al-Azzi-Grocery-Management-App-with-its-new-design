@@ -2832,45 +2832,6 @@ void notes(){ base("الملاحظات");
 
         EditText sale=numberField("سعر البيع");
 
-        TextView itemHint=tv("💡 اكتب اسم الصنف وسيتم ملء أسعار الشراء والبيع والمخزون أوتوماتيكياً",10f);
-        itemHint.setTextColor(MUTED); itemHint.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
-
-        Runnable updateItemHint=()->{
-            String iname=item.getText().toString().trim();
-            if(iname.isEmpty()){
-                itemHint.setText("💡 اكتب اسم الصنف وسيتم ملء أسعار الشراء والبيع والمخزون أوتوماتيكياً");
-                itemHint.setTextColor(MUTED);
-                return;
-            }
-            double costP=db.itemCostPrice(iname);
-            double saleP=db.itemSalePrice(iname);
-            double st=db.itemQty(iname);
-
-            if(costP>0 && unit.getText().toString().trim().isEmpty()){
-                unit.setText(fmt(costP));
-                double q=1; try{q=Double.parseDouble(qty.getText().toString().trim());}catch(Exception ignored){}
-                if(q<=0)q=1;
-                total.setText(fmt(costP*q));
-            }
-            if(saleP>0 && sale.getText().toString().trim().isEmpty()){
-                sale.setText(fmt(saleP));
-            }
-
-            if(costP>0 || saleP>0 || st>0){
-                itemHint.setText("💡 الصنف: "+iname+" • آخر تكلفة شراء: "+fmt(costP)+" ر.ي • سعر البيع الحالي: "+fmt(saleP)+" ر.ي • بالمخزون: "+fmt(st)+" حبة");
-                itemHint.setTextColor(GOLD);
-            }else{
-                itemHint.setText("💡 صنف جديد: سيتم حفظه وتحديث تكلفته وسعر بيعه أوتوماتيكياً بالمخزن");
-                itemHint.setTextColor(BLUE);
-            }
-        };
-
-        item.addTextChangedListener(new TextWatcher(){
-            public void beforeTextChanged(CharSequence s, int start, int count, int after){}
-            public void onTextChanged(CharSequence s, int start, int before, int count){updateItemHint.run();}
-            public void afterTextChanged(Editable s){}
-        });
-
         item.setOnItemClickListener((parent,view,pos,id)->{
             String selectedName=(String)parent.getItemAtPosition(pos);
             double costP=db.itemCostPrice(selectedName);
@@ -2885,7 +2846,6 @@ void notes(){ base("الملاحظات");
             if(saleP>0 && sale.getText().toString().trim().isEmpty()){
                 sale.setText(fmt(saleP));
             }
-            updateItemHint.run();
         });
 
         fields.addView(total,new LinearLayout.LayoutParams(0,dp(50),1.0f));
