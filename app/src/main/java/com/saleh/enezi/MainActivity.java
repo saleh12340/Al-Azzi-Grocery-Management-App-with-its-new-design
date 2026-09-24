@@ -4078,8 +4078,7 @@ void notes(){ base("الملاحظات");
         catButtons[0].setBackgroundColor(GREEN);
         fields.addView(catRow,new LinearLayout.LayoutParams(-1,dp(50)));
 
-        EditText notesInput=null;
-        fields.addView(notesInput,new LinearLayout.LayoutParams(-1,dp(50)));
+        String notesInput="";
 
         // Save & Share Buttons
         LinearLayout actionsRow=new LinearLayout(this);
@@ -4095,7 +4094,7 @@ void notes(){ base("الملاحظات");
             String name=nameInput.getText().toString().trim();
             if(name.isEmpty()) name=defName;
             String cat=selectedCat[0];
-            String notes=notesInput.getText().toString().trim();
+            String notes=notesInput.trim();
             String date=db.now();
             String savedPath=saveBitmapToInvoicesDir(renderedBmp[0]);
             if(savedPath!=null){
