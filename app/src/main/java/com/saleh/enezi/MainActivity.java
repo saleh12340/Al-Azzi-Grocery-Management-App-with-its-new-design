@@ -96,7 +96,7 @@ public class MainActivity extends Activity {
         LinearLayout box=new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL); box.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         box.setBackgroundColor(BG); box.setPadding(dp(12),dp(12),dp(12),dp(12));
-        TextView head=tv("بقالة العزي للمواد الغذائية",21);
+        TextView head=tv("بقالة العزي",18);
         head.setTextColor(Color.WHITE); head.setGravity(Gravity.CENTER); head.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         head.setBackground(rounded(DARK,dp(14)));
         box.addView(head,new LinearLayout.LayoutParams(-1,-2));
@@ -115,7 +115,7 @@ public class MainActivity extends Activity {
     void addSafeHomeButton(LinearLayout box,String label,View.OnClickListener click){
         Button b=button(label); b.setTextSize(16); b.setTextColor(TEXT);
         b.setBackground(outlined(CARD,dp(1),12)); b.setOnClickListener(click);
-        LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2); p.setMargins(0,dp(6),0,0); b.setMinHeight(dp(52)); box.addView(b,p);
+        LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2); p.setMargins(0,dp(6),0,0); b.setMinHeight(dp(44)); box.addView(b,p);
     }
 
     void showStartupRecovery(Throwable error){
@@ -459,7 +459,7 @@ EditText numberField(String h){
         LinearLayout bar=new LinearLayout(this);
         bar.setOrientation(LinearLayout.HORIZONTAL);
         bar.setGravity(Gravity.CENTER_VERTICAL);
-        bar.setPadding(dp(8),dp(7),dp(8),dp(7));
+        bar.setPadding(dp(7),dp(4),dp(7),dp(4));
         bar.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,
                 new int[]{GREEN,DARK}));
         
@@ -467,15 +467,15 @@ EditText numberField(String h){
         back.setTextColor(Color.WHITE); back.setTextSize(28);
         back.setBackgroundColor(Color.TRANSPARENT); back.setElevation(0);
         back.setOnClickListener(v->goBack());
-        bar.addView(back,new LinearLayout.LayoutParams(dp(44),dp(50)));
+        bar.addView(back,new LinearLayout.LayoutParams(dp(40),dp(42)));
 
         LinearLayout titleBox=new LinearLayout(this);
         titleBox.setOrientation(LinearLayout.VERTICAL);
         titleBox.setGravity(Gravity.CENTER_VERTICAL);
         titleBox.setPadding(dp(8),0,dp(8),0);
-        TextView logo=tv("بقالة العزي",17);
+        TextView logo=tv("بقالة العزي",15.5f);
         logo.setTextColor(Color.WHITE); logo.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        TextView pt=tv(title,18);
+        TextView pt=tv(title,16.5f);
         pt.setTextColor(Color.WHITE); pt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         pt.setSingleLine(true); pt.setMaxLines(1); pt.setEllipsize(null); fitInside(pt,17f,13f);
         titleBox.addView(logo,new LinearLayout.LayoutParams(-1,-2));
@@ -487,30 +487,30 @@ EditText numberField(String h){
         GradientDrawable badgeBg=new GradientDrawable();
         badgeBg.setColor(Color.argb(55,255,255,255)); badgeBg.setCornerRadius(dp(18));
         badge.setBackground(badgeBg);
-        bar.addView(badge,new LinearLayout.LayoutParams(dp(56),dp(34)));
+        bar.addView(badge,new LinearLayout.LayoutParams(dp(54),dp(32)));
         root.addView(bar,new LinearLayout.LayoutParams(-1,-2));
 
         ScrollView sv=new ScrollView(this);
         sv.setFillViewport(true); sv.setClipToPadding(false);
         content=new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(dp(8),dp(6),dp(8),dp(14));
+        content.setPadding(dp(6),dp(4),dp(6),dp(8));
         content.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
         if(!"الرئيسية".equals(title) && !title.contains("فاتورة جديدة") && !title.contains("تعديل الفاتورة")){
             LinearLayout pageHero=new LinearLayout(this);
             pageHero.setOrientation(LinearLayout.VERTICAL);
-            pageHero.setPadding(dp(12),dp(6),dp(12),dp(6));
+            pageHero.setPadding(dp(8),dp(3),dp(8),dp(3));
             GradientDrawable heroBg=new GradientDrawable();
             heroBg.setColor(Color.WHITE); heroBg.setCornerRadius(dp(14));
             heroBg.setStroke(dp(1),Color.rgb(221,229,238));
             pageHero.setBackground(heroBg); pageHero.setElevation(dp(1));
-            TextView heroTitle=tv(title,17);
+            TextView heroTitle=tv(title,14);
             heroTitle.setTextColor(GREEN); heroTitle.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-            TextView heroSub=tv("واجهة مرتبة وسريعة لإدارة بياناتك",11.5f);
+            TextView heroSub=tv("إدارة سريعة ومنظمة",10.5f);
             heroSub.setTextColor(MUTED);
-            pageHero.addView(heroTitle,new LinearLayout.LayoutParams(-1,dp(25)));
-            pageHero.addView(heroSub,new LinearLayout.LayoutParams(-1,dp(20)));
+            pageHero.addView(heroTitle,new LinearLayout.LayoutParams(-1,dp(22)));
+            pageHero.addView(heroSub,new LinearLayout.LayoutParams(-1,dp(18)));
             content.addView(pageHero,new LinearLayout.LayoutParams(-1,-2));
             addSpace(5);
         }
@@ -813,44 +813,86 @@ EditText numberField(String h){
             r.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
             LinearLayout h=new LinearLayout(this);
-            h.setOrientation(LinearLayout.VERTICAL);
-            h.setGravity(Gravity.CENTER);
-            h.setPadding(dp(12),dp(8),dp(12),dp(8));
-            h.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                    new int[]{GREEN,DARK}));
-            TextView t=tv("بقالة العزي للمواد الغذائية",20);
-            t.setTextColor(Color.WHITE);
-            t.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-            t.setGravity(Gravity.CENTER);
-            h.addView(t,new LinearLayout.LayoutParams(-1,dp(48)));
-            TextView p=tv("نظام المبيعات والحسابات والمخزون والحوالات",15);
-            p.setTextColor(Color.WHITE);
-            p.setGravity(Gravity.CENTER);
-            h.addView(p,new LinearLayout.LayoutParams(-1,dp(28)));
-            r.addView(h,new LinearLayout.LayoutParams(-1,dp(82)));
+            h.setOrientation(LinearLayout.HORIZONTAL);
+            h.setGravity(Gravity.CENTER_VERTICAL);
+            h.setPadding(dp(7),dp(4),dp(7),dp(4));
+            h.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{GREEN,DARK}));
+
+            TextView title=tv("بقالة العزي",16);
+            title.setTextColor(Color.WHITE);
+            title.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+            title.setGravity(Gravity.CENTER);
+            h.addView(title,new LinearLayout.LayoutParams(0,dp(42),1));
+
+            TextView manage=tv("إدارة",11);
+            manage.setTextColor(Color.WHITE);
+            manage.setGravity(Gravity.CENTER);
+            manage.setBackground(rounded(Color.argb(55,255,255,255),dp(16)));
+            h.addView(manage,new LinearLayout.LayoutParams(dp(54),dp(30)));
+            r.addView(h,new LinearLayout.LayoutParams(-1,dp(50)));
 
             ScrollView sv=new ScrollView(this);
-            LinearLayout grid=new LinearLayout(this);
-            grid.setOrientation(LinearLayout.VERTICAL);
-            grid.setPadding(dp(10),dp(12),dp(10),dp(20));
+            sv.setFillViewport(true);
+            sv.setClipToPadding(false);
+            LinearLayout body=new LinearLayout(this);
+            body.setOrientation(LinearLayout.VERTICAL);
+            body.setPadding(dp(6),dp(5),dp(6),dp(8));
+            body.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+
+            TextView welcome=tv("لوحة الإدارة",14);
+            welcome.setTextColor(GREEN);
+            welcome.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+            welcome.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+            body.addView(welcome,new LinearLayout.LayoutParams(-1,dp(30)));
+
+            GridLayout grid=new GridLayout(this);
+            grid.setColumnCount(2);
+            grid.setRowCount(4);
+            grid.setUseDefaultMargins(false);
+            grid.setPadding(0,0,0,0);
             grid.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
-            TextView sec=tv("الأقسام الرئيسية",17);
-            sec.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-            sec.setTextColor(GREEN);
-            grid.addView(sec,new LinearLayout.LayoutParams(-1,dp(52)));
+            String[] labels={"🧾 فواتير البيع","👥 العملاء والحسابات","🛒 فواتير الشراء","📦 المخزون والأصناف","📊 التقارير","📝 الملاحظات","💸 الحوالات","⚙ الإعدادات"};
+            View.OnClickListener[] actions={v->invoiceHistory(),v->customers(),v->purchaseInvoices(),v->inventory(),v->reports(),v->notes(),v->transfers(),v->showGeneralActions()};
+            for(int i=0;i<labels.length;i++){
+                Button b=button(labels[i]);
+                b.setTextSize(13.5f);
+                b.setTextColor(TEXT);
+                b.setGravity(Gravity.CENTER);
+                b.setPadding(dp(5),dp(3),dp(5),dp(3));
+                b.setMinHeight(0); b.setMinimumHeight(0);
+                b.setBackground(outlined(CARD,dp(1),dp(9)));
+                b.setOnClickListener(actions[i]);
+                GridLayout.LayoutParams gp=new GridLayout.LayoutParams();
+                gp.width=0; gp.height=dp(52);
+                gp.columnSpec=GridLayout.spec(i%2,1,1f);
+                gp.rowSpec=GridLayout.spec(i/2,1);
+                gp.setMargins(dp(3),dp(3),dp(3),dp(3));
+                grid.addView(b,gp);
+            }
+            body.addView(grid,new LinearLayout.LayoutParams(-1,-2));
 
-            addSafeHomeButton(grid,"🧾 فواتير البيع",v->invoiceHistory());
-            addSafeHomeButton(grid,"👥 العملاء والحسابات",v->customers());
-            addSafeHomeButton(grid,"🛒 فواتير الشراء",v->purchaseInvoices());
-            addSafeHomeButton(grid,"📦 المخزون والأصناف",v->inventory());
-            addSafeHomeButton(grid,"📊 التقارير",v->reports());
-            addSafeHomeButton(grid,"📝 الملاحظات",v->notes());
-            addSafeHomeButton(grid,"💸 الحوالات",v->transfers());
+            LinearLayout backup=new LinearLayout(this);
+            backup.setOrientation(LinearLayout.HORIZONTAL);
+            backup.setGravity(Gravity.CENTER_VERTICAL);
+            backup.setPadding(dp(7),dp(3),dp(7),dp(3));
+            backup.setBackground(outlined(Color.rgb(241,247,242),dp(1),dp(9)));
+            TextView bt=tv("💾 النسخ الاحتياطي اليومي تلقائي",11.5f);
+            bt.setTextColor(GREEN);
+            bt.setGravity(Gravity.CENTER);
+            backup.addView(bt,new LinearLayout.LayoutParams(0,dp(32),1));
+            Button backupAction=button("إدارة النسخ");
+            backupAction.setTextSize(10.5f);
+            backupAction.setTextColor(GREEN);
+            backupAction.setPadding(dp(5),0,dp(5),0);
+            backupAction.setOnClickListener(v->showGeneralActions());
+            backup.addView(backupAction,new LinearLayout.LayoutParams(dp(82),dp(30)));
+            body.addView(backup,new LinearLayout.LayoutParams(-1,dp(36)));
 
-            sv.addView(grid);
+            sv.addView(body);
             r.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
             setContentView(r);
+            finalizeAdaptiveLayout(r);
         }catch(Throwable e){
             android.util.Log.e("AlAzziHome","Home UI failed",e);
             showSafeHome(e);
@@ -7112,25 +7154,24 @@ void printTextBluetooth(String text,int requestedWidth){
 
     void applyDenseGlassPage(){
         try{
-            root.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                new int[]{Color.rgb(8,72,78),Color.rgb(18,105,105),Color.rgb(82,66,38)}));
-            if(root.getChildCount()>0) root.getChildAt(0).setVisibility(View.GONE);
+            // هوية موحدة لكل الشاشات: لا نخفي رأس الصفحة ولا نبدل الخلفية بين التبويبات.
+            root.setBackgroundColor(BG);
             if(content!=null){
-                if(content.getChildCount()>0) content.removeViewAt(0);
-                content.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                    new int[]{Color.argb(215,5,65,72),Color.argb(205,18,95,96),Color.argb(190,76,61,35)}));
-                content.setPadding(dp(5),dp(5),dp(5),dp(7));
+                content.setBackgroundColor(BG);
+                content.setPadding(dp(6),dp(4),dp(6),dp(8));
             }
             if(bottom!=null&&bottom.getChildCount()>0){
                 View nav=bottom.getChildAt(0);
-                nav.setBackground(outlined(Color.argb(150,255,255,255),dp(1),dp(18)));
+                nav.setBackground(outlined(CARD,dp(1),dp(10)));
             }
         }catch(Throwable ignored){}
     }
     TextView denseText(String s,float max,float min,int color){
-        TextView t=tv(s,Math.max(16f,max));
-        t.setTextColor(color); t.setTextSize(16f); t.setSingleLine(false);
-        t.setMaxLines(6); t.setMinLines(1); t.setEllipsize(null);
+        float safeMax=Math.max(12f,Math.min(15.5f,max));
+        float safeMin=Math.max(10.5f,Math.min(safeMax-0.5f,min));
+        TextView t=tv(s,safeMax);
+        t.setTextColor(color); t.setTextSize(safeMax); t.setSingleLine(false);
+        t.setMaxLines(4); t.setMinLines(1); t.setEllipsize(null);
         t.setHorizontallyScrolling(false); t.setIncludeFontPadding(true);
         if(Build.VERSION.SDK_INT>=23){try{t.setBreakStrategy(android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY);}catch(Throwable ignored){}}
         if(Build.VERSION.SDK_INT>=28){try{t.setFallbackLineSpacing(true);}catch(Throwable ignored){} try{t.setElegantTextHeight(true);}catch(Throwable ignored){}}
