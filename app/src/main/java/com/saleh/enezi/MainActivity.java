@@ -58,32 +58,36 @@ public class MainActivity extends Activity {
         getWindow().setStatusBarColor(DARK);
         getWindow().setNavigationBarColor(DARK);
 
-        // الواجهة لا تنتظر SQLite إطلاقاً. نعرض الشاشة الرئيسية فوراً.
-        startupFinished=true;
-        try{ home(); }catch(Throwable e){
-            android.util.Log.e("AlAzziStartup","Initial UI failed",e);
-            showSafeHome(e);
-        }
-
-        // فتح قاعدة البيانات يتم خارج خيط الواجهة.
-        new Thread(() -> {
-            try{
-                DB localDb=new DB(this);
-                SQLiteDatabase writable=localDb.getWritableDatabase();
-                writable.setForeignKeyConstraintsEnabled(false);
-                db=localDb;
-                try{ AppStorage.initializeAllDirectories(this); }catch(Throwable ignored){}
-                try{ BackupReceiver.schedule(this); }catch(Throwable ignored){}
-                runOnUiThread(() -> {
-                    Toast.makeText(this,"تم تجهيز قاعدة البيانات",Toast.LENGTH_SHORT).show();
-                });
-            }catch(Throwable e){
-                android.util.Log.e("AlAzziStartup","Database startup failed",e);
-                runOnUiThread(() -> Toast.makeText(this,
-                    "تعذر تجهيز قاعدة البيانات. الواجهة تعمل، ويمكن إعادة المحاولة من الإعدادات.",
-                    Toast.LENGTH_LONG).show());
+        // تجهيز قاعدة البيانات قبل فتح أي شاشة يمنع سباقاً كان يسمح للمستخدم
+        // بفتح شاشة تعتمد على db قبل اكتمال تهيئتها، وهو سبب محتمل لانهيار التطبيق.
+        startupFinished=false;
+        try{
+            DB localDb=new DB(this);
+            SQLiteDatabase writable=localDb.getWritableDatabase();
+            writable.setForeignKeyConstraintsEnabled(false);
+            db=localDb;
+            try{ AppStorage.initializeAllDirectories(this); }catch(Throwable e){
+                android.util.Log.w("AlAzziStartup","Storage initialization skipped",e);
             }
-        }).start();
+            try{ BackupReceiver.schedule(this); }catch(Throwable e){
+                android.util.Log.w("AlAzziStartup","Backup scheduling skipped",e);
+            }
+            startupFinished=true;
+            try{ home(); }catch(Throwable e){
+                android.util.Log.e("AlAzziStartup","Initial UI failed",e);
+                showSafeHome(e);
+            }
+        }catch(Throwable e){
+            android.util.Log.e("AlAzziStartup","Database startup failed",e);
+            startupFinished=true;
+            try{ home(); }catch(Throwable uiError){
+                android.util.Log.e("AlAzziStartup","Fallback home failed",uiError);
+                showSafeHome(uiError);
+            }
+            Toast.makeText(this,
+                "تعذر تجهيز قاعدة البيانات. بعض العمليات ستحتاج إعادة المحاولة.",
+                Toast.LENGTH_LONG).show();
+        }
     }
 
     void showSafeHome(Throwable error){
