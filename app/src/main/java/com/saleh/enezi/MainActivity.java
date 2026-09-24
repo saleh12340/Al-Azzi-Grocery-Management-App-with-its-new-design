@@ -4192,7 +4192,7 @@ EditText numberField(String h){
                 top.addView(avatar,new LinearLayout.LayoutParams(dp(42),dp(42)));
 
                 LinearLayout info=new LinearLayout(this);info.setOrientation(LinearLayout.VERTICAL);info.setPadding(dp(9),0,dp(7),0);
-                TextView nameTv=tv(n,15,1);nameTv.setTextColor(TEXT);nameTv.setTypeface(Typeface.DEFAULT,Typeface.BOLD);nameTv.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+                TextView nameTv=tv(n,15f);nameTv.setTextColor(TEXT);nameTv.setTypeface(Typeface.DEFAULT,Typeface.BOLD);nameTv.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
                 int cnt=db.transactionCount(id);
                 TextView sub=tv("العمليات: "+cnt+(ph!=null&&!ph.trim().isEmpty()?"   •   "+ph:""),10.8f);sub.setTextColor(MUTED);sub.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);sub.setSingleLine(true);sub.setEllipsize(TextUtils.TruncateAt.END);
                 info.addView(nameTv,new LinearLayout.LayoutParams(-1,dp(25)));info.addView(sub,new LinearLayout.LayoutParams(-1,dp(21)));
