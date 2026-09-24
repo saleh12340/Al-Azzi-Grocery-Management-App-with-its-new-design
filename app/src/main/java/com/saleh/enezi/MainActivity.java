@@ -6156,11 +6156,10 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
             File file=createInvoicePdf(no,customer,lines,total,paid,balanceAfter,date);
             String text=invoiceWhatsAppText(no,customer,lines,total,paid,balanceAfter,date);
             DocumentCenter.sharePdf(this,file,text,"مشاركة فاتورة PDF");
-            return;
-            /*
-        }*/
+        }catch(Exception e){
+            Toast.makeText(this,"تعذر مشاركة فاتورة PDF",Toast.LENGTH_SHORT).show();
         }
-
+    }
 
     void shareInvoiceImage(String no,String customer,ArrayList<Line> lines,double total,double paid,double balanceAfter,String date){
         try{
