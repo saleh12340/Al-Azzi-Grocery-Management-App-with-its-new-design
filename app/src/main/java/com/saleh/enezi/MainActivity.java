@@ -229,6 +229,31 @@ public class MainActivity extends Activity {
             }
         }
     }
+    void autoFitText(TextView t,float maxSp,float minSp,float stepSp){
+        if(t==null)return;
+        t.setSingleLine(true);
+        t.setMaxLines(1);
+        t.setEllipsize(null);
+        t.setHorizontallyScrolling(false);
+        t.setIncludeFontPadding(true);
+        final float max=Math.max(minSp,maxSp), min=Math.max(7f,minSp), step=Math.max(0.5f,stepSp);
+        t.setTextSize(max);
+        t.post(()->{
+            try{
+                int available=t.getWidth()-t.getPaddingLeft()-t.getPaddingRight();
+                if(available<=0)return;
+                float size=max;
+                TextPaint p=t.getPaint();
+                while(size>min){
+                    p.setTextSize(spToPx(size));
+                    if(p.measureText(t.getText().toString())<=available)break;
+                    size-=step;
+                }
+                t.setTextSize(Math.max(min,size));
+            }catch(Throwable ignored){}
+        });
+    }
+    float spToPx(float sp){return sp*getResources().getDisplayMetrics().scaledDensity;}
     TextView tv(String s,float z){
         TextView v=new TextView(this); v.setText(s); v.setTextSize(fitText(z*1.10f)); v.setTextColor(TEXT);
         v.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL); v.setPadding(dp(4),dp(1),dp(4),dp(1));
@@ -7620,8 +7645,9 @@ void customers(){
 
                 TextView name=tv(n,16);
                 name.setTextColor(DARK); name.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-                name.setMaxLines(2); name.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
-                fitInside(name,16,13);
+                name.setSingleLine(true); name.setMaxLines(1); name.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+                name.setEllipsize(null);
+                autoFitText(name,16f,9f,0.8f);
                 info.addView(name,new LinearLayout.LayoutParams(-1,dp(32)));
 
                 String subText=db.transactionCount(id)+" حركة"+(phone!=null&&!phone.trim().isEmpty()?"  •  "+phone.trim():"");
@@ -7641,8 +7667,9 @@ void customers(){
                     Color.argb(210,236,248,239),dp(1),dp(16)));
                 TextView bv=tv(balanceText(bal),12);
                 bv.setTextColor(balanceColor(bal)); bv.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-                bv.setGravity(Gravity.CENTER); bv.setMaxLines(2);
-                fitInside(bv,12,10);
+                bv.setGravity(Gravity.CENTER); bv.setSingleLine(true); bv.setMaxLines(1);
+                bv.setEllipsize(null);
+                autoFitText(bv,12f,8f,0.7f);
                 balance.addView(bv,new LinearLayout.LayoutParams(-2,dp(34)));
                 card.addView(balance,new LinearLayout.LayoutParams(-2,dp(44)));
 
