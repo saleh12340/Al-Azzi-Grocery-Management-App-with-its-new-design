@@ -581,6 +581,13 @@ EditText numberField(String h){
         return card;
     }
 
+    int safeLowStockCount(){try{return db==null?0:db.lowStockCount();}catch(Throwable e){return 0;}}
+    double safeTodaySales(){try{return db==null?0:db.todaySales();}catch(Throwable e){return 0;}}
+    int safeTodayInvoiceCount(){try{return db==null?0:db.todayInvoiceCount();}catch(Throwable e){return 0;}}
+    int safeCustomerCount(){try{return db==null?0:db.customerCount();}catch(Throwable e){return 0;}}
+    int safeScannedInvoiceCount(){try{return db==null?0:db.scannedInvoiceCount();}catch(Throwable e){return 0;}}
+    int safeTransferCount(){try{return db==null?0:db.transferCount();}catch(Throwable e){return 0;}}
+
     void home(){
         currentPage="الرئيسية";
         pageStack.clear();
