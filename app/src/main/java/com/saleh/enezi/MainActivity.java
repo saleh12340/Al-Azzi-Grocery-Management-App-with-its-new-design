@@ -4042,6 +4042,52 @@ EditText numberField(String h){
     void thermalPreview(String no,String customer,LinearLayout rows,double total){preview(no,customer,new ArrayList<Line>(),total,false,-1);}
     static String fmt(double x){String v=String.format(Locale.US,"%,.2f",x);return v.endsWith(".00")?v.substring(0,v.length()-3):v;}
 
+    String amountInArabicWords(String raw){
+        try{
+            if(raw==null)return "";
+            String s=raw.replace(",","").trim();
+            if(s.isEmpty())return "";
+            double val=Double.parseDouble(s);
+            if(val<0)return "";
+            long whole=(long)Math.floor(val+0.000001d);
+            int fraction=(int)Math.round((val-whole)*100d);
+            if(fraction>=100){whole++;fraction=0;}
+            if(whole==0 && fraction==0)return "صفر ريال";
+            String result=integerToArabicWords(whole)+" ريال";
+            if(fraction>0) result += " و"+integerToArabicWords(fraction)+" هللة";
+            return result;
+        }catch(Exception e){return "";}
+    }
+
+    String integerToArabicWords(long n){
+        if(n==0)return "صفر";
+        if(n<0)return "سالب "+integerToArabicWords(-n);
+        String[] ones={"","واحد","اثنان","ثلاثة","أربعة","خمسة","ستة","سبعة","ثمانية","تسعة"};
+        String[] tens={"","","عشرون","ثلاثون","أربعون","خمسون","ستون","سبعون","ثمانون","تسعون"};
+        String[] teens={"عشرة","أحد عشر","اثنا عشر","ثلاثة عشر","أربعة عشر","خمسة عشر","ستة عشر","سبعة عشر","ثمانية عشر","تسعة عشر"};
+        String[] hundreds={"","مائة","مائتان","ثلاثمائة","أربعمائة","خمسمائة","ستمائة","سبعمائة","ثمانمائة","تسعمائة"};
+        if(n<10)return ones[(int)n];
+        if(n<20)return teens[(int)n-10];
+        if(n<100){int a=(int)(n/10),b=(int)(n%10);return b==0?tens[a]:ones[b]+" و"+tens[a];}
+        if(n<1000){int a=(int)(n/100),b=(int)(n%100);return b==0?hundreds[a]:hundreds[a]+" و"+integerToArabicWords(b);}
+        long[] scales={1000,1000000,1000000000};
+        String[] singular={"ألف","مليون","مليار"};
+        String[] dual={"ألفان","مليونان","ملياران"};
+        String[] plural={"آلاف","ملايين","مليارات"};
+        for(int i=scales.length-1;i>=0;i--){
+            if(n>=scales[i]){
+                long q=n/scales[i],r=n%scales[i];
+                String part;
+                if(q==1)part=singular[i];
+                else if(q==2)part=dual[i];
+                else if(q>=3&&q<=10)part=integerToArabicWords(q)+" "+plural[i];
+                else part=integerToArabicWords(q)+" "+singular[i];
+                return r==0?part:part+" و"+integerToArabicWords(r);
+            }
+        }
+        return String.valueOf(n);
+    }
+
     void customers(){
         base("الحسابات والعملاء");
 
@@ -4557,13 +4603,36 @@ EditText numberField(String h){
         txFields.setOrientation(LinearLayout.HORIZONTAL);
         txFields.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
-        EditText amountInput=numberField("المبلغ بالريال *");
-        EditText detailsInput=field("البيان / ملاحظات (اختياري)");
+        LinearLayout amountCol=new LinearLayout(this);
+        amountCol.setOrientation(LinearLayout.VERTICAL);
+        amountCol.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        amountCol.setPadding(0,0,dp(4),0);
 
-        txFields.addView(amountInput,new LinearLayout.LayoutParams(0,dp(40),1f));
+        EditText amountInput=numberField("المبلغ بالريال *");
+        amountInput.setHint("اكتب المبلغ هنا");
+        TextView amountWords=tv("",11.5f);
+        amountWords.setTextColor(BLUE);
+        amountWords.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+        amountWords.setSingleLine(true);
+        amountWords.setEllipsize(TextUtils.TruncateAt.END);
+        amountWords.setIncludeFontPadding(false);
+        amountWords.setPadding(dp(4),0,dp(4),0);
+        amountCol.addView(amountInput,new LinearLayout.LayoutParams(-1,dp(40)));
+        amountCol.addView(amountWords,new LinearLayout.LayoutParams(-1,dp(25)));
+        amountInput.addTextChangedListener(new TextWatcher(){
+            public void beforeTextChanged(CharSequence s,int st,int count,int after){}
+            public void onTextChanged(CharSequence s,int st,int before,int count){
+                String words=amountInArabicWords(s==null?"":s.toString());
+                amountWords.setText(words.isEmpty()?"":words);
+            }
+            public void afterTextChanged(Editable e){}
+        });
+
+        EditText detailsInput=field("البيان / ملاحظات (اختياري)");
+        txFields.addView(amountCol,new LinearLayout.LayoutParams(0,dp(67),1f));
         LinearLayout.LayoutParams dtlp=new LinearLayout.LayoutParams(0,dp(40),1.4f); dtlp.setMargins(dp(4),0,0,0);
         txFields.addView(detailsInput,dtlp);
-        addTxBox.addView(txFields,new LinearLayout.LayoutParams(-1,dp(42)));
+        addTxBox.addView(txFields,new LinearLayout.LayoutParams(-1,dp(67)));
         addSpaceTo(addTxBox,6);
 
         LinearLayout txButtons=new LinearLayout(this);
@@ -4663,73 +4732,64 @@ EditText numberField(String h){
                 boolean isDebit=type==1;
 
                 LinearLayout r=new LinearLayout(this);
-                r.setOrientation(LinearLayout.HORIZONTAL);
-                r.setGravity(Gravity.CENTER_VERTICAL);
+                r.setOrientation(LinearLayout.VERTICAL);
+                r.setPadding(dp(10),dp(8),dp(10),dp(8));
                 r.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
                 styleDisplayRow(r);
-                r.setBackground(outlined(CARD,1,10));
+                r.setBackground(outlined(CARD,1,12));
                 r.setElevation(dp(1));
 
-                // Selection CheckBox
+                LinearLayout topRow=new LinearLayout(this);
+                topRow.setOrientation(LinearLayout.HORIZONTAL);
+                topRow.setGravity(Gravity.CENTER_VERTICAL);
+                topRow.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+
                 CheckBox cb=new CheckBox(this);
                 cb.setPadding(0,0,0,0);
                 cb.setOnCheckedChangeListener((btn,isChecked)->{
-                    if(isChecked){
-                        if(!selectedIds.contains(tid)) selectedIds.add(tid);
-                    }else{
-                        selectedIds.remove(tid);
-                    }
+                    if(isChecked){ if(!selectedIds.contains(tid)) selectedIds.add(tid); }
+                    else selectedIds.remove(tid);
                 });
                 rowCheckBoxes.add(cb);
-                r.addView(cb,new LinearLayout.LayoutParams(dp(28),dp(36)));
+                topRow.addView(cb,new LinearLayout.LayoutParams(dp(28),dp(36)));
 
-                // Type Icon Badge
-                TextView typeIcon=new TextView(this);
-                typeIcon.setText(isInvoice?"🧾":(isDebit?"🔴":"💰"));
-                typeIcon.setTextSize(14);
-                typeIcon.setGravity(Gravity.CENTER);
-                r.addView(typeIcon,new LinearLayout.LayoutParams(dp(26),dp(36)));
+                TextView typeTv=tv(isInvoice?"🧾 فاتورة مبيعات":(isDebit?"🔴 قيد سحب — عليه":"🟢 دفعة سداد — له"),14);
+                typeTv.setTextColor(isInvoice?Color.rgb(24,120,70):(isDebit?RED:BLUE));
+                styleDisplayText(typeTv,14,true);
+                topRow.addView(typeTv,new LinearLayout.LayoutParams(0,dp(36),1));
 
-                // Details Column
-                LinearLayout infoCol=new LinearLayout(this);
-                infoCol.setOrientation(LinearLayout.VERTICAL);
-                infoCol.setPadding(dp(6),0,dp(6),0);
+                TextView amountTop=tv((isDebit?"عليه: ":"له: ")+fmt(a)+" ريال",15);
+                amountTop.setTextColor(isDebit?RED:GREEN);
+                styleDisplayValue(amountTop,15,isDebit?RED:GREEN);
+                amountTop.setGravity(Gravity.CENTER);
+                amountTop.setBackground(outlined(isDebit?Color.rgb(255,243,243):Color.rgb(240,249,242),dp(1),dp(8)));
+                topRow.addView(amountTop,new LinearLayout.LayoutParams(dp(125),dp(36)));
+                r.addView(topRow,new LinearLayout.LayoutParams(-1,dp(38)));
 
-                String mainTitle=isInvoice?("فاتورة مبيعات رقم "+invNo):(d==null||d.trim().isEmpty()?(isDebit?"قيد سحب":"دفعة سداد"):d.trim());
-                TextView titleTv=tv(mainTitle,14);
-                titleTv.setTextColor(TEXT); styleDisplayText(titleTv,14,true);
-                infoCol.addView(titleTv,new LinearLayout.LayoutParams(-1,dp(34)));
+                TextView dateTv=tv("التاريخ والوقت: "+date,11.5f);
+                dateTv.setTextColor(MUTED);
+                styleDisplayValue(dateTv,11.5f,MUTED);
+                dateTv.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+                r.addView(dateTv,new LinearLayout.LayoutParams(-1,dp(28)));
 
-                TextView dateTv=tv("📅 "+date+"  •  الرصيد بعد: "+balanceText(running),11);
-                dateTv.setTextColor(MUTED); styleDisplayValue(dateTv,11,MUTED);
-                LinearLayout.LayoutParams dateLp=new LinearLayout.LayoutParams(-1,dp(31));
-                dateLp.setMargins(0,dp(4),0,0);
-                infoCol.addView(dateTv,dateLp);
+                String mainTitle=isInvoice?("رقم الفاتورة: "+invNo):(d==null||d.trim().isEmpty()?(isDebit?"قيد سحب":"دفعة سداد"):d.trim());
+                TextView detailsTv=tv("البيان: "+mainTitle,12.5f);
+                detailsTv.setTextColor(TEXT);
+                styleDisplayValue(detailsTv,12.5f,TEXT);
+                detailsTv.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+                detailsTv.setMaxLines(2);
+                detailsTv.setEllipsize(TextUtils.TruncateAt.END);
+                detailsTv.setBackground(outlined(Color.rgb(248,250,252),dp(1),dp(8)));
+                r.addView(detailsTv,new LinearLayout.LayoutParams(-1,dp(38)));
 
-                r.addView(infoCol,new LinearLayout.LayoutParams(0,-2,1));
+                TextView balanceTv=tv("الرصيد بعد العملية: "+balanceText(running),11.5f);
+                balanceTv.setTextColor(BLUE);
+                styleDisplayValue(balanceTv,11.5f,BLUE);
+                balanceTv.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+                r.addView(balanceTv,new LinearLayout.LayoutParams(-1,dp(30)));
 
-                // Amount Column
-                LinearLayout amtCol=new LinearLayout(this);
-                amtCol.setOrientation(LinearLayout.VERTICAL);
-                amtCol.setGravity(Gravity.LEFT|Gravity.CENTER_VERTICAL);
-                amtCol.setPadding(dp(4),0,0,0);
-
-                TextView amtValTv=tv((isDebit?"عليه: ":"له: ")+fmt(a)+" ر.ي",14);
-                amtValTv.setTextColor(isDebit?RED:GREEN); amtValTv.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-                amtValTv.setGravity(Gravity.CENTER); amtValTv.setIncludeFontPadding(false);
-                amtValTv.setMaxLines(2); amtValTv.setEllipsize(TextUtils.TruncateAt.END);
-                amtValTv.setPadding(dp(7),dp(5),dp(7),dp(5));
-                amtValTv.setBackground(outlined(isDebit?Color.rgb(255,243,243):Color.rgb(240,249,242),dp(1),dp(8)));
-                amtCol.addView(amtValTv,new LinearLayout.LayoutParams(dp(108),dp(44)));
-
-                r.addView(amtCol,new LinearLayout.LayoutParams(-2,-2));
-
-                // Click opens the rich Operation Details Modal
                 r.setOnClickListener(v->showOperationDetails(name,tid,d,a,type));
-                r.setOnLongClickListener(v->{
-                    operationActions(id,name,tid,d,a,type);
-                    return true;
-                });
+                r.setOnLongClickListener(v->{ operationActions(id,name,tid,d,a,type); return true; });
 
                 LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);
                 lp.setMargins(0,0,0,dp(5));
