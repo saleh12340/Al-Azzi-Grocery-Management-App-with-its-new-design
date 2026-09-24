@@ -203,6 +203,10 @@ public class MainActivity extends Activity {
             t.setIncludeFontPadding(true);
             t.setHorizontallyScrolling(false);
             t.setEllipsize(null);
+            if(!(t instanceof EditText)){
+                t.setSingleLine(false);
+                t.setMaxLines(4);
+            }
             if(Build.VERSION.SDK_INT>=28){
                 try{t.setFallbackLineSpacing(true);}catch(Throwable ignored){}
                 try{t.setElegantTextHeight(true);}catch(Throwable ignored){}
@@ -220,19 +224,31 @@ public class MainActivity extends Activity {
             t.setIncludeFontPadding(true);
             t.setHorizontallyScrolling(false);
             t.setEllipsize(null);
+            t.setSingleLine(false);
+            t.setMaxLines(4);
             if(android.os.Build.VERSION.SDK_INT>=23){
                 try{t.setBreakStrategy(android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY);}catch(Throwable ignored){}
             }
-            float size=Math.max(Math.max(8f,minSp),maxSp);
-            if(android.os.Build.VERSION.SDK_INT>=26 && maxSp>minSp){
-                try{
-                    int min=Math.max(8,Math.round(minSp));
-                    int max=Math.max(min+1,Math.round(maxSp));
-                    t.setAutoSizeTextTypeUniformWithConfiguration(min,max,1,android.util.TypedValue.COMPLEX_UNIT_SP);
-                }catch(IllegalArgumentException ignored){t.setTextSize(size);}
-            }else{
-                t.setTextSize(size);
-            }
+            // لا نصغّر الخط بقوة ولا نقصّ النص: الأولوية لظهور البيانات كاملة.
+            float size=Math.max(14f,Math.max(minSp,maxSp));
+            t.setTextSize(size);
+            t.addOnLayoutChangeListener(new View.OnLayoutChangeListener(){
+                public void onLayoutChange(View view,int l,int top,int r,int bottom,int ol,int ot,int orr,int ob){
+                    if(!(view instanceof TextView)) return;
+                    TextView x=(TextView)view;
+                    if(x.getLineCount()>1){
+                        ViewParent pp=x.getParent();
+                        if(pp instanceof View){
+                            View pv=(View)pp;
+                            ViewGroup.LayoutParams lp=pv.getLayoutParams();
+                            if(lp instanceof LinearLayout.LayoutParams && lp.height>0){
+                                lp.height=ViewGroup.LayoutParams.WRAP_CONTENT;
+                                pv.setLayoutParams(lp);
+                            }
+                        }
+                    }
+                }
+            });
         }
     }
     void autoFitText(TextView t,float maxSp,float minSp,float stepSp){
@@ -484,6 +500,8 @@ EditText numberField(String h){
         bottom.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         root.addView(bottom,new LinearLayout.LayoutParams(-1,-2));
         setContentView(root);
+        // طبّق قواعد الملاءمة بعد اكتمال الشجرة حتى لا تُخفى الكلمات خلف البطاقات.
+        root.postDelayed(() -> normalizeAppText(root), 40);
         if(withDefaultNav) attachDefaultBottomNav(title);
     }
 
@@ -1471,7 +1489,7 @@ EditText numberField(String h){
         float[] w={1.0f,.72f,1.35f,.9f,.55f};
         TextView total=tv(fmt(l.total),13);total.setGravity(Gravity.CENTER);total.setSingleLine(true);
         TextView qty=tv(fmt(l.qty),13);qty.setGravity(Gravity.CENTER);qty.setSingleLine(true);
-        TextView item=tv(l.name,12);item.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);item.setMaxLines(2);item.setEllipsize(TextUtils.TruncateAt.END);
+        TextView item=tv(l.name,12);item.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);item.setMaxLines(4);item.setEllipsize(null);
         TextView unit=tv(l.qty==0?"0":fmt(l.total/l.qty),12);unit.setTextColor(MUTED);unit.setGravity(Gravity.CENTER);unit.setSingleLine(true);
         Button del=button("حذف");del.setTextSize(10);del.setTextColor(Color.RED);del.setBackgroundColor(Color.TRANSPARENT);
         total.setBackground(outline(Color.rgb(248,250,248),6));qty.setBackground(outline(Color.rgb(248,250,248),6));item.setBackground(outline(Color.rgb(248,250,248),6));
@@ -3011,7 +3029,7 @@ void notes(){ base("الملاحظات");
                 for(int i=0;i<5;i++){
                     TextView v=tv(vals[i],8.5f);
                     v.setGravity(i==2?Gravity.RIGHT|Gravity.CENTER_VERTICAL:Gravity.CENTER);
-                    v.setMaxLines(2); v.setEllipsize(TextUtils.TruncateAt.END);
+                    v.setMaxLines(4); v.setEllipsize(null);
                     v.setBackground(outline(Color.rgb(248,250,248),6));
                     r.addView(v,new LinearLayout.LayoutParams(0,dp(32),w[i]));
                 }
@@ -3363,7 +3381,7 @@ void notes(){ base("الملاحظات");
                         if(!lineItemsPreview.isEmpty()){
                             spaceTo(row,2);
                             TextView itemPrev=tv(lineItemsPreview,10f);
-                            itemPrev.setTextColor(MUTED); itemPrev.setMaxLines(1);
+                            itemPrev.setTextColor(MUTED); itemPrev.setMaxLines(4);
                             row.addView(itemPrev,new LinearLayout.LayoutParams(-1,-2));
                         }
 
@@ -4356,16 +4374,16 @@ void notes(){ base("الملاحظات");
 
                 TextView nameTv=tv(name,13);
                 nameTv.setTextColor(GREEN); nameTv.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-                nameTv.setMaxLines(1);
+                nameTv.setMaxLines(3);
                 info.addView(nameTv,new LinearLayout.LayoutParams(-1,dp(22)));
 
                 TextView subTv=tv("🏷️ "+(cat==null?"عام":cat)+"  •  📅 "+date,10);
-                subTv.setTextColor(MUTED); subTv.setMaxLines(1);
+                subTv.setTextColor(MUTED); subTv.setMaxLines(3);
                 info.addView(subTv,new LinearLayout.LayoutParams(-1,dp(18)));
 
                 if(notes!=null&&!notes.trim().isEmpty()){
                     TextView noteTv=tv("📝 "+notes,10);
-                    noteTv.setTextColor(TEXT); noteTv.setMaxLines(1);
+                    noteTv.setTextColor(TEXT); noteTv.setMaxLines(3);
                     info.addView(noteTv,new LinearLayout.LayoutParams(-1,dp(16)));
                 }
                 card.addView(info,new LinearLayout.LayoutParams(0,-2,1));
