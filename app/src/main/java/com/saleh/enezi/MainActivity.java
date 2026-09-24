@@ -236,17 +236,37 @@ public class MainActivity extends Activity {
         fitInside(v,fitText(z),8f); return v;
     }
     Button button(String s){
-        Button b=new Button(this); b.setText(s); b.setTextSize(16); b.setAllCaps(false); b.setMinHeight(0);
-        b.setMinimumHeight(0); b.setPadding(dp(8),dp(0),dp(8),dp(0)); b.setGravity(Gravity.CENTER); b.setStateListAnimator(null);
-        b.setIncludeFontPadding(true); b.setMaxLines(2); b.setEllipsize(null); b.setTextColor(TEXT);
-        b.setBackground(outlined(CARD,dp(1),10)); b.setElevation(dp(2));
-        b.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); fitInside(b,20f,14f); return b;
+        Button b=new Button(this);
+        b.setText(s); b.setTextSize(15); b.setAllCaps(false); b.setMinHeight(0); b.setMinimumHeight(0);
+        b.setPadding(dp(10),0,dp(10),0); b.setGravity(Gravity.CENTER);
+        b.setStateListAnimator(null); b.setIncludeFontPadding(false); b.setMaxLines(2);
+        b.setEllipsize(TextUtils.TruncateAt.END); b.setTextColor(TEXT);
+        GradientDrawable bg=new GradientDrawable();
+        bg.setColor(CARD); bg.setCornerRadius(dp(11)); bg.setStroke(dp(1),Color.rgb(213,223,234));
+        b.setBackground(bg); b.setElevation(dp(1));
+        b.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); fitInside(b,17f,13f);
+        return b;
     }
     EditText field(String h){
-        EditText e=new EditText(this); e.setHint(h); e.setTextSize(15); e.setSingleLine(true); e.setIncludeFontPadding(true); e.setMaxLines(1); fitInside(e,24f,15f);
-        e.setTextColor(TEXT); e.setHintTextColor(MUTED); e.setPadding(dp(10),dp(1),dp(10),dp(1)); e.setBackground(outlined(Color.WHITE,dp(1),10)); e.setElevation(dp(1)); e.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL); e.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); e.setTextDirection(View.TEXT_DIRECTION_RTL);
-        e.setSelectAllOnFocus(true); e.setOnClickListener(v -> e.selectAll());
-        e.setOnFocusChangeListener((v,has)->{ if(has) e.postDelayed(() -> { e.selectAll(); },60); });
+        EditText e=new EditText(this);
+        e.setHint(h); e.setTextSize(15); e.setSingleLine(true); e.setIncludeFontPadding(false); e.setMaxLines(1);
+        fitInside(e,18f,14f);
+        e.setTextColor(TEXT); e.setHintTextColor(Color.rgb(118,132,148));
+        e.setPadding(dp(12),0,dp(12),0);
+        e.setBackground(outlined(Color.rgb(252,253,255),dp(1),12));
+        e.setElevation(dp(1));
+        e.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+        e.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); e.setTextDirection(View.TEXT_DIRECTION_RTL);
+        e.setSelectAllOnFocus(true);
+        e.setOnClickListener(v -> e.selectAll());
+        e.setOnFocusChangeListener((v,has)->{
+            if(has){
+                e.setBackground(outlined(Color.rgb(247,251,255),dp(2),12));
+                e.postDelayed(() -> e.selectAll(),60);
+            }else{
+                e.setBackground(outlined(Color.rgb(252,253,255),dp(1),12));
+            }
+        });
         attachLearning(e,h);
         return e;
     }
@@ -336,9 +356,22 @@ EditText numberField(String h){
         e.setRawInputType(InputType.TYPE_CLASS_PHONE);
         return e;
     }
-    void addField(EditText e){content.addView(e,new LinearLayout.LayoutParams(-1,dp(50))); addSpace(6);}
+    void addField(EditText e){
+        content.addView(e,new LinearLayout.LayoutParams(-1,dp(46)));
+        addSpace(4);
+    }
     void addSpace(int h){Space s=new Space(this); content.addView(s,new LinearLayout.LayoutParams(1,dp(h)));}
-    TextView section(String s){TextView v=tv("  "+s,15);v.setTextColor(DARK);v.setTypeface(Typeface.DEFAULT,Typeface.BOLD);v.setSingleLine(true);v.setMaxLines(1);v.setEllipsize(null);v.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);v.setPadding(dp(8),0,dp(8),0);v.setBackground(outlined(Color.rgb(232,239,247),dp(1),9));fitInside(v,15f,12f);content.addView(v,new LinearLayout.LayoutParams(-1,dp(38)));addSpace(6);return v;}
+    TextView section(String s){
+        TextView v=tv("  "+s,15); v.setTextColor(DARK); v.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        v.setSingleLine(true); v.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+        v.setPadding(dp(12),0,dp(12),0);
+        GradientDrawable bg=new GradientDrawable();
+        bg.setColor(Color.rgb(235,242,249)); bg.setCornerRadius(dp(12));
+        bg.setStroke(dp(1),Color.rgb(211,223,236)); v.setBackground(bg);
+        fitInside(v,15f,13f);
+        content.addView(v,new LinearLayout.LayoutParams(-1,dp(40)));
+        addSpace(5); return v;
+    }
 
     void base(String title){
         base(title,true);
@@ -348,21 +381,75 @@ EditText numberField(String h){
             pageStack.push(currentPage);
             currentPage=title;
         }
-        root=new LinearLayout(this); root.setOrientation(LinearLayout.VERTICAL); root.setBackgroundColor(BG); root.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        LinearLayout bar=new LinearLayout(this); bar.setGravity(Gravity.CENTER_VERTICAL); bar.setPadding(dp(8),dp(3),dp(8),dp(3)); bar.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{GREEN,DARK}));
+        root=new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setBackgroundColor(BG);
+        root.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+
+        LinearLayout bar=new LinearLayout(this);
+        bar.setOrientation(LinearLayout.HORIZONTAL);
+        bar.setGravity(Gravity.CENTER_VERTICAL);
+        bar.setPadding(dp(8),dp(7),dp(8),dp(7));
+        bar.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,
+                new int[]{GREEN,DARK}));
+        
         Button back=button("‹");
-        back.setTextColor(Color.WHITE); back.setTextSize(28); back.setBackgroundColor(Color.TRANSPARENT);
-        back.setContentDescription("رجوع للشاشة السابقة"); back.setOnClickListener(v->goBack());
-        bar.addView(back,new LinearLayout.LayoutParams(dp(40),dp(38)));
-        TextView logo=tv("بقالة العزي للمواد الغذائية",18); logo.setTextColor(Color.WHITE); logo.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        bar.addView(logo,new LinearLayout.LayoutParams(0,dp(38),1));
-        TextView pt=tv(title,15); pt.setTextColor(Color.WHITE); pt.setGravity(Gravity.CENTER); pt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        bar.addView(pt,new LinearLayout.LayoutParams(dp(120),dp(42))); root.addView(bar,new LinearLayout.LayoutParams(-1,dp(66)));
-        ScrollView sv=new ScrollView(this); sv.setFillViewport(true); sv.setClipToPadding(false);
-        content=new LinearLayout(this); content.setOrientation(LinearLayout.VERTICAL); content.setPadding(dp(8),dp(8),dp(8),dp(16)); content.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        if(!"الرئيسية".equals(title)){ TextView operationChip=tv("  "+title+"  ",14); operationChip.setTextColor(GREEN); operationChip.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL); operationChip.setSingleLine(true); operationChip.setMaxLines(1); operationChip.setEllipsize(TextUtils.TruncateAt.END); operationChip.setPadding(dp(8),0,dp(8),0); operationChip.setBackground(outline(Color.rgb(234,240,248),12)); content.addView(operationChip,new LinearLayout.LayoutParams(-1,dp(36))); addSpace(5); }
-        sv.addView(content); root.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
-        bottom=new LinearLayout(this); bottom.setOrientation(LinearLayout.VERTICAL); bottom.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        back.setTextColor(Color.WHITE); back.setTextSize(28);
+        back.setBackgroundColor(Color.TRANSPARENT); back.setElevation(0);
+        back.setOnClickListener(v->goBack());
+        bar.addView(back,new LinearLayout.LayoutParams(dp(44),dp(50)));
+
+        LinearLayout titleBox=new LinearLayout(this);
+        titleBox.setOrientation(LinearLayout.VERTICAL);
+        titleBox.setGravity(Gravity.CENTER_VERTICAL);
+        titleBox.setPadding(dp(8),0,dp(8),0);
+        TextView logo=tv("بقالة العزي",17);
+        logo.setTextColor(Color.WHITE); logo.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        TextView pt=tv(title,18);
+        pt.setTextColor(Color.WHITE); pt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        pt.setSingleLine(true); pt.setEllipsize(TextUtils.TruncateAt.END);
+        titleBox.addView(logo,new LinearLayout.LayoutParams(-1,dp(22)));
+        titleBox.addView(pt,new LinearLayout.LayoutParams(-1,dp(28)));
+        bar.addView(titleBox,new LinearLayout.LayoutParams(0,dp(52),1));
+
+        TextView badge=tv("إدارة",11);
+        badge.setTextColor(Color.WHITE); badge.setGravity(Gravity.CENTER);
+        GradientDrawable badgeBg=new GradientDrawable();
+        badgeBg.setColor(Color.argb(55,255,255,255)); badgeBg.setCornerRadius(dp(18));
+        badge.setBackground(badgeBg);
+        bar.addView(badge,new LinearLayout.LayoutParams(dp(56),dp(34)));
+        root.addView(bar,new LinearLayout.LayoutParams(-1,dp(66)));
+
+        ScrollView sv=new ScrollView(this);
+        sv.setFillViewport(true); sv.setClipToPadding(false);
+        content=new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(10),dp(10),dp(10),dp(18));
+        content.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+
+        if(!"الرئيسية".equals(title)){
+            LinearLayout pageHero=new LinearLayout(this);
+            pageHero.setOrientation(LinearLayout.VERTICAL);
+            pageHero.setPadding(dp(14),dp(8),dp(14),dp(8));
+            GradientDrawable heroBg=new GradientDrawable();
+            heroBg.setColor(Color.WHITE); heroBg.setCornerRadius(dp(14));
+            heroBg.setStroke(dp(1),Color.rgb(221,229,238));
+            pageHero.setBackground(heroBg); pageHero.setElevation(dp(1));
+            TextView heroTitle=tv(title,17);
+            heroTitle.setTextColor(GREEN); heroTitle.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+            TextView heroSub=tv("واجهة مرتبة وسريعة لإدارة بياناتك",11.5f);
+            heroSub.setTextColor(MUTED);
+            pageHero.addView(heroTitle,new LinearLayout.LayoutParams(-1,dp(25)));
+            pageHero.addView(heroSub,new LinearLayout.LayoutParams(-1,dp(20)));
+            content.addView(pageHero,new LinearLayout.LayoutParams(-1,dp(54)));
+            addSpace(7);
+        }
+
+        sv.addView(content);
+        root.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
+        bottom=new LinearLayout(this);
+        bottom.setOrientation(LinearLayout.VERTICAL);
+        bottom.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         root.addView(bottom,new LinearLayout.LayoutParams(-1,-2));
         setContentView(root);
         if(withDefaultNav) attachDefaultBottomNav(title);
