@@ -631,7 +631,7 @@ EditText numberField(String h){
             setContentView(r);
         }catch(Throwable e){
             android.util.Log.e("AlAzziHome","Home UI failed",e);
-            showSafeHomeFallback(e);
+            showSafeHome(e);
         }
     }
 
