@@ -162,7 +162,7 @@ public class MainActivity extends Activity {
 
     GradientDrawable rounded(int color,float radius){ GradientDrawable g=new GradientDrawable(); g.setColor(color); g.setCornerRadius(radius); return g; }
     GradientDrawable outlined(int color,int stroke,float radius){ GradientDrawable g=rounded(color,radius); g.setStroke(stroke,Color.rgb(174,185,198)); return g; }
-    float fitText(float z){return Math.max(16f,Math.min(z,32f));}
+    float fitText(float z){return 15f;}
     void fitInside(View v,float maxSp,float minSp){
         if(v instanceof TextView){
             TextView t=(TextView)v;
@@ -171,7 +171,7 @@ public class MainActivity extends Activity {
             t.setEllipsize(null);
             t.setBreakStrategy(android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY);
             if(android.os.Build.VERSION.SDK_INT>=26){
-                t.setAutoSizeTextTypeUniformWithConfiguration(Math.round(minSp),Math.round(maxSp),1,android.util.TypedValue.COMPLEX_UNIT_SP);
+                t.setAutoSizeTextTypeUniformWithConfiguration(15,15,1,android.util.TypedValue.COMPLEX_UNIT_SP);
             }
         }
     }
@@ -182,14 +182,14 @@ public class MainActivity extends Activity {
         fitInside(v,fitText(z),8f); return v;
     }
     Button button(String s){
-        Button b=new Button(this); b.setText(s); b.setTextSize(fitText(21)); b.setAllCaps(false); b.setMinHeight(0);
+        Button b=new Button(this); b.setText(s); b.setTextSize(15); b.setAllCaps(false); b.setMinHeight(0);
         b.setMinimumHeight(0); b.setPadding(dp(8),dp(0),dp(8),dp(0)); b.setGravity(Gravity.CENTER); b.setStateListAnimator(null);
         b.setIncludeFontPadding(true); b.setMaxLines(2); b.setEllipsize(null); b.setTextColor(TEXT);
         b.setBackground(outlined(CARD,dp(1),10)); b.setElevation(dp(2));
         b.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); fitInside(b,21f,14f); return b;
     }
     EditText field(String h){
-        EditText e=new EditText(this); e.setHint(h); e.setTextSize(22); e.setSingleLine(true); e.setIncludeFontPadding(true); e.setMaxLines(1); fitInside(e,24f,15f);
+        EditText e=new EditText(this); e.setHint(h); e.setTextSize(15); e.setSingleLine(true); e.setIncludeFontPadding(true); e.setMaxLines(1); fitInside(e,24f,15f);
         e.setTextColor(TEXT); e.setHintTextColor(MUTED); e.setPadding(dp(10),dp(1),dp(10),dp(1)); e.setBackground(outlined(Color.WHITE,dp(1),10)); e.setElevation(dp(1)); e.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL); e.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); e.setTextDirection(View.TEXT_DIRECTION_RTL);
         e.setSelectAllOnFocus(true); e.setOnClickListener(v -> e.selectAll());
         e.setOnFocusChangeListener((v,has)->{ if(has) e.postDelayed(() -> { e.selectAll(); },60); });
@@ -251,13 +251,13 @@ public class MainActivity extends Activity {
         int n=0;
         for(String value:values){
             String q=query.trim().toLowerCase(java.util.Locale.ROOT); String vv=value.trim().toLowerCase(java.util.Locale.ROOT); if(!vv.contains(q)||n>=5)continue;
-            Button b=button(value);b.setTextSize(18);b.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+            Button b=button(value);b.setTextSize(15);b.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);b.setMaxLines(1);b.setEllipsize(TextUtils.TruncateAt.END);
             b.setOnClickListener(v->{anchor.setText(value);anchor.setSelection(anchor.length());dismissLearningSuggestions();});
             box.addView(b,new LinearLayout.LayoutParams(-1,dp(50)));n++;
         }
         if(n==0){dismissLearningSuggestions();return;}
         dismissLearningSuggestions();
-        int popupWidth=Math.max(anchor.getWidth(),getResources().getDisplayMetrics().widthPixels-dp(16));
+        int screenWidth=getResources().getDisplayMetrics().widthPixels; int popupWidth=Math.min(screenWidth-dp(16),Math.max(anchor.getWidth(),dp(280)));
         learningPopup=new PopupWindow(box,popupWidth,WindowManager.LayoutParams.WRAP_CONTENT,false);
         learningPopup.setTouchable(true);
         learningPopup.setFocusable(false);
@@ -266,7 +266,7 @@ public class MainActivity extends Activity {
         learningPopup.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         learningPopup.setBackgroundDrawable(rounded(CARD,dp(10)));
         learningPopup.setElevation(dp(8));
-        learningPopup.showAsDropDown(anchor,anchor.getWidth()-popupWidth,dp(2));
+        learningPopup.showAsDropDown(anchor,(anchor.getWidth()-popupWidth)/2,dp(3));
     }
 EditText numberField(String h){
         EditText e=field(h);
@@ -5194,7 +5194,7 @@ EditText numberField(String h){
         title.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         content.addView(title,new LinearLayout.LayoutParams(-1,dp(44)));
 
-        TextView intro=tv("إدخال الحوالة ومراجعة سجل العمليات — الحقول والأزرار بعرض الشاشة",16);
+        TextView intro=tv("إدخال الحوالة ومراجعة سجل العمليات — بعرض الشاشة الكامل",15);
         intro.setTextColor(MUTED);
         intro.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         content.addView(intro,new LinearLayout.LayoutParams(-1,dp(38)));
@@ -5209,14 +5209,14 @@ EditText numberField(String h){
         amountTitle.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         form.addView(amountTitle,new LinearLayout.LayoutParams(-1,dp(34)));
 
-        TextView amountHelp=tv("المبلغ بالريال اليمني — مثال: 2,500",16);
+        TextView amountHelp=tv("اكتب المبلغ هنا — مثال: 2,500 ريال يمني",15);
         amountHelp.setTextColor(BLUE);
         amountHelp.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         amountHelp.setPadding(dp(4),0,dp(4),0);
         form.addView(amountHelp,new LinearLayout.LayoutParams(-1,dp(34)));
 
         EditText amount=numberField("المبلغ — مثال: 2,500 ريال");
-        amount.setTextSize(30);
+        amount.setTextSize(15);
         amount.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         amount.setPadding(dp(14),0,dp(14),0);
         amount.setHintTextColor(MUTED);
