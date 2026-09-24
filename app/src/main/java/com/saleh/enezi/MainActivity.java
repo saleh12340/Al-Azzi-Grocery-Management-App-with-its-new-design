@@ -1594,12 +1594,14 @@ EditText numberField(String h){
         headTitles.setOrientation(LinearLayout.VERTICAL);
         headTitles.setPadding(dp(6),0,dp(6),0);
         
-        TextView tTitle=tv(opTypeTitle,15);
-        tTitle.setTextColor(themeColor); tTitle.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        TextView tTitle=tv(opTypeTitle,16);
+        tTitle.setTextColor(themeColor); styleDisplayText(tTitle,16,true);
         TextView tCustomer=tv("العميل: "+(customer==null||customer.trim().isEmpty()?"نقدي":customer),12);
-        tCustomer.setTextColor(TEXT);
-        headTitles.addView(tTitle,new LinearLayout.LayoutParams(-1,dp(22)));
-        headTitles.addView(tCustomer,new LinearLayout.LayoutParams(-1,dp(18)));
+        tCustomer.setTextColor(TEXT); styleDisplayValue(tCustomer,12,TEXT);
+        headTitles.addView(tTitle,new LinearLayout.LayoutParams(-1,dp(34)));
+        LinearLayout.LayoutParams customerTitleLp=new LinearLayout.LayoutParams(-1,dp(31));
+        customerTitleLp.setMargins(0,dp(4),0,0);
+        headTitles.addView(tCustomer,customerTitleLp);
         head.addView(headTitles,new LinearLayout.LayoutParams(0,dp(40),1));
         
         Button closeBtn=button("✕");
@@ -1620,15 +1622,16 @@ EditText numberField(String h){
         acBg.setStroke(dp(1),isDebit?Color.rgb(245,190,190):Color.rgb(190,235,205));
         amountCard.setBackground(acBg);
 
-        TextView amtLbl=tv(isDebit?"المبلغ المقيد على العميل":"المبلغ المدفوع / المسدد",11);
-        amtLbl.setTextColor(MUTED); amtLbl.setGravity(Gravity.CENTER);
-        amountCard.addView(amtLbl,new LinearLayout.LayoutParams(-1,dp(18)));
+        TextView amtLbl=tv(isDebit?"المبلغ المقيد على العميل":"المبلغ المدفوع / المسدد",12);
+        amtLbl.setTextColor(MUTED); styleDisplayText(amtLbl,12,false); amtLbl.setGravity(Gravity.CENTER);
+        amountCard.addView(amtLbl,new LinearLayout.LayoutParams(-1,dp(32)));
 
-        TextView amtVal=tv((isDebit?"عليه: ":"له: ")+fmt(amount)+" ريال",18);
+        TextView amtVal=tv((isDebit?"عليه: ":"له: ")+fmt(amount)+" ريال",19);
         amtVal.setTextColor(isDebit?RED:GREEN); amtVal.setTypeface(Typeface.DEFAULT,Typeface.BOLD); amtVal.setGravity(Gravity.CENTER);
-        amountCard.addView(amtVal,new LinearLayout.LayoutParams(-1,dp(28)));
-
-        box.addView(amountCard,new LinearLayout.LayoutParams(-1,dp(60)));
+        amtVal.setIncludeFontPadding(false); amtVal.setMaxLines(2); amtVal.setEllipsize(TextUtils.TruncateAt.END);
+        amtVal.setPadding(dp(8),dp(4),dp(8),dp(4)); amtVal.setBackground(outline(CARD,1,8));
+        amountCard.addView(amtVal,new LinearLayout.LayoutParams(-1,dp(38)));
+        box.addView(amountCard,new LinearLayout.LayoutParams(-1,dp(78)));
         addSpaceTo(box,6);
 
         // 3. Statement / Invoice Details
@@ -1647,11 +1650,13 @@ EditText numberField(String h){
                 LinearLayout metaRow=new LinearLayout(this);
                 metaRow.setOrientation(LinearLayout.HORIZONTAL);
                 metaRow.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-                TextView invNoTv=tv("رقم الفاتورة: "+invNo,11); invNoTv.setTextColor(GREEN); invNoTv.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-                TextView invDateTv=tv("التاريخ: "+invDate,11); invDateTv.setTextColor(MUTED); invDateTv.setGravity(Gravity.LEFT);
-                metaRow.addView(invNoTv,new LinearLayout.LayoutParams(0,dp(22),1));
-                metaRow.addView(invDateTv,new LinearLayout.LayoutParams(0,dp(22),1));
-                detailsBody.addView(metaRow,new LinearLayout.LayoutParams(-1,dp(22)));
+                TextView invNoTv=tv("رقم الفاتورة: "+invNo,12); invNoTv.setTextColor(GREEN); styleDisplayText(invNoTv,12,true);
+                TextView invDateTv=tv("التاريخ: "+invDate,11); invDateTv.setTextColor(MUTED); styleDisplayValue(invDateTv,11,MUTED); invDateTv.setGravity(Gravity.CENTER);
+                metaRow.addView(invNoTv,new LinearLayout.LayoutParams(0,dp(34),1));
+                LinearLayout.LayoutParams invDateLp=new LinearLayout.LayoutParams(0,dp(34),1);
+                invDateLp.setMargins(dp(4),0,0,0);
+                metaRow.addView(invDateTv,invDateLp);
+                detailsBody.addView(metaRow,new LinearLayout.LayoutParams(-1,dp(36)));
 
                 // Table of items
                 LinearLayout itemsTable=new LinearLayout(this);
@@ -1662,9 +1667,9 @@ EditText numberField(String h){
                 LinearLayout th=new LinearLayout(this);
                 th.setOrientation(LinearLayout.HORIZONTAL);
                 th.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-                TextView thItem=tv("الصنف",10); thItem.setTypeface(Typeface.DEFAULT,Typeface.BOLD); thItem.setTextColor(GREEN);
-                TextView thQty=tv("الكمية",10); thQty.setTypeface(Typeface.DEFAULT,Typeface.BOLD); thQty.setTextColor(GREEN); thQty.setGravity(Gravity.CENTER);
-                TextView thTot=tv("الإجمالي",10); thTot.setTypeface(Typeface.DEFAULT,Typeface.BOLD); thTot.setTextColor(GREEN); thTot.setGravity(Gravity.CENTER);
+                TextView thItem=tv("الصنف",11); thItem.setTextColor(GREEN); styleOperationTableCell(thItem,11,true);
+                TextView thQty=tv("الكمية",11); thQty.setTextColor(GREEN); styleOperationTableCell(thQty,11,true); thQty.setGravity(Gravity.CENTER);
+                TextView thTot=tv("الإجمالي",11); thTot.setTextColor(GREEN); styleOperationTableCell(thTot,11,true); thTot.setGravity(Gravity.CENTER);
                 th.addView(thItem,new LinearLayout.LayoutParams(0,dp(22),1.4f));
                 th.addView(thQty,new LinearLayout.LayoutParams(0,dp(22),0.8f));
                 th.addView(thTot,new LinearLayout.LayoutParams(0,dp(22),0.9f));
@@ -1680,14 +1685,14 @@ EditText numberField(String h){
                     tr.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
                     tr.setPadding(0,dp(2),0,dp(2));
                     
-                    TextView rName=tv(iname,10.5f); rName.setTextColor(TEXT);
-                    TextView rQty=tv(fmt(iqty),10.5f); rQty.setTextColor(TEXT); rQty.setGravity(Gravity.CENTER);
-                    TextView rTot=tv(fmt(itot)+" ر.ي",10.5f); rTot.setTextColor(GREEN); rTot.setGravity(Gravity.CENTER); rTot.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+                    TextView rName=tv(iname,12); rName.setTextColor(TEXT); styleOperationTableCell(rName,12,false);
+                    TextView rQty=tv(fmt(iqty),12); rQty.setTextColor(TEXT); styleOperationTableCell(rQty,12,false); rQty.setGravity(Gravity.CENTER);
+                    TextView rTot=tv(fmt(itot)+" ر.ي",12); rTot.setTextColor(GREEN); rTot.setTypeface(Typeface.DEFAULT,Typeface.BOLD); styleOperationTableCell(rTot,12,false); rTot.setGravity(Gravity.CENTER);
                     
-                    tr.addView(rName,new LinearLayout.LayoutParams(0,dp(22),1.4f));
-                    tr.addView(rQty,new LinearLayout.LayoutParams(0,dp(22),0.8f));
-                    tr.addView(rTot,new LinearLayout.LayoutParams(0,dp(22),0.9f));
-                    itemsTable.addView(tr,new LinearLayout.LayoutParams(-1,dp(24)));
+                    tr.addView(rName,new LinearLayout.LayoutParams(0,dp(38),1.4f));
+                    tr.addView(rQty,new LinearLayout.LayoutParams(0,dp(38),0.8f));
+                    tr.addView(rTot,new LinearLayout.LayoutParams(0,dp(38),0.9f));
+                    itemsTable.addView(tr,new LinearLayout.LayoutParams(-1,dp(40)));
                     count++;
                 }
                 ic.close();
@@ -1713,9 +1718,9 @@ EditText numberField(String h){
             // Regular financial entry
             LinearLayout entryBox=card();
             entryBox.setPadding(dp(8),dp(6),dp(8),dp(6));
-            TextView detTv=tv("البيان: "+(details==null||details.trim().isEmpty()?"عملية مالية بدون بيان":details),12);
-            detTv.setTextColor(TEXT);
-            entryBox.addView(detTv,new LinearLayout.LayoutParams(-1,-2));
+            TextView detTv=tv("البيان: "+(details==null||details.trim().isEmpty()?"عملية مالية بدون بيان":details),13);
+            detTv.setTextColor(TEXT); styleDisplayText(detTv,13,true);
+            entryBox.addView(detTv,new LinearLayout.LayoutParams(-1,dp(48)));
             detailsBody.addView(entryBox,new LinearLayout.LayoutParams(-1,-2));
         }
 
@@ -1728,14 +1733,14 @@ EditText numberField(String h){
             balRow.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
             balRow.setPadding(dp(6),dp(4),dp(6),dp(4));
             balRow.setBackground(outline(Color.rgb(245,247,245),8));
-            TextView balLbl=tv("الرصيد بعد هذه العملية: ",10.5f);
-            balLbl.setTextColor(MUTED);
-            TextView balVal=tv(balanceText(balAfter),11);
-            balVal.setTextColor(balanceColor(balAfter)); balVal.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-            balRow.addView(balLbl,new LinearLayout.LayoutParams(-2,-2));
-            balRow.addView(balVal,new LinearLayout.LayoutParams(-1,-2));
+            TextView balLbl=tv("الرصيد بعد هذه العملية: ",11);
+            balLbl.setTextColor(MUTED); styleDisplayText(balLbl,11,false);
+            TextView balVal=tv(balanceText(balAfter),12);
+            balVal.setTextColor(balanceColor(balAfter)); balVal.setTypeface(Typeface.DEFAULT,Typeface.BOLD); styleDisplayValue(balVal,12,balanceColor(balAfter));
+            balRow.addView(balLbl,new LinearLayout.LayoutParams(0,dp(38),1.1f));
+            balRow.addView(balVal,new LinearLayout.LayoutParams(0,dp(38),0.9f));
             addSpaceTo(detailsBody,4);
-            detailsBody.addView(balRow,new LinearLayout.LayoutParams(-1,dp(28)));
+            detailsBody.addView(balRow,new LinearLayout.LayoutParams(-1,dp(42)));
         }
 
         scrollBody.addView(detailsBody);
@@ -4217,16 +4222,17 @@ EditText numberField(String h){
                 info.setOrientation(LinearLayout.VERTICAL);
                 info.setPadding(dp(8),0,dp(6),0);
 
-                TextView nameTv=tv(n,14.5f);
-                nameTv.setTextColor(GREEN); nameTv.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-                nameTv.setMaxLines(1);
-                info.addView(nameTv,new LinearLayout.LayoutParams(-1,dp(22)));
+                TextView nameTv=tv(n,14);
+                nameTv.setTextColor(GREEN); styleDisplayText(nameTv,14,true);
+                info.addView(nameTv,new LinearLayout.LayoutParams(-1,dp(34)));
 
                 int txCount=db.transactionCount(id);
                 String subInfo="📊 "+txCount+" حركة"+(phoneStr!=null&&!phoneStr.trim().isEmpty()?"  •  📱 "+phoneStr:"");
-                TextView subTv=tv(subInfo,10.5f);
-                subTv.setTextColor(MUTED); subTv.setMaxLines(1);
-                info.addView(subTv,new LinearLayout.LayoutParams(-1,dp(18)));
+                TextView subTv=tv(subInfo,11);
+                subTv.setTextColor(MUTED); styleDisplayValue(subTv,11,MUTED);
+                LinearLayout.LayoutParams subLp=new LinearLayout.LayoutParams(-1,dp(31));
+                subLp.setMargins(0,dp(3),0,0);
+                info.addView(subTv,subLp);
 
                 card.addView(info,new LinearLayout.LayoutParams(0,dp(42),1));
 
@@ -4249,13 +4255,14 @@ EditText numberField(String h){
                 }
                 balCol.setBackground(bBadgeBg);
 
-                TextView balText=tv(balanceText(bal),11.5f);
-                balText.setTextColor(balanceColor(bal));
-                balText.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-                balText.setGravity(Gravity.CENTER);
-                balCol.addView(balText,new LinearLayout.LayoutParams(-2,-2));
+                TextView balText=tv(balanceText(bal),12.5f);
+                balText.setTextColor(balanceColor(bal)); balText.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+                balText.setGravity(Gravity.CENTER); balText.setIncludeFontPadding(false);
+                balText.setMaxLines(2); balText.setEllipsize(TextUtils.TruncateAt.END);
+                balText.setPadding(dp(6),dp(4),dp(6),dp(4));
+                balCol.addView(balText,new LinearLayout.LayoutParams(-1,dp(42)));
 
-                card.addView(balCol,new LinearLayout.LayoutParams(-2,dp(36)));
+                card.addView(balCol,new LinearLayout.LayoutParams(dp(108),dp(44)));
 
                 // Quick Action Icons: WhatsApp / Call / Options
                 LinearLayout qActions=new LinearLayout(this);
@@ -4659,7 +4666,7 @@ EditText numberField(String h){
                 r.setOrientation(LinearLayout.HORIZONTAL);
                 r.setGravity(Gravity.CENTER_VERTICAL);
                 r.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-                r.setPadding(dp(8),dp(6),dp(8),dp(6));
+                styleDisplayRow(r);
                 r.setBackground(outlined(CARD,1,10));
                 r.setElevation(dp(1));
 
@@ -4689,14 +4696,15 @@ EditText numberField(String h){
                 infoCol.setPadding(dp(6),0,dp(6),0);
 
                 String mainTitle=isInvoice?("فاتورة مبيعات رقم "+invNo):(d==null||d.trim().isEmpty()?(isDebit?"قيد سحب":"دفعة سداد"):d.trim());
-                TextView titleTv=tv(mainTitle,12.5f);
-                titleTv.setTextColor(TEXT); titleTv.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-                titleTv.setMaxLines(1);
-                infoCol.addView(titleTv,new LinearLayout.LayoutParams(-1,dp(20)));
+                TextView titleTv=tv(mainTitle,14);
+                titleTv.setTextColor(TEXT); styleDisplayText(titleTv,14,true);
+                infoCol.addView(titleTv,new LinearLayout.LayoutParams(-1,dp(34)));
 
-                TextView dateTv=tv("📅 "+date+"  •  الرصيد بعد: "+balanceText(running),10);
-                dateTv.setTextColor(MUTED); dateTv.setMaxLines(1);
-                infoCol.addView(dateTv,new LinearLayout.LayoutParams(-1,dp(16)));
+                TextView dateTv=tv("📅 "+date+"  •  الرصيد بعد: "+balanceText(running),11);
+                dateTv.setTextColor(MUTED); styleDisplayValue(dateTv,11,MUTED);
+                LinearLayout.LayoutParams dateLp=new LinearLayout.LayoutParams(-1,dp(31));
+                dateLp.setMargins(0,dp(4),0,0);
+                infoCol.addView(dateTv,dateLp);
 
                 r.addView(infoCol,new LinearLayout.LayoutParams(0,-2,1));
 
@@ -4706,11 +4714,13 @@ EditText numberField(String h){
                 amtCol.setGravity(Gravity.LEFT|Gravity.CENTER_VERTICAL);
                 amtCol.setPadding(dp(4),0,0,0);
 
-                TextView amtValTv=tv((isDebit?"عليه: ":"له: ")+fmt(a)+" ر.ي",12);
-                amtValTv.setTextColor(isDebit?RED:GREEN);
-                amtValTv.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-                amtValTv.setGravity(Gravity.LEFT);
-                amtCol.addView(amtValTv,new LinearLayout.LayoutParams(-2,-2));
+                TextView amtValTv=tv((isDebit?"عليه: ":"له: ")+fmt(a)+" ر.ي",14);
+                amtValTv.setTextColor(isDebit?RED:GREEN); amtValTv.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+                amtValTv.setGravity(Gravity.CENTER); amtValTv.setIncludeFontPadding(false);
+                amtValTv.setMaxLines(2); amtValTv.setEllipsize(TextUtils.TruncateAt.END);
+                amtValTv.setPadding(dp(7),dp(5),dp(7),dp(5));
+                amtValTv.setBackground(outline(isDebit?Color.rgb(255,243,243):Color.rgb(240,249,242),1,8));
+                amtCol.addView(amtValTv,new LinearLayout.LayoutParams(dp(108),dp(44)));
 
                 r.addView(amtCol,new LinearLayout.LayoutParams(-2,-2));
 
@@ -4805,6 +4815,34 @@ EditText numberField(String h){
                 db.updateCustomer(id,oldName,n,p); customers();
                 Toast.makeText(this,"تم تعديل بيانات العميل",Toast.LENGTH_SHORT).show();
             }).show();
+    }
+
+    void styleDisplayText(TextView v,float size,boolean title){
+        if(v==null)return;
+        v.setTextSize(size); v.setIncludeFontPadding(false); v.setHorizontallyScrolling(false);
+        v.setMaxLines(title?2:3); v.setEllipsize(TextUtils.TruncateAt.END);
+        v.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+        v.setPadding(dp(title?9:7),dp(5),dp(title?9:7),dp(5));
+        v.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); v.setTextDirection(View.TEXT_DIRECTION_RTL);
+        v.setBackground(outline(title?Color.rgb(239,247,242):Color.rgb(248,250,252),1,title?9:8));
+        if(title)v.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+    }
+    void styleDisplayValue(TextView v,float size,int color){
+        styleDisplayText(v,size,false); v.setTextColor(color);
+        v.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL); v.setBackground(outline(CARD,1,8));
+    }
+    void styleDisplayRow(LinearLayout row){
+        if(row==null)return; row.setPadding(dp(7),dp(5),dp(7),dp(5));
+        row.setMinimumHeight(dp(54)); row.setGravity(Gravity.CENTER_VERTICAL);
+    }
+    void styleOperationTableCell(TextView v,float size,boolean header){
+        if(v==null)return;
+        v.setTextSize(size); v.setIncludeFontPadding(false); v.setHorizontallyScrolling(false);
+        v.setMaxLines(2); v.setEllipsize(TextUtils.TruncateAt.END);
+        v.setGravity(Gravity.CENTER_VERTICAL|Gravity.RIGHT); v.setPadding(dp(7),dp(5),dp(7),dp(5));
+        v.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); v.setTextDirection(View.TEXT_DIRECTION_RTL);
+        v.setBackground(outline(header?Color.rgb(238,247,241):Color.WHITE,1,7));
+        if(header)v.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
     }
 
     void operationActions(long customerId,String customerName,long tid,String details,double amount,int type){
