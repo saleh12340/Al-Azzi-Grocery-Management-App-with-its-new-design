@@ -1578,7 +1578,7 @@ EditText numberField(String h){
         LinearLayout header=new LinearLayout(this);header.setOrientation(LinearLayout.HORIZONTAL);header.setGravity(Gravity.CENTER_VERTICAL);header.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         TextView icon=tv(invoice?"🧾":(debit?"🔴":"🟢"),19);icon.setGravity(Gravity.CENTER);header.addView(icon,new LinearLayout.LayoutParams(dp(38),dp(38)));
         LinearLayout ht=new LinearLayout(this);ht.setOrientation(LinearLayout.VERTICAL);ht.setPadding(dp(7),0,dp(5),0);
-        TextView tt=tv(title,15,true);tt.setTextColor(color);tt.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+        TextView tt=tv(title,15);tt.setTextColor(color);tt.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         TextView tc=tv("العميل: "+(customer==null||customer.trim().isEmpty()?"نقدي":customer),11);tc.setTextColor(MUTED);tc.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         ht.addView(tt,new LinearLayout.LayoutParams(-1,dp(23)));ht.addView(tc,new LinearLayout.LayoutParams(-1,dp(18)));header.addView(ht,new LinearLayout.LayoutParams(0,dp(42),1));
         Button close=button("✕");close.setTextColor(MUTED);close.setBackgroundColor(Color.TRANSPARENT);close.setOnClickListener(v->dlg.dismiss());header.addView(close,new LinearLayout.LayoutParams(dp(32),dp(34)));
@@ -1597,13 +1597,13 @@ EditText numberField(String h){
                 TextView meta=tv("رقم الفاتورة: "+invNo+"   •   "+db.invoiceDate(iid),11.5f);meta.setTextColor(GREEN);meta.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);meta.setBackground(outlined(CARD,1,8));body.addView(meta,new LinearLayout.LayoutParams(-1,dp(34)));addSpaceTo(body,4);
                 LinearLayout table=card();table.setOrientation(LinearLayout.VERTICAL);table.setPadding(dp(5),dp(4),dp(5),dp(4));
                 LinearLayout th=new LinearLayout(this);th.setOrientation(LinearLayout.HORIZONTAL);th.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-                TextView a=tv("الصنف",10.5f,true),q=tv("الكمية",10.5f,true),t=tv("الإجمالي",10.5f,true);a.setTextColor(GREEN);q.setTextColor(GREEN);t.setTextColor(GREEN);a.setGravity(Gravity.RIGHT);q.setGravity(Gravity.CENTER);t.setGravity(Gravity.CENTER);
+                TextView a=tv("الصنف",10.5f),q=tv("الكمية",10.5f),t=tv("الإجمالي",10.5f);a.setTextColor(GREEN);q.setTextColor(GREEN);t.setTextColor(GREEN);a.setGravity(Gravity.RIGHT);q.setGravity(Gravity.CENTER);t.setGravity(Gravity.CENTER);
                 th.addView(a,new LinearLayout.LayoutParams(0,dp(25),1.5f));th.addView(q,new LinearLayout.LayoutParams(0,dp(25),.7f));th.addView(t,new LinearLayout.LayoutParams(0,dp(25),.9f));table.addView(th);
                 Cursor ic=db.invoiceLines(iid);int n=0;while(ic.moveToNext()){LinearLayout tr=new LinearLayout(this);tr.setOrientation(LinearLayout.HORIZONTAL);tr.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);TextView x=tv(ic.getString(1),11.5f),y=tv(fmt(ic.getDouble(2)),11.5f),z=tv(fmt(ic.getDouble(3)),11.5f,true);x.setTextColor(TEXT);y.setTextColor(TEXT);z.setTextColor(GREEN);x.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);y.setGravity(Gravity.CENTER);z.setGravity(Gravity.CENTER);tr.addView(x,new LinearLayout.LayoutParams(0,dp(30),1.5f));tr.addView(y,new LinearLayout.LayoutParams(0,dp(30),.7f));tr.addView(z,new LinearLayout.LayoutParams(0,dp(30),.9f));table.addView(tr);n++;}ic.close();body.addView(table,new LinearLayout.LayoutParams(-1,-2));
                 TextView sum=tv("الإجمالي: "+fmt(db.invoiceTotal(iid))+"   •   المدفوع: "+fmt(db.invoicePaid(iid))+"   •   المتبقي: "+fmt(Math.max(0,db.invoiceTotal(iid)-db.invoicePaid(iid))),11.5f,true);sum.setTextColor(color);sum.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);body.addView(sum,new LinearLayout.LayoutParams(-1,dp(34)));
             }
         }else{
-            TextView det=tv("البيان",10.5f,true);det.setTextColor(MUTED);body.addView(det,new LinearLayout.LayoutParams(-1,dp(20)));
+            TextView det=tv("البيان",10.5f);det.setTextColor(MUTED);body.addView(det,new LinearLayout.LayoutParams(-1,dp(20)));
             TextView dv=tv((details==null||details.trim().isEmpty())?"لا يوجد بيان":details.trim(),12.5f);dv.setTextColor(TEXT);dv.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);dv.setMaxLines(4);dv.setEllipsize(TextUtils.TruncateAt.END);dv.setPadding(dp(8),dp(6),dp(8),dp(6));dv.setBackground(outlined(CARD,1,8));body.addView(dv,new LinearLayout.LayoutParams(-1,dp(54)));
         }
         if(tid>0){addSpaceTo(body,4);TextView rb=tv("الرصيد بعد العملية: "+balanceText(db.balanceAfterTransaction(tid)),11.5f,true);rb.setTextColor(BLUE);rb.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);rb.setBackground(outlined(CARD,1,8));body.addView(rb,new LinearLayout.LayoutParams(-1,dp(38)));}
