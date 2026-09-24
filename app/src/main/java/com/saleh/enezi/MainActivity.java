@@ -1547,115 +1547,37 @@ EditText numberField(String h){
         return s.toString();
     }
 
-    void showPostSaveOperation(String title,String message,Runnable shareAction,Runnable hideAction){
-        final Dialog dialog=new Dialog(this);
-        LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(dp(16),dp(12),dp(16),dp(10));box.setBackground(rounded(CARD,dp(18)));
-        TextView t=tv(title,17);t.setTextColor(GREEN);t.setTypeface(Typeface.DEFAULT,Typeface.BOLD);t.setGravity(Gravity.CENTER);box.addView(t,new LinearLayout.LayoutParams(-1,dp(46)));
-        TextView m=tv(message,12);m.setTextColor(TEXT);m.setGravity(Gravity.CENTER);m.setMaxLines(5);fitInside(m,12f,9f);box.addView(m,new LinearLayout.LayoutParams(-1,-2));
-        LinearLayout actions=new LinearLayout(this);actions.setOrientation(LinearLayout.HORIZONTAL);
-        Button share=button("📤 مشاركة");share.setTextColor(Color.WHITE);share.setBackgroundColor(GREEN);Button hide=button("إخفاء");hide.setTextColor(MUTED);
-        actions.addView(share,new LinearLayout.LayoutParams(0,dp(52),1));actions.addView(hide,new LinearLayout.LayoutParams(0,dp(52),1));box.addView(actions);
-        share.setOnClickListener(v->{dialog.dismiss();shareAction.run();});hide.setOnClickListener(v->{dialog.dismiss();hideAction.run();});
-        ScrollView dialogScroll=new ScrollView(this);
-        dialogScroll.setFillViewport(true);
-        dialogScroll.setClipToPadding(false);
-        dialogScroll.addView(box,new ScrollView.LayoutParams(-1,-2));
-        dialog.setContentView(dialogScroll);
-        dialog.setCanceledOnTouchOutside(false);dialog.show();
-        if(dialog.getWindow()!=null){
-            Window w=dialog.getWindow();
-            w.setBackgroundDrawableResource(android.R.color.transparent);
-            int width=(int)(getResources().getDisplayMetrics().widthPixels*0.92f);
-            int height=(int)(getResources().getDisplayMetrics().heightPixels*0.88f);
-            w.setLayout(width,height);
-            w.setGravity(Gravity.CENTER);
-            w.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
-        }
+    void showCompactSaveSnackbar(String message,String actionLabel,Runnable action){
+        View anchor=content!=null?content:root;
+        if(anchor==null) anchor=findViewById(android.R.id.content);
+        try{
+            com.google.android.material.snackbar.Snackbar bar=com.google.android.material.snackbar.Snackbar.make(anchor,message,com.google.android.material.snackbar.Snackbar.LENGTH_SHORT);
+            bar.setTextMaxLines(1);
+            if(actionLabel!=null&&!actionLabel.isEmpty()){bar.setAction(actionLabel,v->{if(action!=null)action.run();});bar.setActionTextColor(Color.WHITE);}
+            View sb=bar.getView();sb.setMinimumHeight(dp(42));sb.setPadding(dp(10),0,dp(8),0);
+            TextView text=sb.findViewById(com.google.android.material.R.id.snackbar_text);
+            if(text!=null){text.setTextSize(15);text.setMaxLines(1);text.setEllipsize(null);text.setIncludeFontPadding(true);}
+            TextView av=sb.findViewById(com.google.android.material.R.id.snackbar_action);
+            if(av!=null){av.setTextSize(14);av.setMaxLines(1);}
+            bar.show();
+        }catch(Throwable ignored){Toast.makeText(this,message,Toast.LENGTH_SHORT).show();}
     }
+
+    void showPostSaveOperation(String title,String message,Runnable shareAction,Runnable hideAction){
+        String t=title==null?"":title;
+        String msg=t.contains("فاتورة شراء")?"✓ تم حفظ فاتورة الشراء":(t.contains("فاتورة")?"✓ تم حفظ الفاتورة":(t.contains("عملية")?"✓ تم حفظ العملية":"✓ تم الحفظ"));
+        showCompactSaveSnackbar(msg,"مشاركة",shareAction);
+    }
+
 
     void showPostSaveActions(String no,String customer,ArrayList<Line> lines,double total,long cid,double paid,String stockWarning){
-        String status=paid>=total?"مسددة":(paid>0?"متبقي "+fmt(total-paid)+" ريال":"غير مسددة");
-        int statusColor=paid>=total?BLUE:RED;
-        final Dialog dialog=new Dialog(this);
-        LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(dp(16),dp(12),dp(16),dp(10));box.setBackground(rounded(CARD,dp(18)));
-        TextView title=tv("تم حفظ الفاتورة بنجاح",17);title.setTextColor(GREEN);title.setTypeface(Typeface.DEFAULT,Typeface.BOLD);title.setGravity(Gravity.CENTER);
-        box.addView(title,new LinearLayout.LayoutParams(-1,-2));
-        TextView sub=tv("الفاتورة: #"+no+"\nالإجمالي: "+fmt(total)+" ريال"+(paid>0?" | المدفوع: "+fmt(paid)+" ريال":""),12);sub.setTextColor(TEXT);sub.setGravity(Gravity.CENTER);
-        box.addView(sub,new LinearLayout.LayoutParams(-1,-2));
-        TextView statusV=tv(status,14);statusV.setTextColor(statusColor);statusV.setTypeface(Typeface.DEFAULT,Typeface.BOLD);statusV.setGravity(Gravity.CENTER);
-        box.addView(statusV,new LinearLayout.LayoutParams(-1,-2));
-        double currentBalance=db.balance(cid);
-        if(cid>0){
-            TextView bal=tv("الرصيد بعد الفاتورة: "+balanceText(currentBalance),12);bal.setTextColor(balanceColor(currentBalance));bal.setGravity(Gravity.CENTER);
-            box.addView(bal,new LinearLayout.LayoutParams(-1,dp(28)));
-        }
-        if(stockWarning!=null&&!stockWarning.trim().isEmpty()){
-            TextView warn=tv("⚠️ تنبيه المخزون\n"+stockWarning,11.5f);
-            warn.setTextColor(RED);warn.setGravity(Gravity.CENTER);warn.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-            warn.setBackground(outlined(Color.rgb(255,246,236),1,8));
-            box.addView(warn,new LinearLayout.LayoutParams(-1,-2));spaceTo(box,5);
-        }
-
-        LinearLayout actions1=new LinearLayout(this);actions1.setOrientation(LinearLayout.HORIZONTAL);actions1.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        Button share=button("📲 واتساب");share.setTextColor(Color.WHITE);share.setBackground(rounded(GREEN,dp(8)));share.setTextSize(11f);
-        Button pdfBtn=button("📄 PDF");pdfBtn.setTextColor(Color.rgb(180,40,40));pdfBtn.setBackground(outline(CARD,8));pdfBtn.setTextSize(11f);
-        Button imgBtn=button("🖼️ صورة");imgBtn.setTextColor(Color.rgb(30,100,200));imgBtn.setBackground(outline(CARD,8));imgBtn.setTextSize(11f);
-        Button smsBtn=button("✉️ SMS");smsBtn.setTextColor(Color.rgb(20,100,50));smsBtn.setBackground(outline(CARD,8));smsBtn.setTextSize(11f);
-
-        actions1.addView(share,new LinearLayout.LayoutParams(0,dp(50),1f));
-        LinearLayout.LayoutParams plp=new LinearLayout.LayoutParams(0,dp(50),1f); plp.setMargins(dp(3),0,0,0);
-        actions1.addView(pdfBtn,plp);
-        LinearLayout.LayoutParams ilp=new LinearLayout.LayoutParams(0,dp(50),1f); ilp.setMargins(dp(3),0,0,0);
-        actions1.addView(imgBtn,ilp);
-        LinearLayout.LayoutParams slp=new LinearLayout.LayoutParams(0,dp(50),1f); slp.setMargins(dp(3),0,0,0);
-        actions1.addView(smsBtn,slp);
-        box.addView(actions1);
-        spaceTo(box,6);
-
-        LinearLayout actions2=new LinearLayout(this);actions2.setOrientation(LinearLayout.HORIZONTAL);actions2.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        Button printBtn=button("🖨️ طباعة");printBtn.setTextColor(Color.WHITE);printBtn.setBackground(rounded(DARK,dp(8)));printBtn.setTextSize(11f);
-        Button newInvoice=button("＋ جديدة");newInvoice.setTextColor(GREEN);newInvoice.setBackground(outline(Color.rgb(241,247,242),8));newInvoice.setTextSize(11f);
-        Button close=button("✓ إقفال");close.setTextColor(MUTED);close.setBackground(outline(CARD,8));close.setTextSize(11f);
-
-        actions2.addView(printBtn,new LinearLayout.LayoutParams(0,dp(50),1f));
-        LinearLayout.LayoutParams nlp=new LinearLayout.LayoutParams(0,dp(50),1f); nlp.setMargins(dp(3),0,0,0);
-        actions2.addView(newInvoice,nlp);
-        LinearLayout.LayoutParams clp=new LinearLayout.LayoutParams(0,dp(50),1f); clp.setMargins(dp(3),0,0,0);
-        actions2.addView(close,clp);
-        box.addView(actions2);
-
-        share.setOnClickListener(v->{
-            dialog.dismiss();
-            invoiceHistory();
-            shareReceiptImageAndText(no,customer,lines,total,paid);
-        });
-        pdfBtn.setOnClickListener(v->{
-            dialog.dismiss();
-            invoiceHistory();
-            shareInvoicePdf(no,customer,lines,total,paid,currentBalance,db.now());
-        });
-        imgBtn.setOnClickListener(v->{
-            dialog.dismiss();
-            invoiceHistory();
-            shareInvoiceImage(no,customer,lines,total,paid,currentBalance,db.now());
-        });
-        smsBtn.setOnClickListener(v->{
-            dialog.dismiss();
-            invoiceHistory();
-            shareInvoiceSms(no,customer,lines,total,paid);
-        });
-        printBtn.setOnClickListener(v->{
-            printInvoiceBluetooth(no,customer,lines,total);
-        });
-        newInvoice.setOnClickListener(v->{dialog.dismiss();invoice();});
-        close.setOnClickListener(v->{dialog.dismiss();invoiceHistory();});
-
-        dialog.setContentView(box);dialog.setCanceledOnTouchOutside(false);dialog.setCancelable(false);dialog.show();
-        if(dialog.getWindow()!=null){dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);dialog.getWindow().setLayout(dp(340),WindowManager.LayoutParams.WRAP_CONTENT);dialog.getWindow().setGravity(Gravity.CENTER);}
+        String msg=(stockWarning!=null&&!stockWarning.trim().isEmpty())?"✓ تم حفظ الفاتورة • تنبيه المخزون":"✓ تم حفظ الفاتورة";
+        final String n=no,c=customer;final ArrayList<Line> ls=lines;final double t=total,p=paid;
+        showCompactSaveSnackbar(msg,"مشاركة",()->{try{invoiceHistory();shareReceiptImageAndText(n,c,ls,t,p);}catch(Throwable e){Toast.makeText(this,"تعذر مشاركة الفاتورة",Toast.LENGTH_SHORT).show();}});
     }
 
-    
-void showOperationDetails(String customer,long tid,String details,double amount,int type){
+
+    void showOperationDetails(String customer,long tid,String details,double amount,int type){
         final Dialog dlg=new Dialog(this);
         String invNo=db.invoiceNoFromTransaction(details);boolean invoice=!invNo.isEmpty(),debit=type==1;
         int accent=invoice?GREEN:(debit?RED:Color.rgb(20,185,110));
@@ -5531,86 +5453,12 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
 
 
     void showPostSavePurchaseActions(long id,String no,String supplier,ArrayList<PurchaseLine> lines,double total,String date){
-        final Dialog dialog=new Dialog(this);
-        LinearLayout box=new LinearLayout(this);
-        box.setOrientation(LinearLayout.VERTICAL);
-        box.setPadding(dp(16),dp(14),dp(16),dp(14));
-        box.setBackground(rounded(CARD,dp(18)));
-        box.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-
-        TextView icon=tv("📦",32);icon.setGravity(Gravity.CENTER);
-        box.addView(icon,new LinearLayout.LayoutParams(-1,dp(42)));
-
-        TextView title=tv("تم حفظ فاتورة الشراء بنجاح",16);
-        title.setTextColor(GOLD);title.setTypeface(Typeface.DEFAULT,Typeface.BOLD);title.setGravity(Gravity.CENTER);
-        box.addView(title,new LinearLayout.LayoutParams(-1,dp(26)));
-
-        TextView sub=tv("فاتورة شراء #"+no+" • "+(supplier==null||supplier.isEmpty()?"بدون مورد":supplier)+" • "+lines.size()+" أصناف",11.5f);
-        sub.setTextColor(MUTED);sub.setGravity(Gravity.CENTER);
-        box.addView(sub,new LinearLayout.LayoutParams(-1,dp(20)));
-        addSpaceTo(box,8);
-
-        LinearLayout totBox=new LinearLayout(this);
-        totBox.setOrientation(LinearLayout.VERTICAL);
-        totBox.setGravity(Gravity.CENTER);
-        totBox.setPadding(dp(10),dp(6),dp(10),dp(6));
-        totBox.setBackground(outline(Color.rgb(255,250,240),10));
-        TextView amtTv=tv("إجمالي المشتريات: "+fmt(total)+" ريال",14);
-        amtTv.setTextColor(GOLD);amtTv.setTypeface(Typeface.DEFAULT,Typeface.BOLD);amtTv.setGravity(Gravity.CENTER);
-        totBox.addView(amtTv,new LinearLayout.LayoutParams(-1,-2));
-        box.addView(totBox,new LinearLayout.LayoutParams(-1,dp(48)));
-        addSpaceTo(box,10);
-
-        LinearLayout actions1=new LinearLayout(this);
-        actions1.setOrientation(LinearLayout.HORIZONTAL);
-        actions1.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-
-        Button share=button("📤 واتساب");share.setTextColor(Color.WHITE);share.setBackground(rounded(GREEN,dp(10)));
-        Button smsBtn=button("✉️ SMS");smsBtn.setTextColor(Color.rgb(180,120,20));smsBtn.setBackground(outline(CARD,10));
-        Button printBtn=button("🖨️ طباعة");printBtn.setTextColor(Color.WHITE);printBtn.setBackground(rounded(DARK,dp(10)));
-
-        actions1.addView(share,new LinearLayout.LayoutParams(0,dp(42),1.1f));
-        LinearLayout.LayoutParams slp=new LinearLayout.LayoutParams(0,dp(42),0.9f); slp.setMargins(dp(5),0,0,0);
-        actions1.addView(smsBtn,slp);
-        LinearLayout.LayoutParams plp=new LinearLayout.LayoutParams(0,dp(42),1f); plp.setMargins(dp(5),0,0,0);
-        actions1.addView(printBtn,plp);
-        box.addView(actions1);
-        addSpaceTo(box,6);
-
-        LinearLayout actions2=new LinearLayout(this);
-        actions2.setOrientation(LinearLayout.HORIZONTAL);
-        actions2.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-
-        Button newP=button("＋ فاتورة جديدة");newP.setTextColor(GOLD);newP.setBackground(outline(Color.rgb(255,252,245),10));
-        Button close=button("✓ إقفال والعودة للسجل");close.setTextColor(MUTED);close.setBackground(outline(CARD,10));
-
-        actions2.addView(newP,new LinearLayout.LayoutParams(0,dp(50),1));
-        LinearLayout.LayoutParams clp=new LinearLayout.LayoutParams(0,dp(50),1); clp.setMargins(dp(6),0,0,0);
-        actions2.addView(close,clp);
-        box.addView(actions2);
-
-        share.setOnClickListener(v->{
-            dialog.dismiss();
-            purchaseInvoices();
-            sharePurchaseInvoice(id,no,supplier,total,date);
-        });
-        smsBtn.setOnClickListener(v->{
-            dialog.dismiss();
-            purchaseInvoices();
-            sharePurchaseInvoiceSms(id,no,supplier,total,date);
-        });
-        printBtn.setOnClickListener(v->{
-            printPurchaseInvoice(id,no,supplier,total,date);
-        });
-        newP.setOnClickListener(v->{dialog.dismiss();newPurchaseInvoice();});
-        close.setOnClickListener(v->{dialog.dismiss();purchaseInvoices();});
-
-        dialog.setContentView(box);dialog.setCanceledOnTouchOutside(false);dialog.setCancelable(false);dialog.show();
-        if(dialog.getWindow()!=null){dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);dialog.getWindow().setLayout(dp(340),WindowManager.LayoutParams.WRAP_CONTENT);dialog.getWindow().setGravity(Gravity.CENTER);}
+        final long purchaseId=id;final String purchaseNo=no,purchaseSupplier=supplier,purchaseDate=date;final double purchaseTotal=total;
+        showCompactSaveSnackbar("✓ تم حفظ فاتورة الشراء","مشاركة",()->{try{purchaseInvoices();sharePurchaseInvoice(purchaseId,purchaseNo,purchaseSupplier,purchaseTotal,purchaseDate);}catch(Throwable e){Toast.makeText(this,"تعذر مشاركة فاتورة الشراء",Toast.LENGTH_SHORT).show();}});
     }
 
 
-    ArrayList<PurchaseLine> loadPurchaseLines(long id){
+        ArrayList<PurchaseLine> loadPurchaseLines(long id){
         ArrayList<PurchaseLine> ls=new ArrayList<>();Cursor c=db.purchaseLines(id);
         while(c.moveToNext())ls.add(new PurchaseLine(c.getString(1),c.getDouble(2),c.getDouble(3),c.getDouble(4),c.getDouble(5)));
         c.close();return ls;
