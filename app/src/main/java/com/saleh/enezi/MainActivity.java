@@ -6006,14 +6006,10 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
             File file=createCustomerStatementPdf(id,name);
             String caption="كشف حساب تفصيلي - "+name+"\nبقالة العزي للمواد الغذائية\nرصيدكم الحالي: "+balanceText(db.balance(id));
             DocumentCenter.sharePdf(this,file,caption,"مشاركة كشف الحساب PDF");
-            return;
-            /*
-            String p=normalizeWhatsAppPhone(db.phoneByName(name));
-            if(!p.isEmpty())i.putExtra("jid",p+"@s.whatsapp.net");
-            try{i.setPackage("com.whatsapp");startActivity(i);}
-            catch(Exception e){i.setPackage(null);startActivity(Intent.createChooser(i,"مشاركة كشف الحساب PDF"));}
-        }*/
+        }catch(Exception e){
+            Toast.makeText(this,"تعذر مشاركة كشف الحساب PDF",Toast.LENGTH_SHORT).show();
         }
+    }
 
 
     File createInvoicePdf(String no,String customer,ArrayList<Line> lines,double total,double paid,double balanceAfter,String date){
