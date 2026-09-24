@@ -5453,14 +5453,14 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
             sharePurchaseInvoiceSms(id,no,supplier,total,date);
         });
 
-        row1.addView(shareBtn,new LinearLayout.LayoutParams(0,dp(38),1f));
-        LinearLayout.LayoutParams plp=new LinearLayout.LayoutParams(0,dp(38),1f); plp.setMargins(dp(3),0,0,0);
+                row1.addView(shareBtn,new LinearLayout.LayoutParams(0,dp(40),1f));
+        LinearLayout.LayoutParams plp=new LinearLayout.LayoutParams(0,dp(40),1f);plp.setMargins(dp(4),0,0,0);
         row1.addView(pdfBtn,plp);
-        LinearLayout.LayoutParams ilp=new LinearLayout.LayoutParams(0,dp(38),1f); ilp.setMargins(dp(3),0,0,0);
-        row1.addView(imgBtn,ilp);
-        LinearLayout.LayoutParams slp=new LinearLayout.LayoutParams(0,dp(38),1f); slp.setMargins(dp(3),0,0,0);
-        row1.addView(smsBtn,slp);
-        actionsGrid.addView(row1,new LinearLayout.LayoutParams(-1,dp(40)));
+        actionsGrid.addView(row1,new LinearLayout.LayoutParams(-1,dp(42)));
+        LinearLayout row1b=new LinearLayout(this);row1b.setOrientation(LinearLayout.HORIZONTAL);row1b.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        row1b.addView(imgBtn,new LinearLayout.LayoutParams(0,dp(40),1f));
+        LinearLayout.LayoutParams slp=new LinearLayout.LayoutParams(0,dp(40),1f);slp.setMargins(dp(4),0,0,0);row1b.addView(smsBtn,slp);
+        actionsGrid.addView(row1b,new LinearLayout.LayoutParams(-1,dp(42)));
 
         addSpaceTo(actionsGrid,4);
 
