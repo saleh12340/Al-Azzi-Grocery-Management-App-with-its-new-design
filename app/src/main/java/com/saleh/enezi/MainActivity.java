@@ -7495,122 +7495,73 @@ void printTextBluetooth(String text,int requestedWidth){
 void customers(){
         base("الحسابات والعملاء");
 
-        // التصميم الجديد: تنظيف كامل لواجهة العملاء السابقة واستبدالها بواجهة
-        // حديثة ذات بطاقات شفافة ومدورة، مع استغلال المساحة بدون تكديس.
-        final int glass=Color.argb(232,255,255,255);
-        final int glassSoft=Color.argb(205,248,251,255);
+        // واجهة عالية الكثافة: شريط بحث علوي + إحصاءات مصغرة + بطاقات عملاء قصيرة.
+        final int glass=Color.argb(218,255,255,255);
+        final int glassSoft=Color.argb(198,240,248,249);
 
-        LinearLayout hero=new LinearLayout(this);
-        hero.setOrientation(LinearLayout.HORIZONTAL);
-        hero.setGravity(Gravity.CENTER_VERTICAL);
-        hero.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        hero.setPadding(dp(14),dp(8),dp(14),dp(8));
-        hero.setBackground(outlined(Color.argb(225,255,255,255),dp(1),dp(24)));
-        hero.setElevation(dp(4));
+        LinearLayout top=new LinearLayout(this);
+        top.setOrientation(LinearLayout.HORIZONTAL);
+        top.setGravity(Gravity.CENTER_VERTICAL);
+        top.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        top.setPadding(dp(4),0,dp(4),0);
 
-        LinearLayout heroText=new LinearLayout(this);
-        heroText.setOrientation(LinearLayout.VERTICAL);
-        heroText.setGravity(Gravity.CENTER_VERTICAL);
-        TextView title=tv("الحسابات والعملاء",19);
-        title.setTextColor(DARK); title.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        title.setMaxLines(1); title.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
-        fitInside(title,19,15);
-        TextView sub=tv("كل عميل وحسابه في بطاقة واحدة",12);
-        sub.setTextColor(MUTED); sub.setMaxLines(1);
-        fitInside(sub,12,10);
-        heroText.addView(title,new LinearLayout.LayoutParams(-1,dp(27)));
-        heroText.addView(sub,new LinearLayout.LayoutParams(-1,dp(20)));
-        hero.addView(heroText,new LinearLayout.LayoutParams(0,dp(54),1));
+        EditText search=field("ابحث باسم العميل أو الرقم...");
+        search.setTextSize(10);
+        search.setSingleLine(true);
+        search.setPadding(dp(8),0,dp(8),0);
+        search.setBackground(outlined(glassSoft,dp(1),dp(16)));
+        top.addView(search,new LinearLayout.LayoutParams(0,dp(40),1));
 
-        TextView icon=tv("👥",22);
-        icon.setGravity(Gravity.CENTER);
-        icon.setBackground(outlined(Color.argb(210,238,248,240),dp(1),dp(20)));
-        hero.addView(icon,new LinearLayout.LayoutParams(dp(50),dp(50)));
-        content.addView(hero,new LinearLayout.LayoutParams(-1,dp(60)));
-        addSpace(7);
+        Button mic=button("🎙");
+        mic.setTextSize(12);
+        mic.setPadding(0,0,0,0);
+        mic.setBackground(outlined(glass,dp(1),dp(18)));
+        mic.setOnClickListener(v->{
+            try{
+                Intent i=new Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+                i.putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE,"ar");
+                i.putExtra(android.speech.RecognizerIntent.EXTRA_PROMPT,"ابحث باسم العميل");
+                startActivityForResult(i,5101);
+            }catch(Exception e){Toast.makeText(this,"البحث الصوتي غير متاح على الجهاز",Toast.LENGTH_SHORT).show();}
+        });
+        LinearLayout.LayoutParams mp=new LinearLayout.LayoutParams(dp(40),dp(40)); mp.setMargins(dp(4),0,0,0);
+        top.addView(mic,mp);
+
+        Button add=button("+");
+        add.setTextSize(18);
+        add.setTextColor(Color.WHITE);
+        add.setBackground(rounded(GREEN,dp(18)));
+        add.setPadding(0,0,0,0);
+        add.setOnClickListener(v->showCustomerCreatePopup());
+        LinearLayout.LayoutParams ap=new LinearLayout.LayoutParams(dp(40),dp(40)); ap.setMargins(dp(4),0,0,0);
+        top.addView(add,ap);
+        content.addView(top,new LinearLayout.LayoutParams(-1,dp(42)));
 
         double totalDebts=db.totalDebts();
         double totalCredits=db.totalCredits();
         int totalCustomers=db.customerCount();
-        int debtorCount=db.debtorCustomersCount();
 
         LinearLayout stats=new LinearLayout(this);
         stats.setOrientation(LinearLayout.HORIZONTAL);
         stats.setGravity(Gravity.CENTER_VERTICAL);
         stats.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        stats.addView(glassStat("عليهم",fmt(totalDebts)+" ر.ي",RED),new LinearLayout.LayoutParams(0,dp(68),1));
-        LinearLayout.LayoutParams s1=new LinearLayout.LayoutParams(0,dp(68),1); s1.setMargins(dp(6),0,0,0);
-        stats.addView(glassStat("لهم",fmt(totalCredits)+" ر.ي",BLUE),s1);
-        LinearLayout.LayoutParams s2=new LinearLayout.LayoutParams(0,dp(68),1); s2.setMargins(dp(6),0,0,0);
-        stats.addView(glassStat("العملاء",String.valueOf(totalCustomers),GREEN),s2);
-        content.addView(stats,new LinearLayout.LayoutParams(-1,dp(70)));
-        addSpace(7);
-
-        LinearLayout actions=new LinearLayout(this);
-        actions.setOrientation(LinearLayout.HORIZONTAL);
-        actions.setGravity(Gravity.CENTER_VERTICAL);
-        actions.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-
-        Button addBtn=button("＋ عميل جديد");
-        addBtn.setTextColor(Color.WHITE);
-        addBtn.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        addBtn.setBackground(rounded(GREEN,dp(20)));
-        addBtn.setOnClickListener(v->showCustomerCreatePopup());
-        actions.addView(addBtn,new LinearLayout.LayoutParams(0,dp(45),1));
-
-        Button importBtn=button("👥 استيراد رقم");
-        importBtn.setTextColor(DARK);
-        importBtn.setBackground(outlined(glass,dp(1),dp(20)));
-        importBtn.setOnClickListener(v->{
-            showCustomerCreatePopup();
-            new Handler(Looper.getMainLooper()).postDelayed(this::importContact,220);
-        });
-        LinearLayout.LayoutParams imp=new LinearLayout.LayoutParams(0,dp(45),1);
-        imp.setMargins(dp(6),0,0,0);
-        actions.addView(importBtn,imp);
-        content.addView(actions,new LinearLayout.LayoutParams(-1,dp(47)));
-        addSpace(6);
-
-        EditText search=field("🔎  ابحث باسم العميل أو الرقم");
-        search.setTextSize(15);
-        search.setSingleLine(true);
-        search.setBackground(outlined(glassSoft,dp(1),dp(20)));
-        content.addView(search,new LinearLayout.LayoutParams(-1,dp(47)));
-        addSpace(6);
-
-        final int[] filterMode={0};
-        LinearLayout filters=new LinearLayout(this);
-        filters.setOrientation(LinearLayout.HORIZONTAL);
-        filters.setGravity(Gravity.CENTER_VERTICAL);
-        filters.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        Button all=button("الكل "+totalCustomers);
-        Button debt=button("عليهم "+debtorCount);
-        Button settled=button("خالص / دائن");
-        final Runnable[] refresh={null};
-        Runnable style=()->{
-            all.setBackground(filterMode[0]==0?rounded(GREEN,dp(18)):outlined(glass,dp(1),dp(18)));
-            all.setTextColor(filterMode[0]==0?Color.WHITE:DARK);
-            debt.setBackground(filterMode[0]==1?rounded(RED,dp(18)):outlined(glass,dp(1),dp(18)));
-            debt.setTextColor(filterMode[0]==1?Color.WHITE:DARK);
-            settled.setBackground(filterMode[0]==2?rounded(BLUE,dp(18)):outlined(glass,dp(1),dp(18)));
-            settled.setTextColor(filterMode[0]==2?Color.WHITE:DARK);
-        };
-        all.setOnClickListener(v->{filterMode[0]=0;style.run();refresh[0].run();});
-        debt.setOnClickListener(v->{filterMode[0]=1;style.run();refresh[0].run();});
-        settled.setOnClickListener(v->{filterMode[0]=2;style.run();refresh[0].run();});
-        filters.addView(all,new LinearLayout.LayoutParams(0,dp(39),1));
-        LinearLayout.LayoutParams f1=new LinearLayout.LayoutParams(0,dp(39),1); f1.setMargins(dp(5),0,0,0);
-        filters.addView(debt,f1);
-        LinearLayout.LayoutParams f2=new LinearLayout.LayoutParams(0,dp(39),1); f2.setMargins(dp(5),0,0,0);
-        filters.addView(settled,f2);
-        content.addView(filters,new LinearLayout.LayoutParams(-1,dp(41)));
-        style.run();
-        addSpace(5);
+        TextView st1=tv("العملاء "+totalCustomers,9); st1.setTextColor(DARK); st1.setGravity(Gravity.CENTER);
+        TextView st2=tv("لهم "+fmt(totalCredits)+" ر.ي",9); st2.setTextColor(BLUE); st2.setGravity(Gravity.CENTER);
+        TextView st3=tv("عليهم "+fmt(totalDebts)+" ر.ي",9); st3.setTextColor(RED); st3.setGravity(Gravity.CENTER);
+        for(TextView s:new TextView[]{st1,st2,st3}){s.setSingleLine(true);s.setMaxLines(1);autoFitText(s,10f,8f,0.5f);s.setBackground(outlined(glass,dp(1),dp(14)));}
+        LinearLayout.LayoutParams q1=new LinearLayout.LayoutParams(0,dp(31),1);
+        LinearLayout.LayoutParams q2=new LinearLayout.LayoutParams(0,dp(31),1); q2.setMargins(dp(4),0,0,0);
+        LinearLayout.LayoutParams q3=new LinearLayout.LayoutParams(0,dp(31),1); q3.setMargins(dp(4),0,0,0);
+        stats.addView(st1,q1); stats.addView(st2,q2); stats.addView(st3,q3);
+        content.addView(stats,new LinearLayout.LayoutParams(-1,dp(33)));
 
         LinearLayout list=new LinearLayout(this);
         list.setOrientation(LinearLayout.VERTICAL);
-        content.addView(list);
+        list.setPadding(dp(2),dp(4),dp(2),0);
+        content.addView(list,new LinearLayout.LayoutParams(-1,-2));
 
+        final int[] filterMode={0};
+        final Runnable[] refresh={null};
         refresh[0]=()->{
             list.removeAllViews();
             Cursor c=db.customers(search.getText().toString().trim());
@@ -7618,7 +7569,6 @@ void customers(){
             while(c.moveToNext()){
                 long id=c.getLong(0);
                 String n=c.getString(1)==null?"":c.getString(1).trim();
-                String phone=c.getString(2);
                 double bal=db.balance(id);
                 if(filterMode[0]==1&&bal<=0.005)continue;
                 if(filterMode[0]==2&&bal>0.005)continue;
@@ -7628,76 +7578,78 @@ void customers(){
                 card.setOrientation(LinearLayout.HORIZONTAL);
                 card.setGravity(Gravity.CENTER_VERTICAL);
                 card.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-                card.setPadding(dp(10),dp(7),dp(10),dp(7));
-                card.setBackground(outlined(Color.argb(230,255,255,255),dp(1),dp(23)));
-                card.setElevation(dp(3));
+                card.setPadding(dp(4),dp(2),dp(4),dp(2));
+                card.setBackground(outlined(Color.argb(210,255,255,255),dp(1),dp(15)));
+                card.setElevation(dp(1));
 
-                TextView avatar=tv(n.isEmpty()?"👤":n.substring(0,1),18);
-                avatar.setTextColor(GREEN); avatar.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+                TextView avatar=tv(n.isEmpty()?"ب":n.substring(0,1),10);
+                avatar.setText("ب");
+                avatar.setTextColor(Color.WHITE);
+                avatar.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
                 avatar.setGravity(Gravity.CENTER);
-                avatar.setBackground(outlined(Color.argb(210,238,248,240),dp(1),dp(24)));
-                card.addView(avatar,new LinearLayout.LayoutParams(dp(46),dp(46)));
+                avatar.setBackground(rounded(Color.rgb(20,190,105),dp(14)));
+                card.addView(avatar,new LinearLayout.LayoutParams(dp(24),dp(24)));
 
                 LinearLayout info=new LinearLayout(this);
                 info.setOrientation(LinearLayout.VERTICAL);
                 info.setGravity(Gravity.CENTER_VERTICAL);
-                info.setPadding(dp(9),0,dp(7),0);
+                info.setPadding(dp(5),0,dp(4),0);
 
-                TextView name=tv(n,16);
-                name.setTextColor(DARK); name.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-                name.setSingleLine(true); name.setMaxLines(1); name.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+                TextView name=tv(n,10);
+                name.setTextColor(DARK);
+                name.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+                name.setSingleLine(true);
+                name.setMaxLines(1);
                 name.setEllipsize(null);
-                name.setPadding(0,0,0,0);
-                autoFitText(name,16f,8f,0.5f);
-                info.addView(name,new LinearLayout.LayoutParams(-1,dp(32)));
+                autoFitText(name,10f,8f,0.25f);
+                info.addView(name,new LinearLayout.LayoutParams(-1,dp(20)));
 
-                String subText=db.transactionCount(id)+" حركة";
-                TextView subTv=tv(subText,11);
-                subTv.setTextColor(MUTED); subTv.setMaxLines(1);
-                fitInside(subTv,11,9);
-                info.addView(subTv,new LinearLayout.LayoutParams(-1,dp(18)));
-                card.addView(info,new LinearLayout.LayoutParams(0,dp(52),1));
+                String sub=db.transactionCount(id)+" حركة";
+                TextView subTv=tv(sub,8);
+                subTv.setTextColor(MUTED);
+                subTv.setSingleLine(true);
+                subTv.setMaxLines(1);
+                autoFitText(subTv,8.5f,7.5f,0.25f);
+                info.addView(subTv,new LinearLayout.LayoutParams(-1,dp(15)));
+                card.addView(info,new LinearLayout.LayoutParams(0,dp(39),1));
 
-                LinearLayout balance=new LinearLayout(this);
-                balance.setOrientation(LinearLayout.VERTICAL);
+                TextView balance=tv(balanceText(bal),9);
+                balance.setTextColor(balanceColor(bal));
+                balance.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
                 balance.setGravity(Gravity.CENTER);
-                balance.setPadding(dp(8),dp(3),dp(8),dp(3));
+                balance.setSingleLine(true);
+                balance.setMaxLines(1);
+                balance.setEllipsize(null);
+                balance.setPadding(dp(5),0,dp(5),0);
                 balance.setBackground(outlined(
-                    bal>0.005?Color.argb(210,255,235,235):
-                    bal<-0.005?Color.argb(210,235,246,255):
-                    Color.argb(210,236,248,239),dp(1),dp(16)));
-                TextView bv=tv(balanceText(bal),12);
-                bv.setTextColor(balanceColor(bal)); bv.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-                bv.setGravity(Gravity.CENTER); bv.setSingleLine(true); bv.setMaxLines(1);
-                bv.setEllipsize(null);
-                autoFitText(bv,12f,8f,0.7f);
-                balance.addView(bv,new LinearLayout.LayoutParams(-2,dp(34)));
-                card.addView(balance,new LinearLayout.LayoutParams(-2,dp(44)));
+                    bal>0.005?Color.argb(205,255,228,228):
+                    bal<-0.005?Color.argb(205,230,243,255):
+                    Color.argb(205,232,247,237),dp(1),dp(12)));
+                autoFitText(balance,9.5f,8f,0.25f);
+                LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(dp(122),dp(27));
+                bp.setMargins(dp(2),0,dp(2),0);
+                card.addView(balance,bp);
 
                 Button opt=button("⋮");
-                opt.setTextSize(18); opt.setTextColor(MUTED);
+                opt.setTextSize(12);
+                opt.setPadding(0,0,0,0);
+                opt.setTextColor(MUTED);
                 opt.setBackgroundColor(Color.TRANSPARENT);
                 opt.setOnClickListener(v->customerActions(id,n));
-                LinearLayout.LayoutParams op=new LinearLayout.LayoutParams(dp(34),dp(42));
-                op.setMargins(dp(3),0,0,0);
-                card.addView(opt,op);
+                card.addView(opt,new LinearLayout.LayoutParams(dp(24),dp(30)));
 
                 card.setOnClickListener(v->account(id,n));
                 card.setOnLongClickListener(v->{customerActions(id,n);return true;});
-                LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(-1,dp(64));
-                cp.setMargins(0,0,0,dp(6));
+                LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(-1,dp(45));
+                cp.setMargins(0,0,0,dp(2));
                 list.addView(card,cp);
             }
             c.close();
             if(shown==0){
-                LinearLayout empty=new LinearLayout(this);
+                TextView empty=tv("لا يوجد عملاء مطابقون للبحث",10);
                 empty.setGravity(Gravity.CENTER);
-                empty.setPadding(dp(10),dp(10),dp(10),dp(10));
-                empty.setBackground(outlined(Color.argb(220,255,255,255),dp(1),dp(20)));
-                TextView e=tv("لا يوجد عملاء مطابقون للبحث",14);
-                e.setGravity(Gravity.CENTER); fitInside(e,14,12);
-                empty.addView(e,new LinearLayout.LayoutParams(-1,dp(42)));
-                list.addView(empty,new LinearLayout.LayoutParams(-1,dp(60)));
+                empty.setBackground(outlined(glass,dp(1),dp(14)));
+                list.addView(empty,new LinearLayout.LayoutParams(-1,dp(40)));
             }
         };
 
@@ -7706,6 +7658,31 @@ void customers(){
             public void onTextChanged(CharSequence s,int st,int b,int c){refresh[0].run();}
             public void afterTextChanged(Editable e){}
         });
+
+        // تمرير فلاتر الحسابات بدون إضافة شريط طويل يستهلك المساحة.
+        LinearLayout filterRow=new LinearLayout(this);
+        filterRow.setOrientation(LinearLayout.HORIZONTAL);
+        filterRow.setGravity(Gravity.CENTER_VERTICAL);
+        filterRow.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        Button all=button("الكل"); Button debt=button("عليهم"); Button settled=button("خالص");
+        Button[] fs={all,debt,settled};
+        for(Button b:fs){b.setTextSize(9);b.setMinHeight(0);b.setMinimumHeight(0);b.setPadding(0,0,0,0);}
+        Runnable style=()->{
+            all.setBackground(filterMode[0]==0?rounded(GREEN,dp(12)):outlined(glass,dp(1),dp(12)));
+            debt.setBackground(filterMode[0]==1?rounded(RED,dp(12)):outlined(glass,dp(1),dp(12)));
+            settled.setBackground(filterMode[0]==2?rounded(BLUE,dp(12)):outlined(glass,dp(1),dp(12)));
+            all.setTextColor(filterMode[0]==0?Color.WHITE:DARK);
+            debt.setTextColor(filterMode[0]==1?Color.WHITE:DARK);
+            settled.setTextColor(filterMode[0]==2?Color.WHITE:DARK);
+        };
+        all.setOnClickListener(v->{filterMode[0]=0;style.run();refresh[0].run();});
+        debt.setOnClickListener(v->{filterMode[0]=1;style.run();refresh[0].run();});
+        settled.setOnClickListener(v->{filterMode[0]=2;style.run();refresh[0].run();});
+        filterRow.addView(all,new LinearLayout.LayoutParams(0,dp(27),1));
+        LinearLayout.LayoutParams df=new LinearLayout.LayoutParams(0,dp(27),1);df.setMargins(dp(3),0,0,0);filterRow.addView(debt,df);
+        LinearLayout.LayoutParams sf=new LinearLayout.LayoutParams(0,dp(27),1);sf.setMargins(dp(3),0,0,0);filterRow.addView(settled,sf);
+        content.addView(filterRow,new LinearLayout.LayoutParams(-1,dp(29)));
+        style.run();
         refresh[0].run();
     }
 
