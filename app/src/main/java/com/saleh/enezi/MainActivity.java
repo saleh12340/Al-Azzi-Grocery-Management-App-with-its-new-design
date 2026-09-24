@@ -6904,7 +6904,7 @@ Uri saveReceiptBitmap(Bitmap bitmap,String no)throws Exception{
             shareText(invoiceWhatsAppText(no,customer,lines,total,paid,cid>0?db.balance(cid):0,db.now()));
         }
     }
-    String pendingPrintNo="",pendingPrintCustomer="";ArrayList<Line> pendingPrintLines;double pendingPrintTotal;
+    String pendingPrintNo="",pendingPrintCustomer="";ArrayList<Line> pendingPrintLines;double pendingPrintTotal;String pendingPrintText="";int pendingPrintWidth=384;
 
 
     void printTextBluetooth(String text){ printTextBluetooth(text,384); }
