@@ -4292,7 +4292,7 @@ EditText numberField(String h){
                 card.addView(qActions,new LinearLayout.LayoutParams(-2,dp(36)));
 
                 // فتح حساب العميل أصبح نافذة منبثقة حتى تبقى قائمة العملاء ثابتة وواضحة.
-                card.setOnClickListener(v->showCustomerOperationsPopup(id,n));
+                card.setOnClickListener(v->account(id,n));
                 card.setOnLongClickListener(v->{customerActions(id,n); return true;});
 
                 LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,-2);
@@ -4402,129 +4402,6 @@ EditText numberField(String h){
                 ww.setLayout(width,WindowManager.LayoutParams.WRAP_CONTENT);
             }
             name.requestFocus();
-        });
-        dialog.show();
-    }
-
-    void showCustomerOperationsPopup(long id,String name){
-        final Dialog dialog=new Dialog(this);
-        LinearLayout outer=new LinearLayout(this);
-        outer.setOrientation(LinearLayout.VERTICAL);
-        outer.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        outer.setPadding(dp(12),dp(10),dp(12),dp(10));
-        outer.setBackground(rounded(CARD,dp(18)));
-
-        String phone=db.phoneByName(name);
-        TextView title=tv("👤 "+name,17);
-        title.setTextColor(GREEN);
-        title.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        outer.addView(title,new LinearLayout.LayoutParams(-1,dp(36)));
-
-        TextView phoneTv=tv(phone.isEmpty()?"بدون رقم هاتف":"📱 "+phone,11);
-        phoneTv.setTextColor(MUTED);
-        outer.addView(phoneTv,new LinearLayout.LayoutParams(-1,dp(26)));
-
-        double bal=db.balance(id);
-        LinearLayout balanceBox=new LinearLayout(this);
-        balanceBox.setOrientation(LinearLayout.VERTICAL);
-        balanceBox.setGravity(Gravity.CENTER);
-        balanceBox.setPadding(dp(8),dp(5),dp(8),dp(5));
-        balanceBox.setBackground(outlined(bal>0.005?Color.rgb(255,242,242):bal<-0.005?Color.rgb(240,248,255):Color.rgb(242,248,243),1,12));
-        TextView status=tv(bal>0.005?"عليه":bal<-0.005?"له":"خالص",11);
-        status.setTextColor(balanceColor(bal)); status.setGravity(Gravity.CENTER);
-        TextView amount=tv(fmt(Math.abs(bal))+" ر.ي",19);
-        amount.setTextColor(balanceColor(bal)); amount.setTypeface(Typeface.DEFAULT,Typeface.BOLD); amount.setGravity(Gravity.CENTER);
-        balanceBox.addView(status,new LinearLayout.LayoutParams(-1,dp(20)));
-        balanceBox.addView(amount,new LinearLayout.LayoutParams(-1,dp(28)));
-        outer.addView(balanceBox,new LinearLayout.LayoutParams(-1,dp(56)));
-        spaceInside(outer,7);
-
-        LinearLayout quick=new LinearLayout(this);
-        quick.setOrientation(LinearLayout.HORIZONTAL);
-        quick.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-
-        Button addTx=button("＋ حركة");
-        addTx.setTextColor(Color.WHITE); addTx.setBackground(rounded(GREEN,dp(10)));
-        addTx.setOnClickListener(v->{dialog.dismiss(); account(id,name);});
-
-        Button statement=button("📄 كشف");
-        statement.setTextColor(GREEN); statement.setBackground(outline(CARD,10));
-        statement.setOnClickListener(v->shareAccountPdfToWhatsApp(id,name));
-
-        Button edit=button("✏ تعديل");
-        edit.setTextColor(BLUE); edit.setBackground(outline(CARD,10));
-        edit.setOnClickListener(v->{dialog.dismiss();editCustomer(id,name);});
-
-        quick.addView(addTx,new LinearLayout.LayoutParams(0,dp(40),1));
-        LinearLayout.LayoutParams q2=new LinearLayout.LayoutParams(0,dp(40),1);q2.setMargins(dp(5),0,0,0);quick.addView(statement,q2);
-        LinearLayout.LayoutParams q3=new LinearLayout.LayoutParams(0,dp(40),1);q3.setMargins(dp(5),0,0,0);quick.addView(edit,q3);
-        outer.addView(quick,new LinearLayout.LayoutParams(-1,dp(42)));
-        spaceInside(outer,7);
-
-        TextView sec=tv("آخر عمليات العميل",13);
-        sec.setTextColor(DARK); sec.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        outer.addView(sec,new LinearLayout.LayoutParams(-1,dp(30)));
-
-        ScrollView sv=new ScrollView(this);
-        sv.setFillViewport(true);
-        LinearLayout list=new LinearLayout(this);
-        list.setOrientation(LinearLayout.VERTICAL);
-        list.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-
-        Cursor c=db.transactions(id);
-        int count=0;
-        while(c.moveToNext()){
-            long tid=c.getLong(0); String date=c.getString(1); String details=c.getString(2);
-            double a=c.getDouble(3); int type=c.getInt(4);
-            LinearLayout row=new LinearLayout(this);
-            row.setOrientation(LinearLayout.VERTICAL);
-            row.setPadding(dp(9),dp(7),dp(9),dp(7));
-            row.setBackground(outlined(CARD,1,11));
-
-            TextView rt=tv((type==1?"🔴 ":"🟢 ")+fmt(a)+" ر.ي",14);
-            rt.setTextColor(type==1?RED:GREEN);rt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-            row.addView(rt,new LinearLayout.LayoutParams(-1,dp(24)));
-
-            String d=(details==null||details.trim().isEmpty())?"عملية مالية":details.trim();
-            TextView rd=tv(d,11);rd.setTextColor(TEXT);rd.setMaxLines(2);
-            row.addView(rd,new LinearLayout.LayoutParams(-1,dp(34)));
-
-            TextView rdate=tv(date==null?"":date,9.5f);rdate.setTextColor(MUTED);
-            row.addView(rdate,new LinearLayout.LayoutParams(-1,dp(20)));
-
-            row.setOnClickListener(v->operationActions(id,name,tid,d,a,type));
-            LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,dp(82));rp.setMargins(0,0,0,dp(5));
-            list.addView(row,rp);
-            count++;
-            if(count>=30)break;
-        }
-        c.close();
-
-        if(count==0){
-            TextView empty=tv("لا توجد عمليات مسجلة لهذا العميل",12);
-            empty.setTextColor(MUTED);empty.setGravity(Gravity.CENTER);
-            list.addView(empty,new LinearLayout.LayoutParams(-1,dp(70)));
-        }
-        sv.addView(list,new ScrollView.LayoutParams(-1,-2));
-        outer.addView(sv,new LinearLayout.LayoutParams(-1,dp(300)));
-
-        Button close=button("إغلاق");
-        close.setTextColor(MUTED);
-        close.setOnClickListener(v->dialog.dismiss());
-        outer.addView(close,new LinearLayout.LayoutParams(-1,dp(42)));
-
-        dialog.setContentView(outer);
-        Window w=dialog.getWindow();
-        if(w!=null){
-            w.setBackgroundDrawableResource(android.R.color.transparent);
-            w.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
-        }
-        dialog.setOnShowListener(x->{
-            Window ww=dialog.getWindow();
-            if(ww!=null){
-                int width=(int)(getResources().getDisplayMetrics().widthPixels*0.94f);
-                ww.setLayout(width,(int)(getResources().getDisplayMetrics().heightPixels*0.82f));
-            }
         });
         dialog.show();
     }
