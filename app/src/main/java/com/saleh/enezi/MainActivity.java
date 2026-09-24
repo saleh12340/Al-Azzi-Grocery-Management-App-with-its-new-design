@@ -4112,7 +4112,7 @@ void notes(){ base("الملاحظات");
             String name=nameInput.getText().toString().trim();
             if(name.isEmpty()) name=defName;
             String cat=selectedCat[0];
-            String notes=notesInput.getText().toString().trim();
+            String notes=notesInput.trim();
             String date=db.now();
             String savedPath=saveBitmapToInvoicesDir(renderedBmp[0]);
             if(savedPath!=null){
