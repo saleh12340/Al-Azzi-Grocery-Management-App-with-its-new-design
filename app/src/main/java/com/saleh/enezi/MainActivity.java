@@ -199,58 +199,42 @@ public class MainActivity extends Activity {
         if(v instanceof TextView){
             TextView t=(TextView)v;
             String x=t.getText()==null?"":t.getText().toString().trim();
-            if(!x.matches("[\\p{So}\\p{Cs}\\uFE0F\\u200D ]+")) { if(t.getTextSize()<spToPx(16f)) t.setTextSize(16f); }
-            t.setIncludeFontPadding(true);
-            t.setHorizontallyScrolling(false);
-            t.setEllipsize(null);
-            if(!(t instanceof EditText)){
-                t.setSingleLine(false);
-                t.setMaxLines(4);
+            if(!x.matches("[\\p{So}\\p{Cs}\\uFE0F\\u200D ]+")) {
+                if(t.getTextSize()<spToPx(16f)) t.setTextSize(16f);
             }
-            if(Build.VERSION.SDK_INT>=28){
-                try{t.setFallbackLineSpacing(true);}catch(Throwable ignored){}
-                try{t.setElegantTextHeight(true);}catch(Throwable ignored){}
-            }
+            t.setIncludeFontPadding(true); t.setHorizontallyScrolling(false); t.setEllipsize(null);
+            if(!(t instanceof EditText)){ t.setSingleLine(false); t.setMaxLines(6); t.setMinLines(1); }
+            if(Build.VERSION.SDK_INT>=23){try{t.setBreakStrategy(android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY);}catch(Throwable ignored){}}
+            if(Build.VERSION.SDK_INT>=28){try{t.setFallbackLineSpacing(true);}catch(Throwable ignored){} try{t.setElegantTextHeight(true);}catch(Throwable ignored){}}
+            t.postDelayed(()->expandForText(t),25);
         }
         if(v instanceof ViewGroup){
-            ViewGroup g=(ViewGroup)v;
+            ViewGroup g=(ViewGroup)v; g.setClipChildren(false); g.setClipToPadding(false);
             for(int i=0;i<g.getChildCount();i++) normalizeAppText(g.getChildAt(i));
         }
+    }
+    void expandForText(TextView t){
+        if(t==null || t.getWidth()<=0 || t.getLineCount()<=1) return;
+        View p=t;
+        for(int level=0;level<4 && p.getParent() instanceof ViewGroup;level++){
+            ViewGroup parent=(ViewGroup)p.getParent();
+            ViewGroup.LayoutParams lp=parent.getLayoutParams();
+            if(lp!=null && lp.height>0){ lp.height=ViewGroup.LayoutParams.WRAP_CONTENT; parent.setLayoutParams(lp); }
+            parent.setClipChildren(false); parent.setClipToPadding(false); p=parent;
+        }
+        t.requestLayout();
     }
 
     void fitInside(View v,float maxSp,float minSp){
         if(v instanceof TextView){
-            TextView t=(TextView)v;
-            t.setIncludeFontPadding(true);
-            t.setHorizontallyScrolling(false);
-            t.setEllipsize(null);
-            t.setSingleLine(false);
-            t.setMaxLines(4);
-            if(android.os.Build.VERSION.SDK_INT>=23){
-                try{t.setBreakStrategy(android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY);}catch(Throwable ignored){}
-            }
-            // لا نصغّر الخط بقوة ولا نقصّ النص: الأولوية لظهور البيانات كاملة.
-            float size=Math.max(14f,Math.max(minSp,maxSp));
-            t.setTextSize(size);
-            t.addOnLayoutChangeListener(new View.OnLayoutChangeListener(){
-                public void onLayoutChange(View view,int l,int top,int r,int bottom,int ol,int ot,int orr,int ob){
-                    if(!(view instanceof TextView)) return;
-                    TextView x=(TextView)view;
-                    if(x.getLineCount()>1){
-                        ViewParent pp=x.getParent();
-                        if(pp instanceof View){
-                            View pv=(View)pp;
-                            ViewGroup.LayoutParams lp=pv.getLayoutParams();
-                            if(lp instanceof LinearLayout.LayoutParams && lp.height>0){
-                                lp.height=ViewGroup.LayoutParams.WRAP_CONTENT;
-                                pv.setLayoutParams(lp);
-                            }
-                        }
-                    }
-                }
-            });
+            TextView t=(TextView)v; t.setIncludeFontPadding(true); t.setHorizontallyScrolling(false);
+            t.setEllipsize(null); t.setSingleLine(false); t.setMaxLines(6); t.setMinLines(1);
+            if(android.os.Build.VERSION.SDK_INT>=23){try{t.setBreakStrategy(android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY);}catch(Throwable ignored){}}
+            t.setTextSize(Math.max(16f,Math.max(minSp,maxSp)));
+            t.postDelayed(()->expandForText(t),35);
         }
     }
+
     void autoFitText(TextView t,float maxSp,float minSp,float stepSp){
         if(t==null)return;
         t.setSingleLine(false);
@@ -7216,24 +7200,13 @@ void printTextBluetooth(String text,int requestedWidth){
         }catch(Throwable ignored){}
     }
     TextView denseText(String s,float max,float min,int color){
-        TextView t=tv(s,max);
-        t.setTextColor(color);
-        t.setSingleLine(false);
-        t.setMaxLines(2);
-        t.setEllipsize(null);
-        t.setHorizontallyScrolling(false);
-        t.setIncludeFontPadding(true);
-        if(Build.VERSION.SDK_INT>=28){
-            try{t.setFallbackLineSpacing(true);}catch(Throwable ignored){}
-            try{t.setElegantTextHeight(true);}catch(Throwable ignored){}
-        }
-        if(Build.VERSION.SDK_INT>=26){
-            try{
-                int lo=Math.max(8,Math.round(min));
-                int hi=Math.max(lo+1,Math.round(max));
-                t.setAutoSizeTextTypeUniformWithConfiguration(lo,hi,1,android.util.TypedValue.COMPLEX_UNIT_SP);
-            }catch(Throwable ignored){}
-        }
+        TextView t=tv(s,Math.max(16f,max));
+        t.setTextColor(color); t.setTextSize(16f); t.setSingleLine(false);
+        t.setMaxLines(6); t.setMinLines(1); t.setEllipsize(null);
+        t.setHorizontallyScrolling(false); t.setIncludeFontPadding(true);
+        if(Build.VERSION.SDK_INT>=23){try{t.setBreakStrategy(android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY);}catch(Throwable ignored){}}
+        if(Build.VERSION.SDK_INT>=28){try{t.setFallbackLineSpacing(true);}catch(Throwable ignored){} try{t.setElegantTextHeight(true);}catch(Throwable ignored){}}
+        t.postDelayed(()->expandForText(t),35);
         return t;
     }
     GradientDrawable glassFill(int color){
