@@ -369,7 +369,7 @@ EditText numberField(String h){
         bg.setColor(Color.rgb(235,242,249)); bg.setCornerRadius(dp(12));
         bg.setStroke(dp(1),Color.rgb(211,223,236)); v.setBackground(bg);
         fitInside(v,15f,13f);
-        content.addView(v,new LinearLayout.LayoutParams(-1,dp(40)));
+        content.addView(v,new LinearLayout.LayoutParams(-1,dp(38)));
         addSpace(5); return v;
     }
 
@@ -424,13 +424,13 @@ EditText numberField(String h){
         sv.setFillViewport(true); sv.setClipToPadding(false);
         content=new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(dp(10),dp(10),dp(10),dp(18));
+        content.setPadding(dp(8),dp(6),dp(8),dp(14));
         content.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
         if(!"الرئيسية".equals(title)){
             LinearLayout pageHero=new LinearLayout(this);
             pageHero.setOrientation(LinearLayout.VERTICAL);
-            pageHero.setPadding(dp(14),dp(8),dp(14),dp(8));
+            pageHero.setPadding(dp(12),dp(6),dp(12),dp(6));
             GradientDrawable heroBg=new GradientDrawable();
             heroBg.setColor(Color.WHITE); heroBg.setCornerRadius(dp(14));
             heroBg.setStroke(dp(1),Color.rgb(221,229,238));
@@ -441,8 +441,8 @@ EditText numberField(String h){
             heroSub.setTextColor(MUTED);
             pageHero.addView(heroTitle,new LinearLayout.LayoutParams(-1,dp(25)));
             pageHero.addView(heroSub,new LinearLayout.LayoutParams(-1,dp(20)));
-            content.addView(pageHero,new LinearLayout.LayoutParams(-1,dp(54)));
-            addSpace(7);
+            content.addView(pageHero,new LinearLayout.LayoutParams(-1,dp(50)));
+            addSpace(5);
         }
 
         sv.addView(content);
@@ -1385,12 +1385,12 @@ EditText numberField(String h){
     int dp(float v){return (int)(v*getResources().getDisplayMetrics().density+0.5f);}
     GradientDrawable bg(int color,float radius){return rounded(color,dp((int)radius));}
     GradientDrawable outline(int color,float radius){return outlined(color,1,dp((int)radius));}
-    LinearLayout card(){LinearLayout c=new LinearLayout(this);c.setOrientation(LinearLayout.VERTICAL);c.setPadding(dp(8),dp(6),dp(8),dp(6));c.setBackground(outline(CARD,12));c.setElevation(dp(1));return c;}
+    LinearLayout card(){LinearLayout c=new LinearLayout(this);c.setOrientation(LinearLayout.VERTICAL);c.setPadding(dp(10),dp(7),dp(10),dp(7));c.setBackground(outline(CARD,12));c.setElevation(dp(1));c.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);return c;}
     void addCard(View v,int h){content.addView(v,new LinearLayout.LayoutParams(-1,dp(Math.max(50,h-18))));space(4);}
     void add(View v,int h){content.addView(v,new LinearLayout.LayoutParams(-1,dp(Math.max(42,h-12))));space(4);}
     void space(int h){addSpace(dp(h));}
     void spaceInside(LinearLayout p,int h){Space x=new Space(this);p.addView(x,new LinearLayout.LayoutParams(1,dp(h)));}
-    Button action(String text,int color){Button b=button(text);b.setTextColor(Color.WHITE);b.setTextSize(17);b.setBackground(rounded(color,dp(14)));return b;}
+    Button action(String text,int color){Button b=button(text);b.setTextColor(Color.WHITE);b.setTextSize(15);b.setBackground(rounded(color,dp(12)));b.setMinHeight(0);b.setMinimumHeight(0);return b;}
     Button btn(String text){Button b=button(text);b.setTextColor(TEXT);b.setBackground(outline(CARD,14));return b;}
     static class Line{String name;double qty,total;Line(String n,double q,double t){name=n;qty=q;total=t;}}
     void addRow(LinearLayout parent,Line l,double running,double baseBal,ArrayList<Line> all){
