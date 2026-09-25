@@ -3340,14 +3340,14 @@ void notes(){ base("الملاحظات");
     String supplierBalanceLabel(double b){return b>0.005?"على البقالة":b< -0.005?"لصالح البقالة":"خالص";}
     void showAddSupplierDialog(Runnable refresh){
         LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(dp(6),dp(2),dp(6),dp(2));box.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        EditText n=field("اسم المورد");EditText p=field("رقم الهاتف عند الحاجة");p.setInputType(2);
-        box.addView(n,new LinearLayout.LayoutParams(-1,dp(52)));spaceTo(box,5);box.addView(p,new LinearLayout.LayoutParams(-1,dp(52)));
+        EditText n=field("اسم المورد");EditText p=phoneField("رقم الهاتف عند الحاجة");
+        box.addView(n,new LinearLayout.LayoutParams(-1,dp(54)));spaceTo(box,6);box.addView(p,new LinearLayout.LayoutParams(-1,dp(54)));
         AlertDialog dlg=new AlertDialog.Builder(this).setTitle("إضافة مورد").setView(box).setNegativeButton("إلغاء",null).setPositiveButton("حفظ",null).create();
         dlg.setOnShowListener(x->dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
             String name=n.getText().toString().trim(),phone=p.getText().toString().trim();
             if(name.isEmpty()){n.setError("اسم المورد مطلوب");return;}
-            long id=db.supplier(name,phone);if(id>0)db.updateSupplierPhone(id,phone);
-            dlg.dismiss();refresh.run();Toast.makeText(this,"تم حفظ المورد",Toast.LENGTH_SHORT).show();
+            long id=db.supplier(name,phone);dlg.dismiss();refresh.run();
+            Toast.makeText(this,"المورد موجود مسبقاً أو تم حفظه — تم فتح السجل الموجود.",Toast.LENGTH_SHORT).show();
         }));dlg.show();
     }
 
@@ -5080,7 +5080,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
             }
         }
         Cursor items(){return getReadableDatabase().rawQuery("SELECT id,name,qty,min_qty,cost,sale FROM items ORDER BY name",null);}
-        boolean itemExists(String n){Cursor c=getReadableDatabase().rawQuery("SELECT id FROM items WHERE name=? LIMIT 1",new String[]{n});boolean x=c.moveToFirst();c.close();return x;}
+        boolean itemExists(String n){String key=norm(n);Cursor c=getReadableDatabase().rawQuery("SELECT id FROM items WHERE normalized_name=? LIMIT 1",new String[]{key});boolean x=c.moveToFirst();c.close();return x;}
         void addItem(String n,double q,double m){if(n.isEmpty()||q<0||m<0)throw new IllegalArgumentException();SQLiteDatabase d=getWritableDatabase();Cursor c=d.rawQuery("SELECT id FROM items WHERE name=? LIMIT 1",new String[]{n});if(c.moveToFirst()){long id=c.getLong(0);c.close();ContentValues v=new ContentValues();v.put("qty",q);v.put("min_qty",m);d.update("items",v,"id=?",new String[]{String.valueOf(id)});return;}c.close();ContentValues v=new ContentValues();v.put("name",n);v.put("qty",q);v.put("min_qty",m);d.insert("items",null,v);}
         void updateItem(long id,String n,double q,double m){if(id<1||n==null||n.trim().isEmpty()||q<0||m<0)throw new IllegalArgumentException();ContentValues v=new ContentValues();v.put("name",n.trim());v.put("qty",q);v.put("min_qty",m);getWritableDatabase().update("items",v,"id=?",new String[]{String.valueOf(id)});}
         void deleteItem(long id){if(id>0)getWritableDatabase().delete("items","id=?",new String[]{String.valueOf(id)});}
@@ -7665,63 +7665,44 @@ void account(long id,String name){
 
 
 void customers(){
-        base("الحسابات والعملاء");
-        applyDenseGlassPage();
-
-        // البحث هو العنصر الأول، تماماً كالتصميم المرجعي.
-        LinearLayout searchBar=new LinearLayout(this);searchBar.setOrientation(LinearLayout.HORIZONTAL);searchBar.setGravity(Gravity.CENTER_VERTICAL);searchBar.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        EditText search=field("ابحث باسم العميل أو الرقم...");
-        search.setTextSize(16);search.setSingleLine(true);search.setPadding(dp(7),0,dp(7),0);search.setBackground(glassFill(Color.argb(170,255,255,255)));
-        searchBar.addView(search,new LinearLayout.LayoutParams(0,dp(46),1));
-        Button mic=button("🎙");mic.setTextSize(10);mic.setPadding(0,0,0,0);mic.setTextColor(Color.WHITE);mic.setBackground(glassFill(Color.argb(120,255,255,255)));
-        mic.setOnClickListener(v->{search.setTag("searchVoice");startVoiceInput(search,"تحدث باسم العميل أو رقم الهاتف",REQ_VOICE_SEARCH);});
-        LinearLayout.LayoutParams mp=new LinearLayout.LayoutParams(dp(34),dp(34));mp.setMargins(dp(3),0,0,0);searchBar.addView(mic,mp);
-        Button plus=button("+");plus.setTextSize(17);plus.setTextColor(Color.WHITE);plus.setBackground(rounded(Color.rgb(16,181,111),dp(17)));plus.setPadding(0,0,0,0);plus.setOnClickListener(v->showCustomerCreatePopup());
-        LinearLayout.LayoutParams pp=new LinearLayout.LayoutParams(dp(34),dp(34));pp.setMargins(dp(3),0,0,0);searchBar.addView(plus,pp);
-        content.addView(searchBar,new LinearLayout.LayoutParams(-1,dp(48)));
-
-        double debts=db.totalDebts(), credits=db.totalCredits();int customers=db.customerCount();
-        LinearLayout stats=new LinearLayout(this);stats.setOrientation(LinearLayout.HORIZONTAL);stats.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        TextView a=denseText("العملاء "+customers,8.7f,7.8f,DARK),b=denseText("لهم "+fmt(credits)+" ر.ي",8.7f,7.8f,BLUE),d=denseText("عليهم "+fmt(debts)+" ر.ي",8.7f,7.8f,RED);
-        for(TextView t:new TextView[]{a,b,d}){t.setGravity(Gravity.CENTER);t.setBackground(glassFill(Color.argb(145,255,255,255)));}
-        stats.addView(a,new LinearLayout.LayoutParams(0,27,1));LinearLayout.LayoutParams sb=new LinearLayout.LayoutParams(0,27,1);sb.setMargins(dp(3),0,0,0);stats.addView(b,sb);LinearLayout.LayoutParams sd=new LinearLayout.LayoutParams(0,27,1);sd.setMargins(dp(3),0,0,0);stats.addView(d,sd);
-        content.addView(stats,new LinearLayout.LayoutParams(-1,dp(29)));
-
-        LinearLayout filters=new LinearLayout(this);filters.setOrientation(LinearLayout.HORIZONTAL);filters.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        final int[] mode={0};Button all=button("الكل"), debt=button("عليهم"), clear=button("خالص");
-        Button[] fb={all,debt,clear};for(Button x:fb){x.setTextSize(8.5f);x.setPadding(0,0,0,0);}
-        Runnable fs=()->{all.setBackground(mode[0]==0?rounded(Color.rgb(18,175,111),dp(11)):glassFill(Color.argb(135,255,255,255)));debt.setBackground(mode[0]==1?rounded(RED,dp(11)):glassFill(Color.argb(135,255,255,255)));clear.setBackground(mode[0]==2?rounded(BLUE,dp(11)):glassFill(Color.argb(135,255,255,255)));all.setTextColor(mode[0]==0?Color.WHITE:DARK);debt.setTextColor(mode[0]==1?Color.WHITE:DARK);clear.setTextColor(mode[0]==2?Color.WHITE:DARK);};
-        filters.addView(all,new LinearLayout.LayoutParams(0,25,1));LinearLayout.LayoutParams f2=new LinearLayout.LayoutParams(0,25,1);f2.setMargins(dp(3),0,0,0);filters.addView(debt,f2);LinearLayout.LayoutParams f3=new LinearLayout.LayoutParams(0,25,1);f3.setMargins(dp(3),0,0,0);filters.addView(clear,f3);
-        content.addView(filters,new LinearLayout.LayoutParams(-1,dp(27)));
-
-        LinearLayout list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);content.addView(list,new LinearLayout.LayoutParams(-1,-2));
-        Runnable refresh=()->{
-            list.removeAllViews();Cursor c=db.customers(search.getText().toString().trim());int shown=0;
-            while(c.moveToNext()){
-                long id=c.getLong(0);String n=c.getString(1)==null?"":c.getString(1).trim();double bal=db.balance(id);
-                if(mode[0]==1&&bal<=0.005)continue;if(mode[0]==2&&bal>0.005)continue;shown++;
-                LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);row.setGravity(Gravity.CENTER_VERTICAL);row.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);row.setPadding(dp(3),dp(1),dp(3),dp(1));
-                row.setBackground(glassFill(Color.argb(160,255,255,255)));
-                TextView av=denseText("ب",10,8f,Color.WHITE);av.setGravity(Gravity.CENTER);av.setBackground(rounded(Color.rgb(19,194,111),dp(12)));row.addView(av,new LinearLayout.LayoutParams(dp(24),dp(24)));
-                LinearLayout info=new LinearLayout(this);info.setOrientation(LinearLayout.VERTICAL);info.setGravity(Gravity.CENTER_VERTICAL);info.setPadding(dp(4),0,dp(3),0);
-                TextView nm=denseText(n,9.5f,8f,DARK);nm.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-                TextView sub=denseText(db.transactionCount(id)+" حركة",7.7f,7f,MUTED);
-                info.addView(nm,new LinearLayout.LayoutParams(-1,dp(17)));info.addView(sub,new LinearLayout.LayoutParams(-1,dp(13)));
-                row.addView(info,new LinearLayout.LayoutParams(0,dp(46),1));
-                TextView balv=denseText(balanceText(bal),8.7f,7.5f,balanceColor(bal));balv.setGravity(Gravity.CENTER);balv.setBackground(glassFill(bal>0.005?Color.argb(205,255,110,120):bal<-0.005?Color.argb(175,205,232,255):Color.argb(165,220,250,230)));
-                row.addView(balv,new LinearLayout.LayoutParams(dp(116),dp(25)));
-                Button opt=button("⋮");opt.setTextSize(12);opt.setPadding(0,0,0,0);opt.setBackgroundColor(Color.TRANSPARENT);opt.setTextColor(Color.WHITE);opt.setOnClickListener(v->customerActions(id,n));row.addView(opt,new LinearLayout.LayoutParams(dp(24),dp(28)));
-                row.setOnClickListener(v->account(id,n));row.setOnLongClickListener(v->{customerActions(id,n);return true;});
-                LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,dp(43));rp.setMargins(0,0,0,dp(2));list.addView(row,rp);
-            }
-            c.close();if(shown==0){TextView e=denseText("لا يوجد عملاء مطابقون للبحث",9,8f,Color.WHITE);e.setGravity(Gravity.CENTER);list.addView(e,new LinearLayout.LayoutParams(-1,-2));}
+        base("الحسابات والعملاء"); applyDenseGlassPage();
+        LinearLayout searchBar=new LinearLayout(this); searchBar.setOrientation(LinearLayout.HORIZONTAL); searchBar.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); searchBar.setGravity(Gravity.CENTER_VERTICAL);
+        AutoCompleteTextView search=new AutoCompleteTextView(this);
+        search.setHint("🔎 ابحث عن عميل"); search.setTextSize(16); search.setSingleLine(true); search.setThreshold(1); search.setSelectAllOnFocus(true);
+        search.setPadding(dp(12),0,dp(12),0); search.setTextColor(TEXT); search.setHintTextColor(MUTED); search.setBackground(outlined(CARD,dp(1),14));
+        search.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); search.setTextDirection(View.TEXT_DIRECTION_RTL);
+        search.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_dropdown_item_1line,db.customerNames()));
+        Button add=action("＋ عميل",GREEN); add.setOnClickListener(v->showCustomerCreatePopup());
+        searchBar.addView(search,new LinearLayout.LayoutParams(0,dp(54),1));
+        LinearLayout.LayoutParams ap=new LinearLayout.LayoutParams(dp(92),dp(54));ap.setMargins(dp(5),0,0,0);searchBar.addView(add,ap);
+        content.addView(searchBar); addSpace(6);
+        LinearLayout stats=card();stats.setOrientation(LinearLayout.HORIZONTAL);stats.setPadding(dp(6),dp(5),dp(6),dp(5));
+        TextView st1=tv("العملاء: "+db.customerCount(),13);st1.setTextColor(GREEN);st1.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        TextView st2=tv("عليهم: "+fmt(db.totalDebts())+" ر.ي",13);st2.setTextColor(RED);st2.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        TextView st3=tv("لهم: "+fmt(db.totalCredits())+" ر.ي",13);st3.setTextColor(BLUE);st3.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        for(TextView t:new TextView[]{st1,st2,st3}){t.setGravity(Gravity.CENTER);stats.addView(t,new LinearLayout.LayoutParams(0,dp(38),1));}
+        content.addView(stats); addSpace(6);
+        LinearLayout list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);list.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);content.addView(list);
+        Runnable render=()->{
+            list.removeAllViews(); String q=search.getText().toString().trim(); Cursor cur=db.customers(q); int count=0;
+            while(cur.moveToNext()){
+                long id=cur.getLong(0);String name=cur.getString(1);double bal=db.balance(id);count++;
+                LinearLayout row=card();row.setPadding(dp(10),dp(7),dp(10),dp(7));row.setOnClickListener(v->account(id,name));row.setOnLongClickListener(v->{customerActions(id,name);return true;});
+                LinearLayout top=new LinearLayout(this);top.setOrientation(LinearLayout.HORIZONTAL);top.setGravity(Gravity.CENTER_VERTICAL);top.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+                TextView avatar=tv(name==null||name.isEmpty()?"ب":name.substring(0,1),16);avatar.setGravity(Gravity.CENTER);avatar.setTextColor(Color.WHITE);avatar.setTypeface(Typeface.DEFAULT,Typeface.BOLD);avatar.setBackground(rounded(GREEN,dp(18)));
+                top.addView(avatar,new LinearLayout.LayoutParams(dp(38),dp(38)));
+                TextView nm=tv(name,16);nm.setTextColor(TEXT);nm.setTypeface(Typeface.DEFAULT,Typeface.BOLD);nm.setPadding(dp(9),0,dp(5),0);top.addView(nm,new LinearLayout.LayoutParams(0,dp(42),1));
+                TextView bv=tv(balanceText(bal),15);bv.setTextColor(balanceColor(bal));bv.setTypeface(Typeface.DEFAULT,Typeface.BOLD);bv.setGravity(Gravity.CENTER);bv.setBackground(outlined(CARD,dp(1),12));top.addView(bv,new LinearLayout.LayoutParams(dp(125),dp(36)));
+                row.addView(top,new LinearLayout.LayoutParams(-1,-2));LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,-2);rp.setMargins(0,0,0,dp(6));list.addView(row,rp);
+            } cur.close();
+            if(count==0){TextView empty=tv("لا يوجد عميل مطابق. يمكنك إضافة عميل جديد.",14);empty.setTextColor(MUTED);empty.setGravity(Gravity.CENTER);list.addView(empty,new LinearLayout.LayoutParams(-1,dp(70)));}
         };
-        all.setOnClickListener(v->{mode[0]=0;fs.run();refresh.run();});debt.setOnClickListener(v->{mode[0]=1;fs.run();refresh.run();});clear.setOnClickListener(v->{mode[0]=2;fs.run();refresh.run();});
-        search.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int c,int a){}public void onTextChanged(CharSequence s,int st,int b,int c){refresh.run();}public void afterTextChanged(Editable e){}});
-        fs.run();refresh.run();
+        search.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int a,int b,int d){}public void onTextChanged(CharSequence s,int a,int b,int d){render.run();}public void afterTextChanged(Editable e){}});
+        search.setOnItemClickListener((p,v,pos,id)->{String n=(String)p.getItemAtPosition(pos);long cid=db.customerIdByName(n);if(cid>0)account(cid,n);});
+        render.run();
     }
 
-LinearLayout glassStat(String label,String value,int accent){
+    LinearLayout glassStat(String label,String value,int accent){
         LinearLayout box=new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setGravity(Gravity.CENTER);
