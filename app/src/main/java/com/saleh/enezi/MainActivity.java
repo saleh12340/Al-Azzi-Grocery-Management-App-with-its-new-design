@@ -2062,6 +2062,54 @@ void operationActions(long customerId,String customerName,long tid,String detail
     }
 
 
+    void shareSelectedTransactions(long customerId,String name,ArrayList<Long> ids){
+        StringBuilder text=new StringBuilder("📋 *بقالة العزي للمواد الغذائية - كشف عمليات محددة*\n");
+        text.append("━━━━━━━━━━━━━━━━━━\n");
+        text.append("👤 *العميل:* ").append(name).append("\n");
+        text.append("📅 *التاريخ:* ").append(db.now()).append("\n");
+        text.append("━━━━━━━━━━━━━━━━━━\n");
+        double debit=0,credit=0;
+        for(Long tid:ids){
+            Cursor c=db.transactionById(tid);
+            if(c.moveToFirst()){
+                String d=c.getString(3);double a=c.getDouble(4);int t=c.getInt(5);
+                text.append(t==1?"🔴 عليه: ":"🟢 له: ").append(fmt(a)).append(" ر.ي");
+                if(d!=null&&!d.trim().isEmpty())text.append(" • ").append(d.trim());
+                text.append(" (").append(c.getString(2)).append(")\n");
+                if(t==1)debit+=a;else credit+=a;
+            }
+            c.close();
+        }
+        text.append("━━━━━━━━━━━━━━━━━━\n");
+        text.append("🔻 *إجمالي المحدد عليه:* ").append(fmt(debit)).append(" ريال\n");
+        text.append("🔺 *إجمالي المحدد له:* ").append(fmt(credit)).append(" ريال\n");
+        text.append("📊 *الرصيد الإجمالي الحالي:* ").append(balanceText(db.balance(customerId))).append("\n");
+        text.append("━━━━━━━━━━━━━━━━━━\n");
+        text.append("✨ *بقالة العزي للمواد الغذائية - خدمة متميزة* ✨");
+        shareWhatsAppToCustomer(db.phoneByName(name),text.toString(),null);
+    }
+
+    void printSelectedTransactions(long customerId,String name,ArrayList<Long> ids){
+        StringBuilder text=new StringBuilder("بقالة العزي للمواد الغذائية\nكشف عمليات: ").append(name).append("\nالتاريخ: ").append(db.now()).append("\n");
+        text.append("------------------------------\n");
+        double debit=0,credit=0;
+        for(Long tid:ids){
+            Cursor c=db.transactionById(tid);
+            if(c.moveToFirst()){
+                String d=c.getString(3);double a=c.getDouble(4);int t=c.getInt(5);
+                text.append(c.getString(2)).append("\n");
+                text.append(t==1?"عليه: ":"له: ").append(fmt(a)).append(" ريال");
+                if(d!=null&&!d.trim().isEmpty())text.append(" | ").append(d.trim());
+                text.append("\n");
+                if(t==1)debit+=a;else credit+=a;
+            }c.close();
+        }
+        text.append("------------------------------\nإجمالي المحدد عليه: ").append(fmt(debit)).append(" ريال\n");
+        text.append("إجمالي المحدد له: ").append(fmt(credit)).append(" ريال\n");
+        text.append("الرصيد الحالي: ").append(balanceText(db.balance(customerId)));
+        previewTextForPrint(text.toString(),name);
+    }
+
     void printOperation(String customer,String details,double amount,int type,String invNo){
         try{
             ArrayList<Line> ls=new ArrayList<>();
