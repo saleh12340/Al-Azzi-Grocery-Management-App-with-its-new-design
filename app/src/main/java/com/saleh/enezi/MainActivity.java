@@ -3076,15 +3076,21 @@ void notes(){ base("الملاحظات");
         content.addView(toggle);
         addSpace(7);
 
-        EditText party=field(sale?"اسم العميل":"اسم المورد");
+        AutoCompleteTextView party=new AutoCompleteTextView(this);
+        party.setHint(sale?"اسم العميل":"اسم المورد");
         party.setSingleLine(true);
         party.setTextSize(15);
-        if(sale){
-            party.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_dropdown_item_1line,db.customerNames()));
-            if(party instanceof AutoCompleteTextView){
-                ((AutoCompleteTextView)party).setThreshold(1);
-            }
-        }
+        party.setTextColor(TEXT);
+        party.setHintTextColor(MUTED);
+        party.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+        party.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        party.setTextDirection(View.TEXT_DIRECTION_RTL);
+        party.setPadding(dp(9),dp(4),dp(9),dp(4));
+        party.setBackground(outline(CARD,1,10));
+        party.setSelectAllOnFocus(true);
+        party.setThreshold(1);
+        party.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_dropdown_item_1line,
+            sale?db.customerNames():db.supplierNames()));
         content.addView(party,new LinearLayout.LayoutParams(-1,dp(48)));
         addSpace(5);
 
