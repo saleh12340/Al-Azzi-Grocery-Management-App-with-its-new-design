@@ -2568,7 +2568,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
                 Toast.makeText(this,"أكمل المبلغ واسم المستلم واسم المرسل",Toast.LENGTH_SHORT).show();
                 return;
             }
-            String txt=fmt(a)+" صافي\n"+amountInWords(a)+"\nالمستلم "+r+(rp.isEmpty()?"":"\n"+rp)+"\nالمرسل "+sName+(sp.isEmpty()?"":"\n"+sp);
+            String txt=fmt(a)+" صافي\nالمستلم "+r+(rp.isEmpty()?"":"\n"+rp)+"\nالمرسل "+sName+(sp.isEmpty()?"":"\n"+sp);
             lastText[0]=txt;
             lastPhone[0]=rp;
             preview.setText(txt);
@@ -5841,8 +5841,20 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
                 new String[]{"فاتورة مبيعات رقم "+clean,"دفعة فاتورة رقم "+clean,
                              "فاتورة مبيعات رقم "+no,"دفعة فاتورة رقم "+no});
         }
-        void addPaymentTransaction(long id,double a,String details,String date){if(id<1||a<=0)return;addTransaction(id,a,details,0,date);}
-        void addTransactionOnce(long id,double a,String details,String date){if(id>0)addTransaction(id,a,details,1,date);}
+        void addPaymentTransaction(long id,double a,String details,String date){
+            if(id<1||a<=0)return;
+            SQLiteDatabase d=getWritableDatabase();
+            Cursor c=d.rawQuery("SELECT id FROM transactions WHERE customer_id=? AND amount=? AND type=0 AND details=? LIMIT 1",new String[]{String.valueOf(id),String.valueOf(a),details==null?"":details});
+            boolean exists=c.moveToFirst();c.close();
+            if(!exists)addTransaction(id,a,details,0,date);
+        }
+        void addTransactionOnce(long id,double a,String details,String date){
+            if(id<1||a<=0)return;
+            SQLiteDatabase d=getWritableDatabase();
+            Cursor c=d.rawQuery("SELECT id FROM transactions WHERE customer_id=? AND amount=? AND type=1 AND details=? LIMIT 1",new String[]{String.valueOf(id),String.valueOf(a),details==null?"":details});
+            boolean exists=c.moveToFirst();c.close();
+            if(!exists)addTransaction(id,a,details,1,date);
+        }
 
         long invoiceIdByNo(String no){Cursor c=getReadableDatabase().rawQuery("SELECT id FROM invoices WHERE no=? ORDER BY id DESC LIMIT 1",new String[]{no});long x=c.moveToFirst()?c.getLong(0):-1;c.close();return x;}
         Cursor transactionById(long id){return getReadableDatabase().rawQuery("SELECT id,customer_id,date,details,amount,type FROM transactions WHERE id=?",new String[]{String.valueOf(id)});}
