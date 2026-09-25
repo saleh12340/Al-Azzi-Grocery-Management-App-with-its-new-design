@@ -835,18 +835,23 @@ void addHomeFab(){
     finalizeAdaptiveLayout(root);
 }
 
-    void showGeneralActions(){
+        void showCustomerTransactionDialog(boolean payment){
+        LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);box.setPadding(dp(5),0,dp(5),0);
+        AutoCompleteTextView name=new AutoCompleteTextView(this);name.setHint("اسم العميل");name.setTextSize(16);name.setSingleLine(true);name.setThreshold(1);name.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_dropdown_item_1line,db.customerNames()));name.setBackground(outlined(CARD,1,12));name.setPadding(dp(10),0,dp(10),0);name.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        EditText amount=numberField(payment?"مبلغ السداد":"مبلغ الحركة");EditText detail=field("البيان / التفاصيل");
+        box.addView(name,new LinearLayout.LayoutParams(-1,dp(54)));spaceTo(box,6);box.addView(amount,new LinearLayout.LayoutParams(-1,dp(54)));spaceTo(box,6);box.addView(detail,new LinearLayout.LayoutParams(-1,dp(54)));
+        AlertDialog dlg=new AlertDialog.Builder(this).setTitle(payment?"سداد عميل":"حركة على حساب عميل").setView(box).setNegativeButton("إلغاء",null).setPositiveButton("حفظ",null).create();
+        dlg.setOnShowListener(x->dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{
+            String n=name.getText().toString().trim();double a=parseDoubleSafe(amount.getText().toString().replace(",","").trim(),0);if(n.isEmpty()||a<=0){Toast.makeText(this,"اختر العميل وأدخل مبلغاً صحيحاً",Toast.LENGTH_SHORT).show();return;}
+            long id=db.customer(n);if(id<=0){Toast.makeText(this,"تعذر فتح حساب العميل",Toast.LENGTH_SHORT).show();return;}
+            db.addTransaction(id,a,detail.getText().toString().trim(),payment?0:1,db.now());dlg.dismiss();account(id,n);Toast.makeText(this,payment?"✓ تم تسجيل السداد":"✓ تم تسجيل الحركة",Toast.LENGTH_SHORT).show();
+        }));dlg.show();
+    }
+void showGeneralActions(){
         String[] choices={"🧾 فاتورة مبيعات","🛒 فاتورة شراء","💰 حركة على حساب عميل","💵 سداد عميل","🏪 حركة على حساب مورد","💸 حوالة","👤 إضافة عميل","🏪 إضافة مورد","📦 إضافة صنف"};
-        new AlertDialog.Builder(this).setTitle("إضافة عملية جديدة").setItems(choices,(d,w)->{
-            if(w==0) invoice();
-            else if(w==1) newPurchaseInvoice();
-            else if(w==2) customers();
-            else if(w==3) customers();
-            else if(w==4) suppliers();
-            else if(w==5) transfers();
-            else if(w==6) showCustomerCreatePopup();
-            else if(w==7) suppliers();
-            else inventory();
+        new AlertDialog.Builder(this).setTitle("إضافة عملية جديدة").setItems(choices,(dlg,w)->{
+            if(w==0) invoice(); else if(w==1) newPurchaseInvoice(); else if(w==2) showCustomerTransactionDialog(false); else if(w==3) showCustomerTransactionDialog(true);
+            else if(w==4) suppliers(); else if(w==5) transfers(); else if(w==6) showCustomerCreatePopup(); else if(w==7) suppliers(); else inventory();
         }).setNegativeButton("إغلاق",null).show();
     }
 
