@@ -559,6 +559,45 @@ void showMoreMenu(){
         }).setNegativeButton("إغلاق",null).show();
 }
     void navigate(String n){hideKeyboard(); if(n.equals("الرئيسية"))home();else if(n.equals("العملاء")||n.equals("الحسابات"))customers();else if(n.equals("الفواتير"))invoice();else if(n.equals("فواتير الشراء"))purchaseInvoices();else if(n.equals("المخزون"))inventory();else if(n.equals("ماسح الفواتير")||n.equals("الماسح الضوئي"))scanner();else if(n.equals("الحوالات"))transfers();else if(n.equals("الملاحظات"))notes();else reports();}
+    String amountInWords(double amount){
+        long n=Math.round(Math.abs(amount));
+        if(n==0)return "صفر ريال";
+        if(n>999999999999L)return fmt(n)+" ريال";
+        return arabicIntegerWords(n)+" ريال";
+    }
+    String arabicIntegerWords(long n){
+        if(n<1000)return arabicBelow1000((int)n);
+        long thousands=n/1000, rem=n%1000;
+        String t=arabicIntegerWords(thousands);
+        if(thousands==1)t="ألف";
+        else if(thousands==2)t="ألفان";
+        else if(thousands>=3&&thousands<=10)t=arabicBelow1000((int)thousands)+" آلاف";
+        else t=t+" ألف";
+        return rem==0?t:t+" و"+arabicIntegerWords(rem);
+    }
+    String arabicBelow1000(int n){
+        String[] ones={"","واحد","اثنان","ثلاثة","أربعة","خمسة","ستة","سبعة","ثمانية","تسعة"};
+        String[] tens={"","","عشرون","ثلاثون","أربعون","خمسون","ستون","سبعون","ثمانون","تسعون"};
+        String[] teens={"عشرة","أحد عشر","اثنا عشر","ثلاثة عشر","أربعة عشر","خمسة عشر","ستة عشر","سبعة عشر","ثمانية عشر","تسعة عشر"};
+        if(n<10)return ones[n];
+        if(n<20)return teens[n-10];
+        if(n<100){int u=n%10;return u==0?tens[n/10]:ones[u]+" و"+tens[n/10];}
+        int h=n/100,r=n%100; String[] hs={"","مائة","مائتان","ثلاثمائة","أربعمائة","خمسمائة","ستمائة","سبعمائة","ثمانمائة","تسعمائة"};
+        return r==0?hs[h]:hs[h]+" و"+arabicBelow1000(r);
+    }
+    void importTransferContact(boolean receiver){
+        if(Build.VERSION.SDK_INT>=23 && checkSelfPermission("android.permission.READ_CONTACTS")!=PackageManager.PERMISSION_GRANTED){
+            transferContactNameTarget=receiver?transferReceiverName:transferSenderName;
+            transferContactPhoneTarget=receiver?transferReceiverPhone:transferSenderPhone;
+            requestPermissions(new String[]{"android.permission.READ_CONTACTS"},REQ_CONTACTS);
+            return;
+        }
+        try{
+            Intent i=new Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI);
+            startActivityForResult(i,receiver?PICK_TRANSFER_RECEIVER:PICK_TRANSFER_SENDER);
+        }catch(Exception e){Toast.makeText(this,"تعذر فتح جهات الاتصال",Toast.LENGTH_SHORT).show();}
+    }
+
     void importContact(){
         if(Build.VERSION.SDK_INT>=23 && checkSelfPermission("android.permission.READ_CONTACTS")!=PackageManager.PERMISSION_GRANTED){ requestPermissions(new String[]{"android.permission.READ_CONTACTS"},REQ_CONTACTS); return; }
         try{ Intent i=new Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI); startActivityForResult(i,PICK_CONTACT); }catch(Exception e){ Toast.makeText(this,"تعذر فتح جهات الاتصال",Toast.LENGTH_SHORT).show(); }
@@ -581,6 +620,11 @@ void showMoreMenu(){
     }
     @Override public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] grantResults){
         super.onRequestPermissionsResult(requestCode,permissions,grantResults);
+        if(requestCode==REQ_CONTACTS && grantResults.length>0 && grantResults[0]==PackageManager.PERMISSION_GRANTED){
+            boolean receiver=transferContactNameTarget==transferReceiverName;
+            importTransferContact(receiver);
+            return;
+        }
         if(requestCode==REQ_AUDIO){
             if(grantResults.length>0&&grantResults[0]==PackageManager.PERMISSION_GRANTED&&activeVoiceField!=null){
                 boolean detail=activeVoiceField.getTag()!=null&&"detailVoice".equals(activeVoiceField.getTag());
@@ -597,7 +641,19 @@ void showMoreMenu(){
 
     @Override protected void onActivityResult(int requestCode,int resultCode,Intent data){
         super.onActivityResult(requestCode,resultCode,data);
-        if(requestCode==PICK_CONTACT&&resultCode==RESULT_OK&&data!=null){
+        if((requestCode==PICK_TRANSFER_RECEIVER||requestCode==PICK_TRANSFER_SENDER)&&resultCode==RESULT_OK&&data!=null){
+            Cursor c=null;
+            try{
+                c=getContentResolver().query(data.getData(),new String[]{ContactsContract.CommonDataKinds.Phone.NUMBER},null,null,null);
+                if(c!=null&&c.moveToFirst()){
+                    String p=c.getString(0);
+                    EditText target=requestCode==PICK_TRANSFER_RECEIVER?transferReceiverPhone:transferSenderPhone;
+                    if(target!=null)target.setText(p==null?"":p);
+                    Toast.makeText(this,"تم استيراد الرقم فقط",Toast.LENGTH_SHORT).show();
+                }
+            }catch(Exception e){Toast.makeText(this,"تعذر قراءة رقم جهة الاتصال",Toast.LENGTH_SHORT).show();}
+            finally{if(c!=null)c.close();}
+        }else if(requestCode==PICK_CONTACT&&resultCode==RESULT_OK&&data!=null){
             Cursor c=null;
             try{
                 c=getContentResolver().query(data.getData(),new String[]{ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,ContactsContract.CommonDataKinds.Phone.NUMBER},null,null,null);
@@ -1401,10 +1457,12 @@ void showGeneralActions(){
             }).setNegativeButton("إلغاء",null).show();
     }
     void saveInvoice(String name,String no,ArrayList<Line> lines,double total,double paid,String phone,boolean edit,long oldId){
+        if(invoiceSaveInProgress){ Toast.makeText(this,"جاري حفظ الفاتورة بالفعل.",Toast.LENGTH_SHORT).show(); return; }
+        invoiceSaveInProgress=true;
         String customerName=(name==null?"":name.trim());
         boolean cashCustomer=customerName.isEmpty() || "نقدي".equals(customerName) || "عميل نقدي".equals(customerName);
-        if(paid<0 || total<0){Toast.makeText(this,"بيانات الفاتورة غير صحيحة.",Toast.LENGTH_SHORT).show();return;}
-        if(lines==null||lines.isEmpty()){Toast.makeText(this,"أضف صنفاً واحداً على الأقل.",Toast.LENGTH_SHORT).show();return;}
+        if(paid<0 || total<0){invoiceSaveInProgress=false;Toast.makeText(this,"بيانات الفاتورة غير صحيحة.",Toast.LENGTH_SHORT).show();return;}
+        if(lines==null||lines.isEmpty()){invoiceSaveInProgress=false;Toast.makeText(this,"أضف صنفاً واحداً على الأقل.",Toast.LENGTH_SHORT).show();return;}
         String stockWarning=db.saleStockWarning(lines,edit?oldId:-1);
         String storedCustomer=cashCustomer?"نقدي":customerName;
         long cid=cashCustomer?-1:db.customer(storedCustomer,phone==null?"":phone);
@@ -1438,6 +1496,7 @@ void showGeneralActions(){
             Toast.makeText(this,"تعذر حفظ الفاتورة بالكامل. لم يتم اعتماد العملية.",Toast.LENGTH_LONG).show();
         }finally{
             txDb.endTransaction();
+            invoiceSaveInProgress=false;
         }
     }
     
@@ -2407,6 +2466,11 @@ void operationActions(long customerId,String customerName,long tid,String detail
         rr.addView(rn,new LinearLayout.LayoutParams(0,dp(48),1));
         LinearLayout.LayoutParams rrp=new LinearLayout.LayoutParams(0,dp(48),1); rrp.setMargins(dp(6),0,0,0);
         rr.addView(transferReceiverPhone,rrp);
+        Button receiverContact=button("👤");
+        receiverContact.setContentDescription("اختيار رقم المستلم من جهات الاتصال");
+        receiverContact.setOnClickListener(v->importTransferContact(true));
+        LinearLayout.LayoutParams rcp=new LinearLayout.LayoutParams(dp(44),dp(48)); rcp.setMargins(dp(6),0,0,0);
+        rr.addView(receiverContact,rcp);
         form.addView(rr,new LinearLayout.LayoutParams(-1,-2));
         addSpaceTo(form,6);
 
@@ -2427,6 +2491,11 @@ void operationActions(long customerId,String customerName,long tid,String detail
         sr.addView(sn,new LinearLayout.LayoutParams(0,dp(48),1));
         LinearLayout.LayoutParams srp=new LinearLayout.LayoutParams(0,dp(48),1); srp.setMargins(dp(6),0,0,0);
         sr.addView(transferSenderPhone,srp);
+        Button senderContact=button("👤");
+        senderContact.setContentDescription("اختيار رقم المرسل من جهات الاتصال");
+        senderContact.setOnClickListener(v->importTransferContact(false));
+        LinearLayout.LayoutParams scp=new LinearLayout.LayoutParams(dp(44),dp(48)); scp.setMargins(dp(6),0,0,0);
+        sr.addView(senderContact,scp);
         form.addView(sr,new LinearLayout.LayoutParams(-1,-2));
         addSpaceTo(form,8);
 
@@ -2486,7 +2555,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
             public void beforeTextChanged(CharSequence s,int st,int c,int a){}
             public void onTextChanged(CharSequence s,int st,int b,int c){
                 double a=parseDoubleSafe(amount.getText().toString().replace(",","").trim(),0);
-                netBadge.setText(a>0?fmt(a)+" صافي":"0 صافي");
+                netBadge.setText(a>0?fmt(a)+" صافي\n"+amountInWords(a):"0 صافي");
             }
             public void afterTextChanged(Editable e){}
         });
@@ -2498,7 +2567,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
                 Toast.makeText(this,"أكمل المبلغ واسم المستلم واسم المرسل",Toast.LENGTH_SHORT).show();
                 return;
             }
-            String txt=fmt(a)+" صافي\n\nالمستلم: "+r+(rp.isEmpty()?"":"\nرقم المستلم: "+rp)+"\n\nالمرسل: "+sName+(sp.isEmpty()?"":"\nرقم المرسل: "+sp);
+            String txt=fmt(a)+" صافي\n"+amountInWords(a)+"\nالمستلم "+r+(rp.isEmpty()?"":"\n"+rp)+"\nالمرسل "+sName+(sp.isEmpty()?"":"\n"+sp);
             lastText[0]=txt;
             lastPhone[0]=rp;
             preview.setText(txt);
@@ -3487,6 +3556,8 @@ void operationActions(long customerId,String customerName,long tid,String detail
     }
 
     void saveUnifiedPurchase(String supplierName,String no,ArrayList<PurchaseLine> lines,double sum){
+        if(invoiceSaveInProgress){Toast.makeText(this,"جاري حفظ الفاتورة بالفعل.",Toast.LENGTH_SHORT).show();return;}
+        invoiceSaveInProgress=true;
         SQLiteDatabase tx=null;
         long purchaseId=0;
         boolean saved=false;
@@ -3505,6 +3576,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
             Toast.makeText(this,"تعذر حفظ فاتورة الشراء بالكامل. لم يتم اعتماد العملية.",Toast.LENGTH_LONG).show();
         }finally{
             if(tx!=null)tx.endTransaction();
+            invoiceSaveInProgress=false;
         }
         if(saved){
             Toast.makeText(this,"تم حفظ فاتورة الشراء وتحديث المخزون",Toast.LENGTH_SHORT).show();
