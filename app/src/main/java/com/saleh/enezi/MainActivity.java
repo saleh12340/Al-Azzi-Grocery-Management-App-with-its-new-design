@@ -1425,7 +1425,7 @@ EditText numberField(String h){
     }
     static void restoreDatabaseFromUri(Context c,Uri uri){
         DB helper=new DB(c);helper.close();
-        File target=c.getDatabasePath("enezi.db");File tmp=new File(c.getCacheDir(),"restore_enezi.db");
+        File target=c.getDatabasePath(DB.DB_NAME);File tmp=new File(c.getCacheDir(),"restore_enezi.db");
         try{
             try(InputStream in=c.getContentResolver().openInputStream(uri);OutputStream out=new FileOutputStream(tmp)){
                 if(in==null)throw new Exception("null");byte[] buf=new byte[8192];int n;while((n=in.read(buf))>0)out.write(buf,0,n);
@@ -3151,10 +3151,31 @@ void notes(){ base("الملاحظات");
     }
     void showSupplierOperationDetails(long supplierId,String name,String phone,int kind,long id,String ref,String details,double amount,String date,double running){
         LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(dp(5),0,dp(5),0);box.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        box.addView(detailLine("نوع العملية",kind==1?"فاتورة شراء":"سداد"));box.addView(detailLine("التاريخ والوقت",date));box.addView(detailLine("التفاصيل",details));box.addView(detailLine("رقم الفاتورة",ref==null||ref.isEmpty()?"—":ref));box.addView(detailLine("المبلغ",fmt(Math.abs(amount))+" ر.ي"));box.addView(detailLine("الرصيد بعد العملية",fmt(Math.abs(running))+" "+supplierBalanceLabel(running)));
-        AlertDialog dlg=new AlertDialog.Builder(this).setTitle("تفاصيل العملية").setView(box).setNegativeButton("إغلاق",null).setNeutralButton("مشاركة",null).setPositiveButton("طباعة",null).create();
-        dlg.setOnShowListener(x->{dlg.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v->shareSupplierStatement(name,phone,supplierStatement(name,supplierId)));dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->previewTextForPrint(supplierStatement(name,supplierId),name));});
-        dlg.setOnDismissListener(x->{});
+        box.addView(detailLine("نوع العملية",kind==1?"فاتورة شراء":"سداد"));
+        box.addView(detailLine("التاريخ والوقت",date));
+        box.addView(detailLine("التفاصيل",details==null||details.isEmpty()?"—":details));
+        box.addView(detailLine("رقم الفاتورة",ref==null||ref.isEmpty()?"—":ref));
+        box.addView(detailLine("المبلغ",(amount>=0?"+":"-")+fmt(Math.abs(amount))+" ر.ي"));
+        box.addView(detailLine("الرصيد بعد العملية",fmt(Math.abs(running))+" "+supplierBalanceLabel(running)));
+        LinearLayout buttons=new LinearLayout(this);buttons.setOrientation(LinearLayout.HORIZONTAL);buttons.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        Button edit=button("تعديل"),share=button("مشاركة"),print=button("طباعة"),close=button("إغلاق");
+        buttons.addView(edit,new LinearLayout.LayoutParams(0,dp(42),1));
+        LinearLayout.LayoutParams bp=new LinearLayout.LayoutParams(0,dp(42),1);bp.setMargins(dp(4),0,0,0);
+        buttons.addView(share,bp);buttons.addView(print,bp);buttons.addView(close,bp);box.addView(buttons,new LinearLayout.LayoutParams(-1,dp(48)));
+        AlertDialog dlg=new AlertDialog.Builder(this).setTitle("تفاصيل العملية").setView(box).create();
+        close.setOnClickListener(v->dlg.dismiss());
+        share.setOnClickListener(v->shareSupplierStatement(name,phone,supplierStatement(name,supplierId)));
+        print.setOnClickListener(v->previewTextForPrint(supplierStatement(name,supplierId),name));
+        edit.setOnClickListener(v->{
+            if(kind==1){dlg.dismiss();long pid=id;purchaseInvoiceForm(true,pid);}
+            else{
+                LinearLayout eb=new LinearLayout(this);eb.setOrientation(LinearLayout.VERTICAL);eb.setPadding(dp(6),0,dp(6),0);
+                EditText a=numberField("مبلغ السداد");a.setText(fmt(Math.abs(amount)));EditText d=field("التفاصيل");d.setText(details==null?"":details);EditText inv=field("رقم الفاتورة");inv.setText(ref==null?"":ref);
+                eb.addView(a);spaceTo(eb,4);eb.addView(d);spaceTo(eb,4);eb.addView(inv);
+                AlertDialog ed=new AlertDialog.Builder(this).setTitle("تعديل السداد").setView(eb).setNegativeButton("إلغاء",null).setPositiveButton("حفظ",null).create();
+                ed.setOnShowListener(x->ed.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v2->{try{double na=Double.parseDouble(a.getText().toString().replace(",","").trim());if(na<=0)throw new Exception();db.updateSupplierPayment(id,na,d.getText().toString().trim(),inv.getText().toString().trim());ed.dismiss();dlg.dismiss();supplierAccount(supplierId,name,phone);}catch(Exception ex){Toast.makeText(this,"أدخل مبلغًا صحيحًا",Toast.LENGTH_SHORT).show();}}));ed.show();
+            }
+        });
         dlg.show();
     }
 
