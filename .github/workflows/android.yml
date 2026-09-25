@@ -31,6 +31,29 @@ jobs:
           echo "/opt/gradle-8.9/bin" >> "$GITHUB_PATH"
       - name: Build debug APK
         run: gradle :app:assembleDebug --stacktrace --no-daemon
+      - name: Android launch smoke test
+        uses: ReactiveCircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_7
+          emulator-boot-timeout: 300
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          script: |
+            adb install -r app/build/outputs/apk/debug/app-debug.apk
+            adb shell am start -n com.saleh.alazzigrocery.newapp/com.saleh.enezi.MainActivity
+            sleep 8
+            adb shell pidof com.saleh.alazzigrocery.newapp
+            adb exec-out screencap -p > home-smoke.png
+      - name: Upload launch smoke screenshot
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Al-Azzi-Grocery-launch-smoke
+          path: home-smoke.png
+          if-no-files-found: warn
       - name: Verify APK
         run: |
           test -s app/build/outputs/apk/debug/app-debug.apk
