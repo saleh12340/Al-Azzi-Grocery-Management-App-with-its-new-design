@@ -2010,169 +2010,57 @@ void operationActions(long customerId,String customerName,long tid,String detail
 
     void shareOperationImage(String customer,String details,double amount,int type,String invNo){
         try{
-            String text=compactOperationText(customer,details,amount,type,invNo);
-            Bitmap b=operationBitmap(customer,details,amount,type,invNo);
-            Uri uri=saveReceiptBitmap(b,invNo==null||invNo.isEmpty()?String.valueOf(System.currentTimeMillis()):"عملية_"+invNo);
+            // إذا كانت الحركة مرتبطة بفاتورة مبيعات، استخدم الإيصال المحفوظ نفسه.
+            if(invNo!=null&&!invNo.trim().isEmpty()){
+                shareSavedInvoiceReceipt(invNo.trim());
+                return;
+            }
+            double balanceAfter=operationBalanceAtTime(customer,details,amount,type);
+            String text=compactOperationText(customer,details,amount,type,invNo)
+                    +"\\nالتاريخ والوقت: "+db.now()
+                    +"\\n"+operationBalanceLabel(balanceAfter);
+            Bitmap b=receiptBitmap(text,384);
+            Uri uri=saveReceiptBitmap(b,"عملية_"+System.currentTimeMillis());
+            if(uri==null||!"content".equalsIgnoreCase(uri.getScheme())) throw new IllegalStateException("invalid operation receipt URI");
             shareWhatsAppToCustomer(db.phoneByName(customer),text,uri);
-        }catch(Exception e){shareOperation(customer,details,amount,type,invNo);}
+        }catch(Exception e){
+            android.util.Log.e("AlAzziShare","Operation receipt share failed",e);
+            Toast.makeText(this,"تعذر إنشاء إيصال العملية 58mm",Toast.LENGTH_LONG).show();
+        }
+    }
+
+    double operationBalanceAtTime(String customer,String details,double amount,int type){
+        long cid=db.customerIdByName(customer==null?"":customer.trim());
+        if(cid<=0)return 0;
+        Cursor c=null;
+        try{
+            c=db.getReadableDatabase().rawQuery(
+                "SELECT id FROM transactions WHERE customer_id=? AND amount=? AND type=? AND details=? ORDER BY id DESC LIMIT 1",
+                new String[]{String.valueOf(cid),String.valueOf(amount),String.valueOf(type),details==null?"":details});
+            if(c.moveToFirst()){
+                long tid=c.getLong(0);
+                return db.balanceAfterTransaction(tid);
+            }
+        }catch(Exception e){
+            android.util.Log.w("AlAzziShare","Could not resolve operation balance",e);
+        }finally{if(c!=null)c.close();}
+        return db.balance(cid);
+    }
+
+    String operationBalanceLabel(double balanceAfter){
+        if(balanceAfter>0.005)return "رصيدكم عليكم: "+fmt(balanceAfter)+" ريال";
+        if(balanceAfter<-0.005)return "الرصيد لكم: "+fmt(Math.abs(balanceAfter))+" ريال";
+        return "الرصيد التراكمي: 0 ريال";
     }
 
     Bitmap operationBitmap(String customer,String details,double amount,int type,String invNo){
-        final int width=480;
-        final int margin=18;
-        Bitmap b=Bitmap.createBitmap(width,390,Bitmap.Config.ARGB_8888);
-        Canvas c=new Canvas(b);c.drawColor(Color.WHITE);
-
-        Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);
-        Paint strokeP=new Paint(Paint.ANTI_ALIAS_FLAG);strokeP.setStyle(Paint.Style.STROKE);strokeP.setStrokeWidth(2);strokeP.setColor(Color.rgb(220,230,222));
-        Paint fillP=new Paint(Paint.ANTI_ALIAS_FLAG);
-
-        // Outer border
-        c.drawRoundRect(8,8,width-8,382,14,14,strokeP);
-
-        // Header ribbon
-        fillP.setColor(Color.rgb(240,248,242));
-        c.drawRoundRect(12,12,width-12,82,10,10,fillP);
-
-        p.setTypeface(Typeface.create("sans",Typeface.BOLD));
-        p.setTextSize(23);p.setColor(GREEN);p.setTextAlign(Paint.Align.RIGHT);
-        c.drawText("بقالة العزي للمواد الغذائية",width-margin-10,40,p);
-        p.setTextSize(11.5f);p.setTypeface(Typeface.create("sans",Typeface.BOLD));
-        c.drawText("مستقبل تجارتك يبدأ من هنا",width-margin-10,58,p);
-        p.setTextSize(12.5f);p.setColor(DARK);p.setTypeface(Typeface.create("sans",Typeface.NORMAL));
-        c.drawText("سند قيد مالي إلكتروني  •  إشعار حركة",width-margin-10,68,p);
-
-        int y=104;
-        String custName=customer==null||customer.trim().isEmpty()?"عميل نقدي":customer.trim();
-        fillP.setColor(Color.rgb(250,252,250));
-        c.drawRoundRect(margin,y,width-margin,y+36,8,8,fillP);
-        strokeP.setColor(Color.rgb(230,238,232));
-        c.drawRoundRect(margin,y,width-margin,y+36,8,8,strokeP);
-
-        p.setTextSize(13.5f);p.setColor(DARK);p.setTypeface(Typeface.create("sans",Typeface.BOLD));
-        p.setTextAlign(Paint.Align.RIGHT);
-        c.drawText("العميل: "+custName,width-margin-12,y+24,p);
-        y+=46;
-
-        // Operation Type & Amount Card
-        int badgeBgColor=type==1?Color.rgb(255,242,242):Color.rgb(240,249,242);
-        int badgeBorderColor=type==1?Color.rgb(245,190,190):Color.rgb(190,230,205);
-        int badgeTextColor=type==1?RED:GREEN;
-        fillP.setColor(badgeBgColor);
-        c.drawRoundRect(margin,y,width-margin,y+64,10,10,fillP);
-        strokeP.setColor(badgeBorderColor);
-        c.drawRoundRect(margin,y,width-margin,y+64,10,10,strokeP);
-
-        p.setTextSize(13);p.setColor(badgeTextColor);p.setTypeface(Typeface.create("sans",Typeface.BOLD));
-        p.setTextAlign(Paint.Align.RIGHT);
-        c.drawText(type==1?"🔴 حركة سحب (قيد عليه)":"🟢 دفعة سداد (قيد له)",width-margin-14,y+24,p);
-
-        p.setTextSize(22);p.setTypeface(Typeface.create("sans",Typeface.BOLD));
-        p.setTextAlign(Paint.Align.LEFT);
-        String amtStr=(type==1?"عليك: ":"له: ")+fmt(amount)+" يمني";
-        c.drawText(amtStr,margin+14,y+46,p);
-        y+=74;
-
-        // Details Card
-        fillP.setColor(Color.rgb(252,254,252));
-        c.drawRoundRect(margin,y,width-margin,y+58,8,8,fillP);
-        strokeP.setColor(Color.rgb(235,240,236));
-        c.drawRoundRect(margin,y,width-margin,y+58,8,8,strokeP);
-
-        String det=details==null?"":details.trim();
-        if(det.startsWith("فاتورة مبيعات رقم ")) det=det.replace("فاتورة مبيعات رقم ","فاتورة #");
-        String detLabel=det;
-
-        p.setTextSize(13);p.setColor(DARK);p.setTypeface(Typeface.create("sans",Typeface.BOLD));
-        p.setTextAlign(Paint.Align.RIGHT);
-        c.drawText(detLabel,width-margin-12,y+24,p);
-
-        p.setTextSize(11.5f);p.setColor(MUTED);p.setTypeface(Typeface.create("sans",Typeface.NORMAL));
-        String subRef=(invNo!=null&&!invNo.trim().isEmpty()?"فاتورة #"+invNo.trim()+"  •  ":"")+db.now();
-        c.drawText(subRef,width-margin-12,y+44,p);
-        y+=68;
-
-        // Balance Card
-        double currentBal=db.balanceByName(customer);
-        if(Math.abs(currentBal)>=0.005){
-            fillP.setColor(currentBal>0.005?Color.rgb(255,243,243):Color.rgb(240,248,255));
-            strokeP.setColor(currentBal>0.005?Color.rgb(245,200,200):Color.rgb(200,225,250));
-            c.drawRoundRect(margin,y,width-margin,y+36,8,8,fillP);
-            c.drawRoundRect(margin,y,width-margin,y+36,8,8,strokeP);
-            p.setColor(balanceColor(currentBal));p.setTextSize(13.5f);p.setTypeface(Typeface.create("sans",Typeface.BOLD));
-            p.setTextAlign(Paint.Align.CENTER);
-            String bText=currentBal>0?"الإجمالي - عليك "+fmt(currentBal)+" يمني":"الإجمالي - له "+fmt(Math.abs(currentBal))+" يمني";
-            c.drawText(bText,width/2,y+23,p);
-            y+=42;
-        }else{
-            fillP.setColor(Color.rgb(240,248,242));
-            strokeP.setColor(Color.rgb(200,235,210));
-            c.drawRoundRect(margin,y,width-margin,y+36,8,8,fillP);
-            c.drawRoundRect(margin,y,width-margin,y+36,8,8,strokeP);
-            p.setColor(GREEN);p.setTextSize(13.5f);p.setTypeface(Typeface.create("sans",Typeface.BOLD));
-            p.setTextAlign(Paint.Align.CENTER);
-            c.drawText("الإجمالي - خالص (0 يمني)",width/2,y+23,p);
-            y+=42;
-        }
-
-        y+=6;
-        p.setColor(MUTED);p.setTextSize(11);p.setTypeface(Typeface.create("sans",Typeface.NORMAL));
-        c.drawText("✨ شكراً لتعاملكم معنا • بقالة العزي للمواد الغذائية ✨",width/2,y+12,p);
-
-        return b;
+        double balanceAfter=operationBalanceAtTime(customer,details,amount,type);
+        String text=compactOperationText(customer,details,amount,type,invNo)
+                +"\\nالتاريخ والوقت: "+db.now()
+                +"\\n"+operationBalanceLabel(balanceAfter);
+        return receiptBitmap(text,384);
     }
 
-    Bitmap operationBitmap(String text){
-        return receiptBitmap(text);
-    }
-
-    void shareSelectedTransactions(long customerId,String name,ArrayList<Long> ids){
-        StringBuilder text=new StringBuilder("📋 *بقالة العزي للمواد الغذائية - كشف عمليات محددة*\n");
-        text.append("━━━━━━━━━━━━━━━━━━\n");
-        text.append("👤 *العميل:* ").append(name).append("\n");
-        text.append("📅 *التاريخ:* ").append(db.now()).append("\n");
-        text.append("━━━━━━━━━━━━━━━━━━\n");
-        double debit=0,credit=0;
-        for(Long tid:ids){
-            Cursor c=db.transactionById(tid);
-            if(c.moveToFirst()){
-                String d=c.getString(3);double a=c.getDouble(4);int t=c.getInt(5);
-                text.append(t==1?"🔴 عليه: ":"🟢 له: ").append(fmt(a)).append(" ر.ي");
-                if(d!=null&&!d.trim().isEmpty())text.append(" • ").append(d.trim());
-                text.append(" (").append(c.getString(2)).append(")\n");
-                if(t==1)debit+=a;else credit+=a;
-            }
-            c.close();
-        }
-        text.append("━━━━━━━━━━━━━━━━━━\n");
-        text.append("🔻 *إجمالي المحدد عليه:* ").append(fmt(debit)).append(" ريال\n");
-        text.append("🔺 *إجمالي المحدد له:* ").append(fmt(credit)).append(" ريال\n");
-        text.append("📊 *الرصيد الإجمالي الحالي:* ").append(balanceText(db.balance(customerId))).append("\n");
-        text.append("━━━━━━━━━━━━━━━━━━\n");
-        text.append("✨ *بقالة العزي للمواد الغذائية - خدمة متميزة* ✨");
-        shareWhatsAppToCustomer(db.phoneByName(name),text.toString(),null);
-    }
-
-    void printSelectedTransactions(long customerId,String name,ArrayList<Long> ids){
-        StringBuilder text=new StringBuilder("بقالة العزي للمواد الغذائية\nكشف عمليات: ").append(name).append("\nالتاريخ: ").append(db.now()).append("\n");
-        text.append("------------------------------\n");
-        double debit=0,credit=0;
-        for(Long tid:ids){
-            Cursor c=db.transactionById(tid);
-            if(c.moveToFirst()){
-                String d=c.getString(3);double a=c.getDouble(4);int t=c.getInt(5);
-                text.append(c.getString(2)).append("\n");
-                text.append(t==1?"عليه: ":"له: ").append(fmt(a)).append(" ريال");
-                if(d!=null&&!d.trim().isEmpty())text.append(" | ").append(d.trim());
-                text.append("\n");
-                if(t==1)debit+=a;else credit+=a;
-            }c.close();
-        }
-        text.append("------------------------------\nإجمالي المحدد عليه: ").append(fmt(debit)).append(" ريال\n");
-        text.append("إجمالي المحدد له: ").append(fmt(credit)).append(" ريال\n");
-        text.append("الرصيد الحالي: ").append(balanceText(db.balance(customerId)));
-        previewTextForPrint(text.toString(),name);
-    }
 
     void printOperation(String customer,String details,double amount,int type,String invNo){
         try{
