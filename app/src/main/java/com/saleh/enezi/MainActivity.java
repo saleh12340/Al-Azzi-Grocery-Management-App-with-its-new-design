@@ -856,8 +856,8 @@ EditText numberField(String h){
             grid.setPadding(0,0,0,0);
             grid.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
-            String[] labels={"فواتير البيع","العملاء والحسابات","الموردون","فواتير الشراء","المخزون والأصناف","التقارير","الملاحظات","الحوالات","الإعدادات"};
-            View.OnClickListener[] actions={v->invoiceHistory(),v->customers(),v->suppliers(),v->purchaseInvoices(),v->inventory(),v->reports(),v->notes(),v->transfers(),v->settingsHub()};
+            String[] labels={"الفواتير","العملاء والحسابات","الموردون","المشتريات","المخزون والأصناف","التقارير","الملاحظات","الحوالات","الإعدادات"};
+            View.OnClickListener[] actions={v->invoicesHub(),v->customers(),v->suppliers(),v->purchaseInvoices(),v->inventory(),v->reports(),v->notes(),v->transfers(),v->settingsHub()};
             for(int i=0;i<labels.length;i++){
                 Button b=button(labels[i]);
                 b.setTextSize(13.5f);
@@ -3047,6 +3047,20 @@ void notes(){ base("الملاحظات");
     }
 
     static class PurchaseLine{String name;double qty,cost,sale,total;PurchaseLine(String n,double q,double c,double s,double t){name=n;qty=q;cost=c;sale=s;total=t;}}
+
+    void invoicesHub(){
+        base("الفواتير");
+        LinearLayout toggle=new LinearLayout(this);toggle.setOrientation(LinearLayout.HORIZONTAL);toggle.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        Button sales=action("مبيعات",GREEN), purchases=button("مشتريات");
+        toggle.addView(sales,new LinearLayout.LayoutParams(0,dp(44),1));LinearLayout.LayoutParams tp=new LinearLayout.LayoutParams(0,dp(44),1);tp.setMargins(dp(5),0,0,0);toggle.addView(purchases,tp);
+        content.addView(toggle);addSpace(7);
+        LinearLayout panel=new LinearLayout(this);panel.setOrientation(LinearLayout.VERTICAL);panel.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);content.addView(panel);
+        Runnable renderSales=()->{panel.removeAllViews();TextView h=tv("فواتير المبيعات",16);h.setTextColor(GREEN);h.setTypeface(Typeface.DEFAULT,Typeface.BOLD);panel.addView(h);Button n=action("＋ فاتورة مبيعات جديدة",GREEN),hist=button("سجل فواتير المبيعات");panel.addView(n,new LinearLayout.LayoutParams(-1,dp(48)));spaceTo(panel,5);panel.addView(hist,new LinearLayout.LayoutParams(-1,dp(48)));n.setOnClickListener(v->invoice());hist.setOnClickListener(v->invoiceHistory());};
+        Runnable renderPurch=()->{panel.removeAllViews();TextView h=tv("فواتير المشتريات",16);h.setTextColor(GOLD);h.setTypeface(Typeface.DEFAULT,Typeface.BOLD);panel.addView(h);Button n=action("＋ فاتورة شراء جديدة",GOLD),hist=button("سجل فواتير المشتريات");panel.addView(n,new LinearLayout.LayoutParams(-1,dp(48)));spaceTo(panel,5);panel.addView(hist,new LinearLayout.LayoutParams(-1,dp(48)));n.setOnClickListener(v->newPurchaseInvoice());hist.setOnClickListener(v->purchaseInvoices());};
+        sales.setOnClickListener(v->{sales.setBackground(rounded(GREEN,dp(9)));sales.setTextColor(Color.WHITE);purchases.setBackground(outline(CARD,1,9));purchases.setTextColor(TEXT);renderSales.run();});
+        purchases.setOnClickListener(v->{purchases.setBackground(rounded(GOLD,dp(9)));purchases.setTextColor(Color.WHITE);sales.setBackground(outline(CARD,1,9));sales.setTextColor(TEXT);renderPurch.run();});
+        sales.performClick();
+    }
 
     void suppliers(){
         base("الموردون");
