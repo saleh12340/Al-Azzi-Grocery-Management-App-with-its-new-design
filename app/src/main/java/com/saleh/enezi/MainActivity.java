@@ -1492,6 +1492,7 @@ void showGeneralActions(){
             clearInvoiceDraft();
             saveReceiptImage(no,storedCustomer,lines,total);
             showPostSaveActions(no,storedCustomer,lines,total,cid,paid,stockWarning);
+            invoiceHistory();
         }catch(Exception ex){
             Toast.makeText(this,"تعذر حفظ الفاتورة بالكامل. لم يتم اعتماد العملية.",Toast.LENGTH_LONG).show();
         }finally{
@@ -3518,11 +3519,8 @@ void operationActions(long customerId,String customerName,long tid,String detail
                 String no=displayInvoiceNo(String.valueOf(db.nextInvoice()));
                 invoiceHeaderNo.setText("فاتورة مبيعات رقم "+no);
                 String knownPhone=db.phoneByName(partyName).trim();
-                if(knownPhone.isEmpty() && !"نقدي".equals(partyName) && !"عميل نقدي".equals(partyName)){
-                    showPhoneDialog(partyName,no,salesLines,sum,paidAmount,false,-1);
-                }else{
-                    saveInvoice(partyName,no,salesLines,sum,paidAmount,knownPhone,false,-1);
-                }
+                // الهاتف اختياري؛ يُطلب فقط عند محاولة مشاركة الفاتورة عبر واتساب.
+                saveInvoice(partyName,no,salesLines,sum,paidAmount,knownPhone,false,-1);
             }else{
                 String no=invNo.getText().toString().trim();
                 invoiceHeaderNo.setText("فاتورة شراء رقم "+no);
@@ -3589,6 +3587,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
         if(saved){
             Toast.makeText(this,"تم حفظ فاتورة الشراء وتحديث المخزون",Toast.LENGTH_SHORT).show();
             showPostSavePurchaseActions(purchaseId,no.trim(),supplierName.trim(),lines,sum,db.now());
+            invoiceHistory();
         }
     }
 
@@ -5299,7 +5298,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
 
     static class DB extends SQLiteOpenHelper{
         static final String DB_NAME="alazzi_grocery_runtime_v5.db";
-        DB(Context c){super(c,DB_NAME,null,3);}
+        DB(Context c){super(c,DB_NAME,null,4);}
         @Override public void onConfigure(SQLiteDatabase d){
             super.onConfigure(d);
             try{d.execSQL("PRAGMA busy_timeout=1500");}catch(Exception ignored){}
@@ -5475,16 +5474,28 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
             catch(SQLiteConstraintException e){Cursor x=d.rawQuery("SELECT id FROM customers WHERE normalized_name=? LIMIT 1",new String[]{key});long id=x.moveToFirst()?x.getLong(0):-1;x.close();return id;}
         }
         long addInvoiceAuto(String c,double t,double paid,String date){
-            SQLiteDatabase d=getWritableDatabase();
-            ContentValues v=new ContentValues();v.put("no",String.valueOf(nextInvoice()));
-            v.put("customer",c);v.put("total",t);v.put("paid",paid);v.put("date",date);
-            try{return d.insertOrThrow("invoices",null,v);}catch(SQLiteConstraintException e){return -2;}
+            synchronized(this){
+                SQLiteDatabase d=getWritableDatabase();
+                for(int attempt=0;attempt<8;attempt++){
+                    int candidate=nextInvoice();
+                    ContentValues v=new ContentValues();v.put("no",String.valueOf(candidate));
+                    v.put("customer",c);v.put("total",t);v.put("paid",paid);v.put("date",date);
+                    try{return d.insertOrThrow("invoices",null,v);}catch(SQLiteConstraintException collision){}
+                }
+                return -2;
+            }
         }
         long addPurchaseAuto(String supplier,double total,String date){
-            SQLiteDatabase d=getWritableDatabase();
-            ContentValues v=new ContentValues();v.put("no",String.valueOf(nextPurchaseNo()));
-            v.put("supplier",supplier);v.put("total",total);v.put("date",date);
-            try{return d.insertOrThrow("purchase_invoices",null,v);}catch(SQLiteConstraintException e){return -2;}
+            synchronized(this){
+                SQLiteDatabase d=getWritableDatabase();
+                for(int attempt=0;attempt<8;attempt++){
+                    int candidate=nextPurchaseNo();
+                    ContentValues v=new ContentValues();v.put("no",String.valueOf(candidate));
+                    v.put("supplier",supplier);v.put("total",total);v.put("date",date);
+                    try{return d.insertOrThrow("purchase_invoices",null,v);}catch(SQLiteConstraintException collision){}
+                }
+                return -2;
+            }
         }
         long addInvoice(String no,String c,double t,double paid,String date){
             SQLiteDatabase d=getWritableDatabase(); String requested=canon(no); if(requested.isEmpty())requested=String.valueOf(nextInvoice());
@@ -6510,7 +6521,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
 
     void showPostSavePurchaseActions(long id,String no,String supplier,ArrayList<PurchaseLine> lines,double total,String date){
         final long purchaseId=id;final String purchaseNo=no,purchaseSupplier=supplier,purchaseDate=date;final double purchaseTotal=total;
-        showCompactSaveSnackbar("✓ تم حفظ فاتورة الشراء","مشاركة",()->{try{purchaseInvoices();sharePurchaseInvoice(purchaseId,purchaseNo,purchaseSupplier,purchaseTotal,purchaseDate);}catch(Throwable e){Toast.makeText(this,"تعذر مشاركة فاتورة الشراء",Toast.LENGTH_SHORT).show();}});
+        showCompactSaveSnackbar("✓ تم حفظ فاتورة الشراء","مشاركة",()->{try{sharePurchaseInvoice(purchaseId,purchaseNo,purchaseSupplier,purchaseTotal,purchaseDate);}catch(Throwable e){Toast.makeText(this,"تعذر مشاركة فاتورة الشراء",Toast.LENGTH_SHORT).show();}});
     }
 
 
