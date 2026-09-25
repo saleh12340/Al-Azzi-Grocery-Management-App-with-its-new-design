@@ -501,23 +501,7 @@ public class MainActivity extends Activity {
         content.setPadding(dp(6),dp(4),dp(6),dp(8));
         content.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
-        if(!"الرئيسية".equals(title) && !"حساب العميل".equals(title) && !title.contains("فاتورة جديدة") && !title.contains("تعديل الفاتورة")){
-            LinearLayout pageHero=new LinearLayout(this);
-            pageHero.setOrientation(LinearLayout.VERTICAL);
-            pageHero.setPadding(dp(8),dp(3),dp(8),dp(3));
-            GradientDrawable heroBg=new GradientDrawable();
-            heroBg.setColor(Color.WHITE); heroBg.setCornerRadius(dp(14));
-            heroBg.setStroke(dp(1),Color.rgb(221,229,238));
-            pageHero.setBackground(heroBg); pageHero.setElevation(dp(1));
-            TextView heroTitle=tv(title,14);
-            heroTitle.setTextColor(GREEN); heroTitle.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-            TextView heroSub=tv("إدارة سريعة ومنظمة",10.5f);
-            heroSub.setTextColor(MUTED);
-            pageHero.addView(heroTitle,new LinearLayout.LayoutParams(-1,dp(20)));
-            pageHero.addView(heroSub,new LinearLayout.LayoutParams(-1,dp(16)));
-            content.addView(pageHero,new LinearLayout.LayoutParams(-1,-2));
-            addSpace(4);
-        }
+
 
         sv.addView(content);
         root.addView(sv,new LinearLayout.LayoutParams(-1,0,1));
@@ -537,17 +521,17 @@ public class MainActivity extends Activity {
         LinearLayout nav=new LinearLayout(this); nav.setTag("fixedNavigation"); nav.setOrientation(LinearLayout.HORIZONTAL);
         nav.setGravity(Gravity.CENTER_VERTICAL); nav.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); nav.setPadding(dp(4),dp(3),dp(4),dp(3));
         nav.setBackground(outlined(CARD,dp(1),dp(14))); nav.setElevation(dp(7));
-        String[] labels={"الرئيسية","الفواتير","الحسابات","المخزون","المزيد"};
-        String[] icons={"⌂","▤","●","□","⋮"};
+        String[] labels={"الفواتير","الحسابات","المخزون","المزيد"};
+        String[] icons={"▤","●","□","⋮"};
         for(int i=0;i<labels.length;i++){
             final int idx=i;
             LinearLayout tab=new LinearLayout(this); tab.setOrientation(LinearLayout.VERTICAL); tab.setGravity(Gravity.CENTER); tab.setPadding(0,dp(2),0,dp(2));
-            boolean active=(i==0&&"الرئيسية".equals(activeTitle))||(i==1&&activeTitle!=null&&activeTitle.contains("فاتورة"))||(i==2&&activeTitle!=null&&activeTitle.contains("حساب"))||(i==3&&activeTitle!=null&&activeTitle.contains("مخزون"));
+            boolean active=(i==0&&activeTitle!=null&&activeTitle.contains("فاتورة"))||(i==1&&activeTitle!=null&&activeTitle.contains("حساب"))||(i==2&&activeTitle!=null&&activeTitle.contains("مخزون"));
             if(active) tab.setBackground(rounded(Color.rgb(231,242,238),dp(10)));
             TextView ic=tv(icons[i],19); ic.setGravity(Gravity.CENTER); ic.setTextColor(active?GREEN:TEXT); tab.addView(ic,new LinearLayout.LayoutParams(-1,dp(25)));
             TextView lab=tv(labels[i],12.5f); lab.setGravity(Gravity.CENTER); lab.setTextColor(active?GREEN:MUTED); if(active)lab.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
             tab.addView(lab,new LinearLayout.LayoutParams(-1,dp(23)));
-            tab.setOnClickListener(v->{hideKeyboard(); if(idx==0)home(); else if(idx==1)invoicesHub(); else if(idx==2)customers(); else if(idx==3)inventory(); else showMoreMenu();});
+            tab.setOnClickListener(v->{hideKeyboard(); if(idx==0)invoicesHub(); else if(idx==1)customers(); else if(idx==2)inventory(); else showMoreMenu();});
             LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(54),1); lp.setMargins(dp(2),0,dp(2),0); nav.addView(tab,lp);
         }
         bottom.addView(nav,new LinearLayout.LayoutParams(-1,dp(60)));
