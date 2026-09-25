@@ -53,6 +53,7 @@ public class MainActivity extends Activity {
     Uri cameraScanTempUri; Bitmap scanRawBitmap; String scanFilterMode="magic"; float scanRotation=0; String scanCategoryFilter="الكل"; String scanSearchQuery="";
     EditText transferSenderName,transferSenderPhone,transferReceiverName,transferReceiverPhone,transferContactNameTarget,transferContactPhoneTarget;
     boolean invoiceSaveInProgress=false;
+    Button invoiceSaveButton;
     EditText activeVoiceField;
 
     @Override public void onCreate(Bundle b){
@@ -554,7 +555,7 @@ public class MainActivity extends Activity {
 void showMoreMenu(){
         String[] choices={"🏪 الموردون","📊 التقارير","💸 الحوالات","📝 الملاحظات","⚙️ الإعدادات","💾 النسخ الاحتياطي والاستعادة"};
         new AlertDialog.Builder(this).setTitle("المزيد").setItems(choices,(d,w)->{
-            if(w==0)suppliers(); else if(w==1)reports(); else if(w==2)transfers(); else if(w==3)notes(); else settingsHub();
+            if(w==0)suppliers(); else if(w==1)reports(); else if(w==2)transfers(); else if(w==3)notes(); else if(w==4)settingsHub(); else if(w==5)showBackupRestore();
         }).setNegativeButton("إغلاق",null).show();
 }
     void navigate(String n){hideKeyboard(); if(n.equals("الرئيسية"))home();else if(n.equals("العملاء")||n.equals("الحسابات"))customers();else if(n.equals("الفواتير")||n.equals("فواتير الشراء"))invoicesHub();else if(n.equals("المخزون"))inventory();else if(n.equals("ماسح الفواتير")||n.equals("الماسح الضوئي"))scanner();else if(n.equals("الحوالات"))transfers();else if(n.equals("الملاحظات"))notes();else reports();}
@@ -1410,8 +1411,11 @@ void showGeneralActions(){
             }
         });
 
+        invoiceSaveButton=fSave;
         fSave.setOnClickListener(v->{
-            if(lines.isEmpty()){Toast.makeText(this,"أضف صنفاً واحداً على الأقل",Toast.LENGTH_SHORT).show();return;}
+            if(invoiceSaveInProgress || !fSave.isEnabled()) return;
+            fSave.setEnabled(false);
+            if(lines.isEmpty(){ fSave.setEnabled(true);{Toast.makeText(this,"أضف صنفاً واحداً على الأقل",Toast.LENGTH_SHORT).show();return;}
             String cn=customer.getText().toString().trim();
             // السماح بالفاتورة النقدية بدون إنشاء حساب عميل.
             if(cn.isEmpty() || "نقدي".equals(cn) || "عميل نقدي".equals(cn)){
@@ -1448,12 +1452,14 @@ void showGeneralActions(){
         LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setPadding(dp(8),dp(4),dp(8),dp(4));
         box.addView(tv("رقم العميل غير مسجل. أضف رقم الهاتف حتى يمكن مشاركة الفاتورة معه عبر واتساب. لا يظهر 967 داخل خانة العميل.",12));
         box.addView(phone,new LinearLayout.LayoutParams(-1,dp(52)));
-        new AlertDialog.Builder(this).setTitle("إضافة رقم العميل").setView(box)
+        AlertDialog dlg=new AlertDialog.Builder(this).setTitle("إضافة رقم العميل").setView(box)
             .setPositiveButton("حفظ الفاتورة",(d,w)->{
                 String p=phone.getText().toString().trim();
-                if(p.isEmpty()){Toast.makeText(this,"أدخل رقم العميل حتى يتم حفظه ومشاركة الفاتورة معه.",Toast.LENGTH_SHORT).show();return;}
+                if(p.isEmpty()){Toast.makeText(this,"أدخل رقم العميل حتى يتم حفظه ومشاركة الفاتورة معه.",Toast.LENGTH_SHORT).show();if(invoiceSaveButton!=null)invoiceSaveButton.setEnabled(true);return;}
                 saveInvoice(name,no,lines,total,paid,p,edit,oldId);
-            }).setNegativeButton("إلغاء",null).show();
+            }).setNegativeButton("إلغاء",null).create();
+        dlg.setOnDismissListener(d->{ if(!invoiceSaveInProgress && invoiceSaveButton!=null) invoiceSaveButton.setEnabled(true); });
+        dlg.show();
     }
     void saveInvoice(String name,String no,ArrayList<Line> lines,double total,double paid,String phone,boolean edit,long oldId){
         if(invoiceSaveInProgress){ Toast.makeText(this,"جاري حفظ الفاتورة بالفعل.",Toast.LENGTH_SHORT).show(); return; }
@@ -1498,6 +1504,7 @@ void showGeneralActions(){
         }finally{
             txDb.endTransaction();
             invoiceSaveInProgress=false;
+            if(invoiceSaveButton!=null) invoiceSaveButton.setEnabled(true);
         }
     }
     
@@ -5527,6 +5534,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         }
         Cursor customers(String q){return getReadableDatabase().rawQuery("SELECT id,name,COALESCE(phone,'') FROM customers WHERE name LIKE ? OR phone LIKE ? ORDER BY name",new String[]{"%"+q+"%","%"+q+"%"});}
         Cursor transactions(long id){return getReadableDatabase().rawQuery("SELECT id,date,details,amount,type FROM transactions WHERE customer_id=? ORDER BY datetime(date) DESC, id DESC",new String[]{String.valueOf(id)});}
+        Cursor transactionsChronological(long id){return getReadableDatabase().rawQuery("SELECT id,date,details,amount,type FROM transactions WHERE customer_id=? ORDER BY datetime(date) ASC, id ASC",new String[]{String.valueOf(id)});}
         int nextPurchaseNo(){return nextSequentialInvoiceNo("purchase_invoices");}
         int nextInvoice(){return nextSequentialInvoiceNo("invoices");}
         int nextSequentialInvoiceNo(String table){
@@ -8195,18 +8203,6 @@ void account(long id,String name){
         content.addView(profile,new LinearLayout.LayoutParams(-1,-2));
         addSpace(5);
 
-        // إحصاءات مصغرة في صف واحد.
-        LinearLayout stats=new LinearLayout(this); stats.setOrientation(LinearLayout.HORIZONTAL); stats.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        TextView s1=denseText("عليه: "+fmt(totalDebit)+" ر.ي",12,10,RED);
-        TextView s2=denseText("له: "+fmt(totalCredit)+" ر.ي",12,10,GREEN);
-        TextView s3=denseText(totalOps+" حركة",12,10,BLUE);
-        for(TextView s:new TextView[]{s1,s2,s3}){s.setGravity(Gravity.CENTER);s.setTypeface(Typeface.DEFAULT,Typeface.BOLD);s.setBackground(glassFill(Color.argb(180,255,255,255)));}
-        stats.addView(s1,new LinearLayout.LayoutParams(0,dp(34),1));
-        LinearLayout.LayoutParams s2p=new LinearLayout.LayoutParams(0,dp(34),1);s2p.setMargins(dp(4),0,0,0);stats.addView(s2,s2p);
-        LinearLayout.LayoutParams s3p=new LinearLayout.LayoutParams(0,dp(34),1);s3p.setMargins(dp(4),0,0,0);stats.addView(s3,s3p);
-        content.addView(stats,new LinearLayout.LayoutParams(-1,-2));
-        addSpace(5);
-
         // الرصيد الحالي كشريط واضح.
         TextView current=denseText(currentBal>0.005?"الرصيد الحالي عليكم: "+fmt(currentBal)+" ريال":
             currentBal<-0.005?"الرصيد الحالي للعميل: "+fmt(Math.abs(currentBal))+" ريال":"الرصيد الحالي: خالص (0 ريال)",13.5f,11.5f,
@@ -8296,10 +8292,19 @@ void account(long id,String name){
 
         Runnable refresh=()->{
             list.removeAllViews();checks.clear();selectedIds.clear();
-            Cursor c=db.transactions(id);double running=db.balance(id);int count=0;
+            Cursor c=db.transactionsChronological(id);
+            ArrayList<Long> tids=new ArrayList<>(); ArrayList<String> dates=new ArrayList<>(); ArrayList<String> detailsList=new ArrayList<>();
+            ArrayList<Double> amounts=new ArrayList<>(); ArrayList<Integer> types=new ArrayList<>(); ArrayList<Double> balancesAfter=new ArrayList<>();
+            double running=0; int count=0;
             while(c.moveToNext()){
                 long tid=c.getLong(0);String date=c.getString(1),d=c.getString(2);double a=c.getDouble(3);int type=c.getInt(4);
-                count++;String inv=db.invoiceNoFromTransaction(d);boolean isInv=!inv.isEmpty();
+                running += (type==1 ? a : -a);
+                tids.add(tid);dates.add(date);detailsList.add(d);amounts.add(a);types.add(type);balancesAfter.add(running);count++;
+            }
+            c.close();
+            for(int k=tids.size()-1;k>=0;k--){
+                long tid=tids.get(k); String date=dates.get(k), d=detailsList.get(k); double a=amounts.get(k), balanceAfter=balancesAfter.get(k); int type=types.get(k);
+                String inv=db.invoiceNoFromTransaction(d); boolean isInv=!inv.isEmpty();
                 LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);row.setGravity(Gravity.CENTER_VERTICAL);row.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
                 row.setPadding(dp(6),dp(5),dp(6),dp(5));row.setBackground(glassFill(Color.argb(190,255,255,255)));
                 CheckBox ck=new CheckBox(this);ck.setPadding(0,0,0,0);checks.add(ck);
@@ -8308,30 +8313,24 @@ void account(long id,String name){
                 TextView ico=denseText(isInv?"🧾":(type==1?"🔴":"🟢"),14,12,type==1?RED:GREEN);ico.setGravity(Gravity.CENTER);
                 row.addView(ico,new LinearLayout.LayoutParams(dp(26),dp(32)));
                 LinearLayout info=new LinearLayout(this);info.setOrientation(LinearLayout.VERTICAL);info.setGravity(Gravity.CENTER_VERTICAL);info.setPadding(dp(4),0,dp(4),0);
-                TextView main=denseText(isInv?"فاتورة #"+inv:(d==null||d.trim().isEmpty()?(type==1?"قيد سحب":"دفعة سداد"):d.trim()),13f,11.5f,DARK);main.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-                main.setMaxLines(2);
-                TextView sub=denseText(date+" • الرصيد بعد "+balanceText(running),11f,9.5f,MUTED);
+                TextView main=denseText(isInv?"فاتورة #"+inv:(d==null||d.trim().isEmpty()?(type==1?"قيد سحب":"دفعة سداد"):d.trim()),13f,11.5f,DARK);main.setTypeface(Typeface.DEFAULT,Typeface.BOLD);main.setMaxLines(2);
+                TextView sub=denseText(date,11f,9.5f,MUTED);
                 info.addView(main,new LinearLayout.LayoutParams(-1,-2));info.addView(sub,new LinearLayout.LayoutParams(-1,-2));
                 row.addView(info,new LinearLayout.LayoutParams(0,-2,1));
-                TextView amt=denseText((type==1?"عليه: ":"له: ")+fmt(a)+" ر.ي",12.5f,10.5f,type==1?RED:GREEN);amt.setGravity(Gravity.CENTER);
-                amt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-                amt.setBackground(glassFill(type==1?Color.argb(210,255,225,228):Color.argb(200,225,250,232)));
-                amt.setPadding(dp(6),dp(3),dp(6),dp(3));
+                TextView bal=denseText("الرصيد بعد العملية\n"+balanceText(balanceAfter),12.5f,10.5f,balanceAfter>0.005?RED:(balanceAfter<-0.005?BLUE:GREEN));
+                bal.setGravity(Gravity.CENTER);bal.setTypeface(Typeface.DEFAULT,Typeface.BOLD);bal.setBackground(glassFill(Color.argb(210,248,250,248)));bal.setPadding(dp(6),dp(3),dp(6),dp(3));
+                row.addView(bal,new LinearLayout.LayoutParams(dp(112),dp(42)));
+                TextView amt=denseText((type==1?"عليه: ":"له: ")+fmt(a)+" ر.ي",12.5f,10.5f,type==1?RED:GREEN);amt.setGravity(Gravity.CENTER);amt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+                amt.setBackground(glassFill(type==1?Color.argb(210,255,225,228):Color.argb(200,225,250,232)));amt.setPadding(dp(6),dp(3),dp(6),dp(3));
                 row.addView(amt,new LinearLayout.LayoutParams(-2,-2));
                 row.setOnClickListener(v->showOperationDetails(name,tid,d,a,type));
                 row.setOnLongClickListener(v->{operationActions(id,name,tid,d,a,type);return true;});
                 LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,-2);rp.setMargins(0,0,0,dp(4));list.addView(row,rp);
-                running-=(type==1?a:-a);
             }
-            c.close();
             if(count==0){
-                LinearLayout emptyBox=card();
-                emptyBox.setPadding(dp(16),dp(14),dp(16),dp(14));
-                emptyBox.setGravity(Gravity.CENTER);
-                TextView e=denseText("لا توجد عمليات مسجلة لهذا العميل حتى الآن",13,11f,MUTED);
-                e.setGravity(Gravity.CENTER);
-                emptyBox.addView(e,new LinearLayout.LayoutParams(-1,-2));
-                list.addView(emptyBox,new LinearLayout.LayoutParams(-1,-2));
+                LinearLayout emptyBox=card();emptyBox.setPadding(dp(16),dp(14),dp(16),dp(14));emptyBox.setGravity(Gravity.CENTER);
+                TextView e=denseText("لا توجد عمليات مسجلة لهذا العميل حتى الآن",13,11f,MUTED);e.setGravity(Gravity.CENTER);
+                emptyBox.addView(e,new LinearLayout.LayoutParams(-1,-2));list.addView(emptyBox,new LinearLayout.LayoutParams(-1,-2));
             }
         };
         Runnable save=( )->{};
