@@ -3048,19 +3048,41 @@ void notes(){ base("الملاحظات");
 
     static class PurchaseLine{String name;double qty,cost,sale,total;PurchaseLine(String n,double q,double c,double s,double t){name=n;qty=q;cost=c;sale=s;total=t;}}
 
-    void invoicesHub(){
-        base("الفواتير");
-        LinearLayout toggle=new LinearLayout(this);toggle.setOrientation(LinearLayout.HORIZONTAL);toggle.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        Button sales=action("مبيعات",GREEN), purchases=button("مشتريات");
-        toggle.addView(sales,new LinearLayout.LayoutParams(0,dp(44),1));LinearLayout.LayoutParams tp=new LinearLayout.LayoutParams(0,dp(44),1);tp.setMargins(dp(5),0,0,0);toggle.addView(purchases,tp);
-        content.addView(toggle);addSpace(7);
-        LinearLayout panel=new LinearLayout(this);panel.setOrientation(LinearLayout.VERTICAL);panel.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);content.addView(panel);
-        Runnable renderSales=()->{panel.removeAllViews();TextView h=tv("فواتير المبيعات",16);h.setTextColor(GREEN);h.setTypeface(Typeface.DEFAULT,Typeface.BOLD);panel.addView(h);Button n=action("＋ فاتورة مبيعات جديدة",GREEN),hist=button("سجل فواتير المبيعات");panel.addView(n,new LinearLayout.LayoutParams(-1,dp(48)));spaceTo(panel,5);panel.addView(hist,new LinearLayout.LayoutParams(-1,dp(48)));n.setOnClickListener(v->invoice());hist.setOnClickListener(v->invoiceHistory());};
-        Runnable renderPurch=()->{panel.removeAllViews();TextView h=tv("فواتير المشتريات",16);h.setTextColor(GOLD);h.setTypeface(Typeface.DEFAULT,Typeface.BOLD);panel.addView(h);Button n=action("＋ فاتورة شراء جديدة",GOLD),hist=button("سجل فواتير المشتريات");panel.addView(n,new LinearLayout.LayoutParams(-1,dp(48)));spaceTo(panel,5);panel.addView(hist,new LinearLayout.LayoutParams(-1,dp(48)));n.setOnClickListener(v->newPurchaseInvoice());hist.setOnClickListener(v->purchaseInvoices());};
-        sales.setOnClickListener(v->{sales.setBackground(rounded(GREEN,dp(9)));sales.setTextColor(Color.WHITE);purchases.setBackground(outline(CARD,1,9));purchases.setTextColor(TEXT);renderSales.run();});
-        purchases.setOnClickListener(v->{purchases.setBackground(rounded(GOLD,dp(9)));purchases.setTextColor(Color.WHITE);sales.setBackground(outline(CARD,1,9));sales.setTextColor(TEXT);renderPurch.run();});
-        sales.performClick();
+    enum InvoiceType { SALE, PURCHASE }
+    static class UnifiedInvoiceItem {
+        String name; double qty,total,unitPrice,salePrice;
+        UnifiedInvoiceItem(String n,double q,double t,double u,double sale){name=n;qty=q;total=t;unitPrice=u;salePrice=sale;}
     }
+    void unifiedInvoiceForm(InvoiceType type){
+        base(type==InvoiceType.SALE?"فاتورة مبيعات":"فاتورة شراء");
+        final boolean sale=type==InvoiceType.SALE;
+        LinearLayout toggle=new LinearLayout(this);toggle.setOrientation(LinearLayout.HORIZONTAL);toggle.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        Button sb=action("مبيعات",sale?GREEN:CARD),pb=action("مشتريات",sale?CARD:GOLD);
+        if(!sale){sb.setTextColor(TEXT);} else sb.setTextColor(Color.WHITE); if(!sale)pb.setTextColor(Color.WHITE);
+        toggle.addView(sb,new LinearLayout.LayoutParams(0,dp(44),1));LinearLayout.LayoutParams pp=new LinearLayout.LayoutParams(0,dp(44),1);pp.setMargins(dp(5),0,0,0);toggle.addView(pb,pp);content.addView(toggle);addSpace(7);
+        EditText party=field(sale?"العميل":"المورد"), invNo=field("رقم فاتورة الشراء عند الحاجة");
+        if(sale) invNo.setVisibility(View.GONE);
+        content.addView(party,new LinearLayout.LayoutParams(-1,dp(50)));spaceTo(content,5);content.addView(invNo,new LinearLayout.LayoutParams(-1,dp(50)));spaceTo(content,5);
+        LinearLayout itemBox=new LinearLayout(this);itemBox.setOrientation(LinearLayout.VERTICAL);itemBox.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);content.addView(itemBox);
+        EditText total=numberField("الإجمالي"), qty=numberField("الكمية"), name=field("اسم الصنف"), unit=numberField("سعر الوحدة — محسوب"), salePrice=numberField("سعر البيع");
+        unit.setEnabled(false);unit.setAlpha(.85f);salePrice.setVisibility(sale?View.GONE:View.VISIBLE);
+        itemBox.addView(total);spaceTo(itemBox,4);itemBox.addView(qty);spaceTo(itemBox,4);itemBox.addView(name);spaceTo(itemBox,4);itemBox.addView(unit);if(!sale){spaceTo(itemBox,4);itemBox.addView(salePrice);}
+        Runnable calc=()->{try{double t=Double.parseDouble(total.getText().toString().replace(",","").trim()),q=Double.parseDouble(qty.getText().toString().replace(",","").trim());unit.setText(q>0?fmt(t/q):"");}catch(Exception e){unit.setText("");}};
+        total.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int a,int b,int c){}public void onTextChanged(CharSequence s,int a,int b,int c){calc.run();}public void afterTextChanged(Editable e){}});
+        qty.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int a,int b,int c){}public void onTextChanged(CharSequence s,int a,int b,int c){calc.run();}public void afterTextChanged(Editable e){}});
+        Button add=action("＋ إضافة الصنف",GREEN);itemBox.addView(add,new LinearLayout.LayoutParams(-1,dp(46)));addSpace(6);
+        LinearLayout rows=new LinearLayout(this);rows.setOrientation(LinearLayout.VERTICAL);rows.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);content.addView(rows);
+        ArrayList<UnifiedInvoiceItem> items=new ArrayList<>();
+        Runnable addItem=()->{try{double t=Double.parseDouble(total.getText().toString().replace(",","").trim()),q=Double.parseDouble(qty.getText().toString().replace(",","").trim());String nm=name.getText().toString().trim();if(nm.isEmpty()||q<=0||t<0)throw new Exception();double u=t/q,sp=sale?0:Double.parseDouble(salePrice.getText().toString().replace(",","").trim());items.add(new UnifiedInvoiceItem(nm,q,t,u,sp));TextView row=tv(fmt(t)+" | "+fmt(q)+" | "+nm+" | "+fmt(u),11.5f);row.setGravity(Gravity.CENTER_VERTICAL|Gravity.RIGHT);rows.addView(row,new LinearLayout.LayoutParams(-1,dp(42)));total.setText("");qty.setText("");name.setText("");unit.setText("");salePrice.setText("");}catch(Exception e){Toast.makeText(this,"أدخل الإجمالي والكمية واسم الصنف بشكل صحيح",Toast.LENGTH_SHORT).show();}};
+        add.setOnClickListener(v->addItem.run());
+        LinearLayout footer=new LinearLayout(this);footer.setOrientation(LinearLayout.VERTICAL);footer.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);content.addView(footer);
+        TextView finalTotal=tv("الإجمالي النهائي: 0",16);finalTotal.setTypeface(Typeface.DEFAULT,Typeface.BOLD);footer.addView(finalTotal);
+        if(sale){EditText paid=numberField("المبلغ المدفوع"), remaining=numberField("المتبقي");remaining.setEnabled(false);footer.addView(paid);spaceTo(footer,4);footer.addView(remaining);paid.addTextChangedListener(new TextWatcher(){public void beforeTextChanged(CharSequence s,int a,int b,int c){}public void onTextChanged(CharSequence s,int a,int b,int c){double sum=0;for(UnifiedInvoiceItem x:items)sum+=x.total;try{double p=Double.parseDouble(s.toString().replace(",",""));remaining.setText(fmt(Math.max(0,sum-p)));}catch(Exception e){remaining.setText(fmt(sum));}}public void afterTextChanged(Editable e){}});}
+        else {TextView hint=tv("يتم ربط الفاتورة بالمورد المختار عند الحفظ.",11);hint.setTextColor(MUTED);footer.addView(hint);}
+        Button save=action("حفظ الفاتورة",GREEN);content.addView(save,new LinearLayout.LayoutParams(-1,dp(48)));save.setOnClickListener(v->{if(items.isEmpty()){Toast.makeText(this,"أضف صنفًا واحدًا على الأقل",Toast.LENGTH_SHORT).show();return;}String pn=party.getText().toString().trim();if(pn.isEmpty()){party.setError(sale?"اسم العميل مطلوب":"اسم المورد مطلوب");return;}double sum=0;for(UnifiedInvoiceItem x:items)sum+=x.total;if(sale){try{double p=Double.parseDouble(((EditText)footer.getChildAt(1)).getText().toString().replace(",","").trim());if(p<0)throw new Exception();}catch(Exception e){Toast.makeText(this,"أدخل المبلغ المدفوع",Toast.LENGTH_SHORT).show();return;}}else{db.supplier(pn,"");}Toast.makeText(this,"تم تجهيز الفاتورة الموحدة بقيمة "+fmt(sum),Toast.LENGTH_SHORT).show();showCompactSaveSnackbar("✓ تم الحفظ","مشاركة",()->shareText("بقالة العزي للمواد الغذائية\n"+(sale?"فاتورة مبيعات":"فاتورة شراء")+"\n"+pn+"\nالإجمالي: "+fmt(sum)));});
+        sb.setOnClickListener(v->{if(!sale)unifiedInvoiceForm(InvoiceType.SALE);});pb.setOnClickListener(v->{if(sale)unifiedInvoiceForm(InvoiceType.PURCHASE);});
+    }
+    void invoicesHub(){ unifiedInvoiceForm(InvoiceType.SALE); }
 
     void suppliers(){
         base("الموردون");
