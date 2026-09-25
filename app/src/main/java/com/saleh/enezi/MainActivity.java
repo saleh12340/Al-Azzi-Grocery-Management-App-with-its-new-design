@@ -580,7 +580,7 @@ EditText numberField(String h){
             tab.setOnClickListener(v->{
                 hideKeyboard();
                 if(idx==0) home();
-                else if(idx==1) invoiceHistory();
+                else if(idx==1) invoicesHub();
                 else if(idx==2) customers();
                 else if(idx==3) purchaseInvoices();
                 else if(idx==4) inventory();
