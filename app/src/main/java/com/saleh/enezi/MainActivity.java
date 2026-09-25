@@ -290,6 +290,17 @@ public class MainActivity extends Activity {
         b.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         return b;
     }
+    boolean isNumericOrFinancial(String hint){
+        if(hint==null || hint.isEmpty() || hint.equals("0")) return true;
+        String h=hint.toLowerCase(java.util.Locale.ROOT);
+        return h.contains("رقم") || h.contains("هاتف") || h.contains("مبلغ") || 
+               h.contains("سعر") || h.contains("كمية") || h.contains("العدد") || 
+               h.contains("عدد") || h.contains("إجمالي") || h.contains("الإجمالي") || 
+               h.contains("مدفوع") || h.contains("متبقي") || h.contains("سداد") || 
+               h.contains("الحد الأدنى") || h.contains("قيمة") || h.contains("whatsapp") ||
+               h.contains("0") || h.contains("فاتورة") || h.contains("الهاتف") ||
+               h.contains("الشراء") || h.contains("البيع") || h.contains("التكلفة");
+    }
     EditText field(String h){
         EditText e=new EditText(this);
         e.setHint(h);
@@ -314,7 +325,13 @@ public class MainActivity extends Activity {
                 e.setBackground(outlined(Color.rgb(252,253,255),dp(1),12));
             }
         });
-        attachLearning(e,h);
+        if(isNumericOrFinancial(h)){
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                e.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);
+            }
+        } else {
+            attachLearning(e,h);
+        }
         return e;
     }
     String learningKind(String hint){
@@ -327,6 +344,7 @@ public class MainActivity extends Activity {
         return "general";
     }
     void attachLearning(EditText e,String hint){
+        if(isNumericOrFinancial(hint)) return;
         final String kind=learningKind(hint);
         final Handler h=new Handler(Looper.getMainLooper());
         final Runnable[] pending=new Runnable[1];
@@ -389,11 +407,14 @@ public class MainActivity extends Activity {
         learningPopup.setElevation(dp(8));
         learningPopup.showAsDropDown(anchor,(anchor.getWidth()-popupWidth)/2,dp(3));
     }
-EditText numberField(String h){
+    EditText numberField(String h){
         EditText e=field(h);
         e.setInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);
         e.setRawInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);
         e.setKeyListener(DigitsKeyListener.getInstance("0123456789."));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            e.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);
+        }
         return e;
     }
     EditText inputNumber(String h){return numberField(h);}
@@ -401,6 +422,9 @@ EditText numberField(String h){
         EditText e=field(h);
         e.setInputType(InputType.TYPE_CLASS_PHONE);
         e.setRawInputType(InputType.TYPE_CLASS_PHONE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            e.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);
+        }
         return e;
     }
     void addField(EditText e){
