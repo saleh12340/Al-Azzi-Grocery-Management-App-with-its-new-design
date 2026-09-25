@@ -513,10 +513,10 @@ EditText numberField(String h){
             heroTitle.setTextColor(GREEN); heroTitle.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
             TextView heroSub=tv("إدارة سريعة ومنظمة",10.5f);
             heroSub.setTextColor(MUTED);
-            pageHero.addView(heroTitle,new LinearLayout.LayoutParams(-1,dp(22)));
-            pageHero.addView(heroSub,new LinearLayout.LayoutParams(-1,dp(18)));
+            pageHero.addView(heroTitle,new LinearLayout.LayoutParams(-1,dp(20)));
+            pageHero.addView(heroSub,new LinearLayout.LayoutParams(-1,dp(16)));
             content.addView(pageHero,new LinearLayout.LayoutParams(-1,-2));
-            addSpace(5);
+            addSpace(4);
         }
 
         sv.addView(content);
@@ -796,22 +796,22 @@ void showMoreMenu(){
         for(int i=0;i<labels.length;i++){
             LinearLayout cardBox=new LinearLayout(this);
             cardBox.setOrientation(LinearLayout.VERTICAL); cardBox.setGravity(Gravity.CENTER_VERTICAL);
-            cardBox.setPadding(dp(12),dp(9),dp(12),dp(9)); cardBox.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+            cardBox.setPadding(dp(10),dp(6),dp(10),dp(6)); cardBox.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
             GradientDrawable bg=new GradientDrawable(); bg.setColor(CARD); bg.setCornerRadius(dp(16)); bg.setStroke(dp(1),BORDER);
             cardBox.setBackground(bg); cardBox.setElevation(dp(2)); cardBox.setOnClickListener(actions[i]);
             TextView t=tv(labels[i],17); t.setTextColor(TEXT); t.setTypeface(Typeface.DEFAULT,Typeface.BOLD); t.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
             TextView d=tv(desc[i],13); d.setTextColor(MUTED); d.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL); d.setMaxLines(2);
-            cardBox.addView(t,new LinearLayout.LayoutParams(-1,dp(31)));
-            cardBox.addView(d,new LinearLayout.LayoutParams(-1,dp(42)));
+            cardBox.addView(t,new LinearLayout.LayoutParams(-1,dp(27)));
+            cardBox.addView(d,new LinearLayout.LayoutParams(-1,dp(34)));
             GridLayout.LayoutParams gp=new GridLayout.LayoutParams(GridLayout.spec(i/2,1),GridLayout.spec(i%2,1,1f));
-            gp.width=0; gp.height=dp(92); gp.setMargins(dp(4),dp(4),dp(4),dp(4));
+            gp.width=0; gp.height=dp(78); gp.setMargins(dp(3),dp(3),dp(3),dp(3));
             grid.addView(cardBox,gp);
         }
         content.addView(grid,new LinearLayout.LayoutParams(-1,-2));
 
         TextView hint=tv("استخدم ＋ إضافة للعمليات السريعة من أي وقت في الرئيسية.",13);
         hint.setTextColor(GREEN); hint.setGravity(Gravity.CENTER);
-        content.addView(hint,new LinearLayout.LayoutParams(-1,dp(40)));
+        content.addView(hint,new LinearLayout.LayoutParams(-1,dp(32)));
 
         addHomeFab();
 }
@@ -1401,6 +1401,27 @@ void showGeneralActions(){
 
     int dp(int v){return (int)(v*getResources().getDisplayMetrics().density+0.5f);}
     int dp(float v){return (int)(v*getResources().getDisplayMetrics().density+0.5f);}
+    // نظام وزن موحد: المحتوى يحدد ارتفاع النافذة، مع حد أقصى للعرض فقط.
+    void compactDialogWindow(Dialog dlg, int maxWidthDp){
+        if(dlg==null) return;
+        try{
+            Window w=dlg.getWindow();
+            if(w!=null){
+                w.setBackgroundDrawableResource(android.R.color.transparent);
+                w.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+                int screenW=getResources().getDisplayMetrics().widthPixels;
+                int width=Math.min(dp(maxWidthDp), Math.max(dp(280), screenW-dp(20)));
+                w.setLayout(width,WindowManager.LayoutParams.WRAP_CONTENT);
+                w.setGravity(Gravity.CENTER);
+            }
+        }catch(Throwable ignored){}
+    }
+    void showCompactDialog(Dialog dlg, View contentView, int maxWidthDp){
+        dlg.setContentView(contentView);
+        dlg.setCanceledOnTouchOutside(true);
+        dlg.show();
+        compactDialogWindow(dlg,maxWidthDp);
+    }
     GradientDrawable bg(int color,float radius){return rounded(color,dp((int)radius));}
     GradientDrawable outline(int color,float radius){return outlined(color,1,dp((int)radius));}
     LinearLayout card(){LinearLayout c=new LinearLayout(this);c.setOrientation(LinearLayout.VERTICAL);c.setPadding(dp(12),dp(9),dp(12),dp(9));c.setBackground(outline(CARD,14));c.setElevation(dp(2));c.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);return c;}
@@ -1585,7 +1606,7 @@ void showGeneralActions(){
 
         dlg.setContentView(box);dlg.setCanceledOnTouchOutside(true);dlg.show();
         Window w=dlg.getWindow();
-        if(w!=null){w.setBackgroundDrawableResource(android.R.color.transparent);w.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);w.setLayout((int)(getResources().getDisplayMetrics().widthPixels*.92f),WindowManager.LayoutParams.WRAP_CONTENT);w.setGravity(Gravity.CENTER);}
+        if(w!=null){w.setBackgroundDrawableResource(android.R.color.transparent);w.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);int sw=getResources().getDisplayMetrics().widthPixels; w.setLayout(Math.min(dp(380),Math.max(dp(280),sw-dp(20))),WindowManager.LayoutParams.WRAP_CONTENT);w.setGravity(Gravity.CENTER);}
     }
 
 void operationActions(long customerId,String customerName,long tid,String details,double amount,int type){
