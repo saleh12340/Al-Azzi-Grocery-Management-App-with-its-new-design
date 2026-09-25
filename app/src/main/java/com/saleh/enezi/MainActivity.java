@@ -2163,19 +2163,18 @@ void operationActions(long customerId,String customerName,long tid,String detail
         }c.close();if(count==0){TextView e=tv("لا توجد حوالات محفوظة.",14);e.setTextColor(MUTED);e.setGravity(Gravity.CENTER);list.addView(e,new LinearLayout.LayoutParams(-1,dp(60)));}
     }
 
-    void notes(){ base("الملاحظات");
-        LinearLayout top=new LinearLayout(this);top.setOrientation(LinearLayout.HORIZONTAL);top.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        Button clear=action("🧹 تفريغ",Color.rgb(235,130,35));clear.setOnClickListener(v->clearNotesPage());
-        Button fresh=action("＋ صفحة",Color.rgb(35,155,190));fresh.setOnClickListener(v->newNotesPage());
-        Button history=action("📚 السجل",Color.rgb(125,70,170));history.setOnClickListener(v->showNotesHistory());
-        Button shareNotes=action("📤 مشاركة",Color.rgb(37,211,102));shareNotes.setOnClickListener(v->shareCurrentNotes());
-        Button print=action("🖨 طباعة",GREEN);print.setOnClickListener(v->printCurrentNotes());
-        top.addView(clear,new LinearLayout.LayoutParams(0,dp(42),1));
-        top.addView(fresh,new LinearLayout.LayoutParams(0,dp(42),1));
-        top.addView(history,new LinearLayout.LayoutParams(0,dp(42),1));
-        top.addView(shareNotes,new LinearLayout.LayoutParams(0,dp(42),1));
-        top.addView(print,new LinearLayout.LayoutParams(0,dp(42),1));
-        content.addView(top,new LinearLayout.LayoutParams(-1,dp(46)));addSpace(5);
+    void notes(){
+        base("الملاحظات");
+        TextView title=tv("📝 الملاحظات",20);title.setTextColor(GREEN);title.setTypeface(Typeface.DEFAULT,Typeface.BOLD);content.addView(title,new LinearLayout.LayoutParams(-1,dp(42)));
+        TextView sub=tv("دفتر ملاحظات ذكي — احفظ العناصر، ابحث عنها، وشاركها أو اطبعها.",14);sub.setTextColor(MUTED);content.addView(sub,new LinearLayout.LayoutParams(-1,-2));addSpace(5);
+        LinearLayout top1=new LinearLayout(this);top1.setOrientation(LinearLayout.HORIZONTAL);top1.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        Button fresh=action("＋ ملاحظة جديدة",GREEN);Button search=button("🔎 بحث");Button history=button("📚 السجل");
+        top1.addView(fresh,new LinearLayout.LayoutParams(0,dp(46),1));LinearLayout.LayoutParams x1=new LinearLayout.LayoutParams(0,dp(46),1);x1.setMargins(dp(5),0,0,0);top1.addView(search,x1);LinearLayout.LayoutParams x2=new LinearLayout.LayoutParams(0,dp(46),1);x2.setMargins(dp(5),0,0,0);top1.addView(history,x2);content.addView(top1);
+        LinearLayout top2=new LinearLayout(this);top2.setOrientation(LinearLayout.HORIZONTAL);top2.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);addSpace(5);
+        Button print=button("🖨 طباعة"),shareNotes=button("📤 مشاركة"),clear=button("🧹 تفريغ");clear.setTextColor(RED);
+        top2.addView(print,new LinearLayout.LayoutParams(0,dp(44),1));LinearLayout.LayoutParams y1=new LinearLayout.LayoutParams(0,dp(44),1);y1.setMargins(dp(5),0,0,0);top2.addView(shareNotes,y1);LinearLayout.LayoutParams y2=new LinearLayout.LayoutParams(0,dp(44),1);y2.setMargins(dp(5),0,0,0);top2.addView(clear,y2);content.addView(top2);addSpace(6);
+        fresh.setOnClickListener(v->newNotesPage());history.setOnClickListener(v->showNotesHistory());shareNotes.setOnClickListener(v->shareCurrentNotes());print.setOnClickListener(v->printCurrentNotes());clear.setOnClickListener(v->clearNotesPage());
+        search.setOnClickListener(v->{final EditText q=field("ابحث في سجل الملاحظات");new AlertDialog.Builder(this).setTitle("بحث في الملاحظات").setView(q).setNegativeButton("إغلاق",null).setPositiveButton("بحث",(d,w)->{String z=q.getText().toString().trim();if(z.isEmpty())return;showNotesHistoryFiltered(z);}).show();});
         LinearLayout controls=card();LinearLayout cr=new LinearLayout(this);cr.setGravity(Gravity.CENTER);Button minus=button("−");TextView fs=tv("حجم الخط "+noteFontSize,11);fs.setGravity(Gravity.CENTER);Button plus=button("+");minus.setOnClickListener(v->{noteFontSize=Math.max(10,noteFontSize-1);notes();});plus.setOnClickListener(v->{noteFontSize=Math.min(24,noteFontSize+1);notes();});cr.addView(minus,new LinearLayout.LayoutParams(dp(38),dp(34)));cr.addView(fs,new LinearLayout.LayoutParams(dp(100),dp(34)));cr.addView(plus,new LinearLayout.LayoutParams(dp(38),dp(34)));Switch sw=new Switch(this);sw.setText("وضع التمرير: "+(noteScrollMode?"مفعل":"متوقف"));sw.setChecked(noteScrollMode);sw.setOnCheckedChangeListener((b,x)->{noteScrollMode=x;b.setText("وضع التمرير: "+(x?"مفعل":"متوقف"));});cr.addView(sw,new LinearLayout.LayoutParams(-2,dp(34)));controls.addView(cr);content.addView(controls,new LinearLayout.LayoutParams(-1,dp(44)));addSpace(5);
         if(currentNotePageId<1)currentNotePageId=db.createNotePage("ملاحظة جديدة",db.now());final long pid=currentNotePageId;ArrayList<NoteItem> left=new ArrayList<>(),right=new ArrayList<>();db.loadNoteItems(pid,left,right);
         LinearLayout form=card();LinearLayout fields=new LinearLayout(this);fields.setOrientation(LinearLayout.HORIZONTAL);fields.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);EditText qty=numberField("العدد / الرقم");qty.setText("1");EditText name=field("اكتب اسم الصنف...");fields.addView(qty,new LinearLayout.LayoutParams(0,dp(52),.8f));LinearLayout.LayoutParams np=new LinearLayout.LayoutParams(0,dp(52),2.1f);np.setMargins(dp(4),0,dp(4),0);fields.addView(name,np);form.addView(fields);
@@ -2186,6 +2185,9 @@ void operationActions(long customerId,String customerName,long tid,String detail
     void addNoteItem(long pid,EditText name,EditText qty,int side){String n=name.getText().toString().trim();double q=0; try { q=Double.parseDouble(qty.getText().toString().trim().replace(",", ".")); } catch(Exception ignored) {}if(n.isEmpty()){Toast.makeText(this,"اكتب اسم الصنف أولاً",Toast.LENGTH_SHORT).show();return;}if(q<=0){Toast.makeText(this,"العدد يجب أن يكون أكبر من صفر",Toast.LENGTH_SHORT).show();return;}db.addNoteItem(pid,n,q,side);name.setText("");qty.setText("1");notes();}
     void clearNotesPage(){if(currentNotePageId<1)return;new AlertDialog.Builder(this).setTitle("تفريغ الصفحة").setMessage("سيتم حذف عناصر الصفحة الحالية فقط. هل تريد المتابعة؟").setNegativeButton("إلغاء",null).setPositiveButton("تفريغ",(d,w)->{db.clearNoteItems(currentNotePageId);notes();}).show();}
     void newNotesPage(){if(currentNotePageId>0)db.touchNotePage(currentNotePageId);currentNotePageId=db.createNotePage("ملاحظة جديدة",db.now());notes();}
+    void showNotesHistoryFiltered(String q){
+        base("بحث الملاحظات");LinearLayout list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);content.addView(list);
+        Cursor cur=db.notePages();int count=0;while(cur.moveToNext()){long id=cur.getLong(0);String title=cur.getString(1),date=cur.getString(2);if((title+" "+date).toLowerCase(Locale.ROOT).contains(q.toLowerCase(Locale.ROOT))){count++;LinearLayout row=card();TextView t=tv("📝 "+title+"\n"+date,14);t.setTextColor(TEXT);row.addView(t,new LinearLayout.LayoutParams(-1,-2));row.setOnClickListener(v->{currentNotePageId=id;notes();});list.addView(row,new LinearLayout.LayoutParams(-1,-2));addSpaceTo(list,5);}}cur.close();if(count==0){TextView e=tv("لا توجد ملاحظات مطابقة.",14);e.setGravity(Gravity.CENTER);e.setTextColor(MUTED);list.addView(e,new LinearLayout.LayoutParams(-1,dp(70)));}}
     void showNotesHistory(){base("سجل الصفحات");section("الصفحات المحفوظة");Cursor c=db.notePages();while(c.moveToNext()){long id=c.getLong(0);String title=c.getString(1),date=c.getString(2);int n=c.getInt(3);LinearLayout row=card();TextView t=tv("📝 "+title+"\n"+date+" • "+n+" عنصر",12);t.setMaxLines(2);row.addView(t,new LinearLayout.LayoutParams(-1,dp(52)));row.setOnClickListener(v->{currentNotePageId=id;notes();});content.addView(row,new LinearLayout.LayoutParams(-1,dp(62)));addSpace(3);}c.close();}
     String notesWhatsAppText(){
         StringBuilder s=new StringBuilder("📝 *بقالة العزي للمواد الغذائية - الملاحظات الذكية*\n");
