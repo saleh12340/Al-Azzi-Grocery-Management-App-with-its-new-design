@@ -7215,7 +7215,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         double bal=db.balanceByName(customer);
         String phone=db.phoneByName(customer);
         StringBuilder s=new StringBuilder();
-        s.append("بقالة العزي\nفاتورة ").append((no==null||no.trim().isEmpty())?"":("#"+no.trim())).append("\n");
+        s.append("بقالة العزي\nكشف حساب العميل\n");
         if(customer!=null&&!customer.trim().isEmpty()) s.append(customer.trim()).append("\n");
         if(Math.abs(bal)<0.005){
             s.append("الإجمالي - خالص (0 يمني)");
