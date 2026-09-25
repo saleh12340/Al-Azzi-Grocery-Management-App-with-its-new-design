@@ -1585,7 +1585,7 @@ void showGeneralActions(){
 
         dlg.setContentView(box);dlg.setCanceledOnTouchOutside(true);dlg.show();
         Window w=dlg.getWindow();
-        if(w!=null){w.setBackgroundDrawableResource(android.R.color.transparent);w.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);w.setLayout((int)(getResources().getDisplayMetrics().widthPixels*.96f),(int)(getResources().getDisplayMetrics().heightPixels*.82f));w.setGravity(Gravity.CENTER);}
+        if(w!=null){w.setBackgroundDrawableResource(android.R.color.transparent);w.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);w.setLayout((int)(getResources().getDisplayMetrics().widthPixels*.92f),WindowManager.LayoutParams.WRAP_CONTENT);w.setGravity(Gravity.CENTER);}
     }
 
 void operationActions(long customerId,String customerName,long tid,String details,double amount,int type){
@@ -2093,60 +2093,31 @@ void operationActions(long customerId,String customerName,long tid,String detail
     }
     static class NoteItem { String name; double qty; int side; NoteItem(String n,double q,int s){name=n;qty=q;side=s;} }
     void transfers(){
-        base("الحوالات");
-        TextView title=tv("💸 الحوالات المالية",20);title.setTextColor(GREEN);title.setTypeface(Typeface.DEFAULT,Typeface.BOLD);content.addView(title,new LinearLayout.LayoutParams(-1,dp(44)));
-        TextView hint=tv("أدخل المبلغ ثم بيانات المستلم والمرسل. بعد التجهيز يمكنك النسخ أو المشاركة مباشرة.",14);hint.setTextColor(MUTED);content.addView(hint,new LinearLayout.LayoutParams(-1,-2));addSpace(6);
-
-        LinearLayout form=card();form.setPadding(dp(10),dp(10),dp(10),dp(12));
-        TextView al=tv("المبلغ الصافي",17);al.setTextColor(GREEN);al.setTypeface(Typeface.DEFAULT,Typeface.BOLD);form.addView(al,new LinearLayout.LayoutParams(-1,dp(34)));
-        EditText amount=numberField("19,000");amount.setTextSize(18);form.addView(amount,new LinearLayout.LayoutParams(-1,dp(56)));addSpaceTo(form,7);
-
-        TextView rt=tv("المستلم",17);rt.setTextColor(GREEN);rt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);form.addView(rt,new LinearLayout.LayoutParams(-1,dp(32)));
-        AutoCompleteTextView rn=new AutoCompleteTextView(this);rn.setHint("اسم المستلم");rn.setTextSize(16);rn.setSingleLine(true);rn.setThreshold(1);rn.setPadding(dp(12),0,dp(12),0);rn.setTextColor(TEXT);rn.setHintTextColor(MUTED);rn.setBackground(outlined(CARD,1,12));rn.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);rn.setTextDirection(View.TEXT_DIRECTION_RTL);
-        rn.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_dropdown_item_1line,transferSuggestionNames(true)));
+        base("الحوالات"); applyDenseGlassPage();
+        TextView title=tv("💸 الحوالات المالية",20);title.setTextColor(GREEN);title.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        content.addView(title,new LinearLayout.LayoutParams(-1,dp(38)));
+        LinearLayout form=card();form.setPadding(dp(10),dp(8),dp(10),dp(10));
+        TextView al=tv("المبلغ الصافي",17);al.setTextColor(GREEN);al.setTypeface(Typeface.DEFAULT,Typeface.BOLD);form.addView(al,new LinearLayout.LayoutParams(-1,dp(28)));
+        EditText amount=numberField("19,000");amount.setTextSize(18);form.addView(amount,new LinearLayout.LayoutParams(-1,dp(52)));addSpaceTo(form,6);
+        TextView rt=tv("المستلم",16);rt.setTextColor(TEXT);rt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);form.addView(rt,new LinearLayout.LayoutParams(-1,dp(25)));
+        AutoCompleteTextView rn=new AutoCompleteTextView(this);rn.setHint("اسم المستلم");rn.setTextSize(16);rn.setSingleLine(true);rn.setThreshold(1);rn.setTextColor(TEXT);rn.setHintTextColor(MUTED);rn.setBackground(outlined(CARD,1,12));rn.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);rn.setTextDirection(View.TEXT_DIRECTION_RTL);rn.setPadding(dp(10),0,dp(10),0);rn.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_dropdown_item_1line,transferSuggestionNames(true)));
         transferReceiverName=rn;transferReceiverPhone=phoneField("رقم المستلم");
-        form.addView(rn,new LinearLayout.LayoutParams(-1,dp(52)));addSpaceTo(form,5);form.addView(transferReceiverPhone,new LinearLayout.LayoutParams(-1,dp(52)));addSpaceTo(form,9);
-
-        TextView st=tv("المرسل",17);st.setTextColor(GREEN);st.setTypeface(Typeface.DEFAULT,Typeface.BOLD);form.addView(st,new LinearLayout.LayoutParams(-1,dp(32)));
-        AutoCompleteTextView sn=new AutoCompleteTextView(this);sn.setHint("اسم المرسل");sn.setTextSize(16);sn.setSingleLine(true);sn.setThreshold(1);sn.setPadding(dp(12),0,dp(12),0);sn.setTextColor(TEXT);sn.setHintTextColor(MUTED);sn.setBackground(outlined(CARD,1,12));sn.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);sn.setTextDirection(View.TEXT_DIRECTION_RTL);
-        sn.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_dropdown_item_1line,transferSuggestionNames(false)));
+        LinearLayout rr=new LinearLayout(this);rr.setOrientation(LinearLayout.HORIZONTAL);rr.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);rr.setWeightSum(2);rr.addView(rn,new LinearLayout.LayoutParams(0,dp(52),1));rr.addView(transferReceiverPhone,new LinearLayout.LayoutParams(0,dp(52),1));form.addView(rr);addSpaceTo(form,7);
+        TextView st=tv("المرسل",16);st.setTextColor(TEXT);st.setTypeface(Typeface.DEFAULT,Typeface.BOLD);form.addView(st,new LinearLayout.LayoutParams(-1,dp(25)));
+        AutoCompleteTextView sn=new AutoCompleteTextView(this);sn.setHint("اسم المرسل");sn.setTextSize(16);sn.setSingleLine(true);sn.setThreshold(1);sn.setTextColor(TEXT);sn.setHintTextColor(MUTED);sn.setBackground(outlined(CARD,1,12));sn.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);sn.setTextDirection(View.TEXT_DIRECTION_RTL);sn.setPadding(dp(10),0,dp(10),0);sn.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_dropdown_item_1line,transferSuggestionNames(false)));
         transferSenderName=sn;transferSenderPhone=phoneField("رقم المرسل");
-        form.addView(sn,new LinearLayout.LayoutParams(-1,dp(52)));addSpaceTo(form,5);form.addView(transferSenderPhone,new LinearLayout.LayoutParams(-1,dp(52)));addSpaceTo(form,10);
-
+        LinearLayout sr=new LinearLayout(this);sr.setOrientation(LinearLayout.HORIZONTAL);sr.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);sr.setWeightSum(2);sr.addView(sn,new LinearLayout.LayoutParams(0,dp(52),1));sr.addView(transferSenderPhone,new LinearLayout.LayoutParams(0,dp(52),1));form.addView(sr);addSpaceTo(form,8);
         LinearLayout actions=new LinearLayout(this);actions.setOrientation(LinearLayout.HORIZONTAL);actions.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        Button prepare=action("✓ تجهيز الحوالة",GREEN),clear=button("🧹 مسح");clear.setTextColor(RED);
-        actions.addView(prepare,new LinearLayout.LayoutParams(0,dp(50),1.3f));LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(0,dp(50),.7f);cp.setMargins(dp(6),0,0,0);actions.addView(clear,cp);form.addView(actions);
-        content.addView(form);addSpace(8);
-
-        LinearLayout previewBox=card();previewBox.setPadding(dp(12),dp(10),dp(12),dp(10));
-        TextView previewTitle=tv("معاينة الحوالة",16);previewTitle.setTextColor(GREEN);previewTitle.setTypeface(Typeface.DEFAULT,Typeface.BOLD);previewBox.addView(previewTitle,new LinearLayout.LayoutParams(-1,dp(32)));
-        TextView preview=tv("لم يتم تجهيز حوالة بعد.",15);preview.setTextColor(TEXT);preview.setGravity(Gravity.RIGHT);preview.setMaxLines(20);previewBox.addView(preview,new LinearLayout.LayoutParams(-1,-2));
-        LinearLayout shareRow=new LinearLayout(this);shareRow.setOrientation(LinearLayout.HORIZONTAL);shareRow.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        Button copy=button("📋 نسخ"),wa=button("📤 مشاركة واتساب");shareRow.addView(copy,new LinearLayout.LayoutParams(0,dp(46),1));LinearLayout.LayoutParams wp=new LinearLayout.LayoutParams(0,dp(46),1);wp.setMargins(dp(6),0,0,0);shareRow.addView(wa,wp);previewBox.addView(shareRow,new LinearLayout.LayoutParams(-1,dp(50)));
-        content.addView(previewBox);addSpace(10);
-
-        TextView hist=tv("سجل الحوالات",18);hist.setTextColor(GREEN);hist.setTypeface(Typeface.DEFAULT,Typeface.BOLD);content.addView(hist,new LinearLayout.LayoutParams(-1,dp(42)));
-        LinearLayout list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);content.addView(list);
-        final String[] lastText={""}; final String[] lastPhone={""};
-        Runnable build=()->{
-            double a=parseDoubleSafe(amount.getText().toString().replace(",","").trim(),0);
-            String r=rn.getText().toString().trim(),rp=transferReceiverPhone.getText().toString().trim(),sName=sn.getText().toString().trim(),sp=transferSenderPhone.getText().toString().trim();
-            if(a<=0||r.isEmpty()||sName.isEmpty()){Toast.makeText(this,"أكمل المبلغ واسم المستلم واسم المرسل",Toast.LENGTH_SHORT).show();return;}
-            String txt=fmt(a)+" صافي\n\nالمستلم: "+r+"\nرقم المستلم: "+rp+"\n\nالمرسل: "+sName+"\nرقم المرسل: "+sp;
-            lastText[0]=txt;lastPhone[0]=rp;preview.setText(txt);
-            try{
-                if(!db.transferDuplicate(a,sp,rp)){db.addTransfer(a,sName,sp,r,rp,"",0);}
-            }catch(Exception ignored){}
-            Toast.makeText(this,"✓ تم تجهيز الحوالة وحفظها",Toast.LENGTH_SHORT).show();
-            renderTransfers(list);
-        };
-        prepare.setOnClickListener(v->build.run());
-        clear.setOnClickListener(v->{amount.setText("");rn.setText("");transferReceiverPhone.setText("");sn.setText("");transferSenderPhone.setText("");preview.setText("لم يتم تجهيز حوالة بعد.");lastText[0]="";lastPhone[0]="";rn.requestFocus();});
-        rn.setOnItemClickListener((p,v,pos,id)->fillTransferSuggestion((String)p.getItemAtPosition(pos),true,rn,transferReceiverPhone));
-        sn.setOnItemClickListener((p,v,pos,id)->fillTransferSuggestion((String)p.getItemAtPosition(pos),false,sn,transferSenderPhone));
+        Button prepare=action("✓ تجهيز الحوالة",GREEN),clear=button("🧹 مسح");clear.setTextColor(RED);actions.addView(prepare,new LinearLayout.LayoutParams(0,dp(48),1.3f));LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(0,dp(48),.7f);cp.setMargins(dp(6),0,0,0);actions.addView(clear,cp);form.addView(actions);content.addView(form);addSpace(8);
+        LinearLayout previewBox=card();previewBox.setPadding(dp(12),dp(8),dp(12),dp(8));TextView previewTitle=tv("معاينة الحوالة",16);previewTitle.setTextColor(GREEN);previewTitle.setTypeface(Typeface.DEFAULT,Typeface.BOLD);previewBox.addView(previewTitle,new LinearLayout.LayoutParams(-1,dp(28)));TextView preview=tv("لم يتم تجهيز حوالة بعد.",15);preview.setTextColor(TEXT);preview.setMaxLines(20);previewBox.addView(preview,new LinearLayout.LayoutParams(-1,-2));
+        LinearLayout shareRow=new LinearLayout(this);shareRow.setOrientation(LinearLayout.HORIZONTAL);shareRow.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);Button copy=button("📋 نسخ"),wa=button("📤 مشاركة واتساب");shareRow.addView(copy,new LinearLayout.LayoutParams(0,dp(44),1));LinearLayout.LayoutParams wp=new LinearLayout.LayoutParams(0,dp(44),1);wp.setMargins(dp(6),0,0,0);shareRow.addView(wa,wp);previewBox.addView(shareRow,new LinearLayout.LayoutParams(-1,dp(48)));content.addView(previewBox);addSpace(8);
+        TextView hist=tv("سجل الحوالات",18);hist.setTextColor(GREEN);hist.setTypeface(Typeface.DEFAULT,Typeface.BOLD);content.addView(hist,new LinearLayout.LayoutParams(-1,dp(36)));LinearLayout list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);content.addView(list);
+        final String[] lastText={""},lastPhone={""};
+        Runnable build=()->{double a=parseDoubleSafe(amount.getText().toString().replace(",","").trim(),0);String r=rn.getText().toString().trim(),rp=transferReceiverPhone.getText().toString().trim(),sName=sn.getText().toString().trim(),sp=transferSenderPhone.getText().toString().trim();if(a<=0||r.isEmpty()||sName.isEmpty()){Toast.makeText(this,"أكمل المبلغ واسم المستلم واسم المرسل",Toast.LENGTH_SHORT).show();return;}String txt=fmt(a)+" صافي\n\nالمستلم: "+r+"\nرقم المستلم: "+rp+"\n\nالمرسل: "+sName+"\nرقم المرسل: "+sp;lastText[0]=txt;lastPhone[0]=rp;preview.setText(txt);try{if(!db.transferDuplicate(a,sp,rp))db.addTransfer(a,sName,sp,r,rp,"",0);}catch(Exception ignored){}Toast.makeText(this,"✓ تم تجهيز الحوالة وحفظها",Toast.LENGTH_SHORT).show();renderTransfers(list);};
+        prepare.setOnClickListener(v->build.run());clear.setOnClickListener(v->{amount.setText("");rn.setText("");transferReceiverPhone.setText("");sn.setText("");transferSenderPhone.setText("");preview.setText("لم يتم تجهيز حوالة بعد.");lastText[0]="";lastPhone[0]="";rn.requestFocus();});
+        rn.setOnItemClickListener((p,v,pos,id)->fillTransferSuggestion((String)p.getItemAtPosition(pos),true,rn,transferReceiverPhone));sn.setOnItemClickListener((p,v,pos,id)->fillTransferSuggestion((String)p.getItemAtPosition(pos),false,sn,transferSenderPhone));
         copy.setOnClickListener(v->{if(lastText[0].isEmpty()){Toast.makeText(this,"جهّز الحوالة أولاً",Toast.LENGTH_SHORT).show();return;}android.content.ClipboardManager cm=(android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);cm.setPrimaryClip(android.content.ClipData.newPlainText("الحوالة",lastText[0]));Toast.makeText(this,"تم نسخ الحوالة",Toast.LENGTH_SHORT).show();});
-        wa.setOnClickListener(v->{if(lastText[0].isEmpty()){Toast.makeText(this,"جهّز الحوالة أولاً",Toast.LENGTH_SHORT).show();return;}shareWhatsAppToCustomer(lastPhone[0],lastText[0],null);});
-        renderTransfers(list);
+        wa.setOnClickListener(v->{if(lastText[0].isEmpty()){Toast.makeText(this,"جهّز الحوالة أولاً",Toast.LENGTH_SHORT).show();return;}shareWhatsAppToCustomer(lastPhone[0],lastText[0],null);});renderTransfers(list);
     }
     String[] transferSuggestionNames(boolean receiver){
         Cursor c=db.getReadableDatabase().rawQuery(receiver?"SELECT DISTINCT receiver_name FROM transfers WHERE receiver_name IS NOT NULL AND trim(receiver_name)<>'' ORDER BY receiver_name":"SELECT DISTINCT sender_name FROM transfers WHERE sender_name IS NOT NULL AND trim(sender_name)<>'' ORDER BY sender_name",null);
