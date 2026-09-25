@@ -3100,7 +3100,6 @@ void notes(){ base("الملاحظات");
 
     void supplierAccount(long supplierId,String name,String phone){
         base("حساب المورد",false);
-        pageStack.push("الموردون");
         TextView head=tv(name,18);head.setTextColor(DARK);head.setTypeface(Typeface.DEFAULT,Typeface.BOLD);head.setGravity(Gravity.CENTER);
         content.addView(head,new LinearLayout.LayoutParams(-1,dp(42)));
         double current=supplierBalance(name);
