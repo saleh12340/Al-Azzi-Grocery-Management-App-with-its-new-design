@@ -7804,7 +7804,6 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);
         p.setTypeface(Typeface.create("sans",Typeface.NORMAL));
         p.setColor(Color.BLACK);
-        p.setTextDirection(Paint.DIRECTION_RTL);
 
         int y=10;
         p.setTypeface(Typeface.create("sans",Typeface.BOLD));
