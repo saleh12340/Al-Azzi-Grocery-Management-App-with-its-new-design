@@ -952,7 +952,7 @@ void addHomeFab(){
         metaRow.setGravity(Gravity.CENTER_VERTICAL);
         metaRow.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
-        TextView no=tv(edit?db.invoiceNo(invoiceId):String.valueOf(db.nextInvoice()),14);
+        TextView no=tv(displayInvoiceNo(edit?db.invoiceNo(invoiceId):String.valueOf(db.nextInvoice())),14);
         no.setTextColor(GREEN); no.setTypeface(Typeface.DEFAULT,Typeface.BOLD); no.setGravity(Gravity.CENTER);
         GradientDrawable noBg=new GradientDrawable();
         noBg.setColor(Color.rgb(240,248,242));
@@ -2343,7 +2343,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
                 topR.setGravity(Gravity.CENTER_VERTICAL);
                 topR.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
-                TextView badge=tv("#"+no,11.5f);
+                TextView badge=tv("#"+displayInvoiceNo(no),11.5f);
                 badge.setTextColor(GOLD); badge.setTypeface(Typeface.DEFAULT,Typeface.BOLD); badge.setGravity(Gravity.CENTER);
                 GradientDrawable bBg=new GradientDrawable();
                 bBg.setColor(Color.rgb(255,250,235));
@@ -2471,7 +2471,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
         supplier.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_dropdown_item_1line,db.supplierNames()));
 
         EditText invoiceNo=field("رقم فاتورة الشراء");
-        invoiceNo.setText(edit?db.purchaseNo(purchaseId):String.valueOf(db.nextPurchaseNo())); invoiceNo.setTextSize(13);
+        invoiceNo.setText(displayInvoiceNo(edit?db.purchaseNo(purchaseId):String.valueOf(db.nextPurchaseNo()))); invoiceNo.setTextSize(13);
         if(edit) supplier.setText(db.purchaseSupplier(purchaseId));
 
         meta.addView(supplier,new LinearLayout.LayoutParams(0,dp(52),1.35f));
@@ -2814,7 +2814,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
         if(sale){
             invNo.setVisibility(View.GONE);
         }else{
-            invNo.setText(String.valueOf(db.nextPurchaseNo()));
+            invNo.setText(displayInvoiceNo(String.valueOf(db.nextPurchaseNo())));
             content.addView(invNo,new LinearLayout.LayoutParams(-1,dp(48)));
             addSpace(5);
         }
@@ -7168,6 +7168,7 @@ void printTextBluetooth(String text,int requestedWidth){
     void thermalPreview(String no,String customer,LinearLayout rows,double total){preview(no,customer,new ArrayList<Line>(),total,false,-1);}
 
     static String fmt(double x){String v=String.format(Locale.US,"%,.2f",x);return v.endsWith(".00")?v.substring(0,v.length()-3):v;}
+    String displayInvoiceNo(String no){try{return String.format(Locale.US,"%06d",Integer.parseInt(no.replaceAll("[^0-9]","")));}catch(Exception e){return no==null?"":no;}}
 
 
     void showCustomerCreatePopup(){
