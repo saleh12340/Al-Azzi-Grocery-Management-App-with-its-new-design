@@ -104,8 +104,7 @@ public class MainActivity extends Activity {
         box.addView(head,new LinearLayout.LayoutParams(-1,-2));
         addSafeHomeButton(box,"🧾 فواتير البيع",v->invoiceHistory());
         addSafeHomeButton(box,"👥 العملاء والحسابات",v->customers());
-        addSafeHomeButton(box,"🛒 فواتير الشراء",v->purchaseInvoices());
-        addSafeHomeButton(box,"📦 المخزون والأصناف",v->inventory());
+                addSafeHomeButton(box,"📦 المخزون والأصناف",v->inventory());
         addSafeHomeButton(box,"📊 التقارير",v->reports());
         addSafeHomeButton(box,"📝 الملاحظات",v->notes());
         addSafeHomeButton(box,"💸 الحوالات",v->transfers());
@@ -186,7 +185,7 @@ public class MainActivity extends Activity {
         if(prev.equals("الرئيسية")) home();
         else if(prev.equals("الحسابات")||prev.equals("العملاء")) customers();
         else if(prev.equals("الفواتير")) invoiceHistory();
-        else if(prev.equals("فواتير الشراء")) purchaseInvoices();
+        else if(prev.equals("فواتير الشراء")) invoicesHub();
         else if(prev.equals("المخزون")) inventory();
         else if(prev.equals("التقارير")) reports(); else if(prev.equals("الملاحظات")) notes();
         else if(prev.equals("ماسح الفواتير")||prev.equals("الماسح الضوئي")) scanner();
@@ -553,12 +552,12 @@ public class MainActivity extends Activity {
         bottom.addView(nav,new LinearLayout.LayoutParams(-1,dp(60)));
 }
 void showMoreMenu(){
-        String[] choices={"🏪 الموردون","📊 التقارير","💸 الحوالات","📝 الملاحظات","⚙️ الإعدادات","💾 النسخ الاحتياطي والاستعادة","🛒 المشتريات"};
+        String[] choices={"🏪 الموردون","📊 التقارير","💸 الحوالات","📝 الملاحظات","⚙️ الإعدادات","💾 النسخ الاحتياطي والاستعادة"};
         new AlertDialog.Builder(this).setTitle("المزيد").setItems(choices,(d,w)->{
-            if(w==0)suppliers(); else if(w==1)reports(); else if(w==2)transfers(); else if(w==3)notes(); else if(w==4)settingsHub(); else if(w==5)settingsHub(); else purchaseInvoices();
+            if(w==0)suppliers(); else if(w==1)reports(); else if(w==2)transfers(); else if(w==3)notes(); else settingsHub();
         }).setNegativeButton("إغلاق",null).show();
 }
-    void navigate(String n){hideKeyboard(); if(n.equals("الرئيسية"))home();else if(n.equals("العملاء")||n.equals("الحسابات"))customers();else if(n.equals("الفواتير"))invoice();else if(n.equals("فواتير الشراء"))purchaseInvoices();else if(n.equals("المخزون"))inventory();else if(n.equals("ماسح الفواتير")||n.equals("الماسح الضوئي"))scanner();else if(n.equals("الحوالات"))transfers();else if(n.equals("الملاحظات"))notes();else reports();}
+    void navigate(String n){hideKeyboard(); if(n.equals("الرئيسية"))home();else if(n.equals("العملاء")||n.equals("الحسابات"))customers();else if(n.equals("الفواتير")||n.equals("فواتير الشراء"))invoicesHub();else if(n.equals("المخزون"))inventory();else if(n.equals("ماسح الفواتير")||n.equals("الماسح الضوئي"))scanner();else if(n.equals("الحوالات"))transfers();else if(n.equals("الملاحظات"))notes();else reports();}
     String amountInWords(double amount){
         long n=Math.round(Math.abs(amount));
         if(n==0)return "صفر ريال";
@@ -1057,7 +1056,7 @@ void showGeneralActions(){
         return b;
     }
 
-    void invoice(){invoice(false,-1);}
+    void invoice(){unifiedInvoiceForm(InvoiceType.SALE);}
     void invoice(boolean edit,long invoiceId){
         final String origCustomer = edit ? db.invoiceCustomer(invoiceId) : "";
         final double origTotal = edit ? db.invoiceTotal(invoiceId) : 0;
@@ -1478,8 +1477,9 @@ void showGeneralActions(){
                 db.replaceInvoiceLines(oldId,lines);
                 if(!db.applyStockFromSale(lines,oldId)) throw new Exception("stock");
             }else{
-                long id=db.addInvoice(no,storedCustomer,total,paid,date);
+                long id=db.addInvoiceAuto(storedCustomer,total,paid,date);
                 if(id<=0) throw new Exception("invoice");
+                no=db.invoiceNo(id);
                 db.replaceInvoiceLines(id,lines);
                 if(!db.applyStockFromSale(lines,id)) throw new Exception("stock");
             }
@@ -3566,8 +3566,9 @@ void operationActions(long customerId,String customerName,long tid,String detail
             tx=db.getWritableDatabase();
             tx.beginTransaction();
             db.supplier(supplierName.trim(),"");
-            purchaseId=db.addPurchase(no.trim(),supplierName.trim(),sum,db.now());
+            purchaseId=db.addPurchaseAuto(supplierName.trim(),sum,db.now());
             if(purchaseId<=0)throw new Exception("purchase");
+            no=db.purchaseNo(purchaseId);
             db.replacePurchaseLines(purchaseId,lines);
             db.updateStockFromPurchase(lines);
             tx.setTransactionSuccessful();
@@ -5465,6 +5466,18 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
             if(c.moveToFirst()){long id=c.getLong(0);c.close();if(p!=null&&!p.trim().isEmpty()){ContentValues v=new ContentValues();v.put("phone",p.trim());d.update("customers",v,"id=?",new String[]{String.valueOf(id)});}return id;}c.close();
             try{ContentValues v=new ContentValues();v.put("name",name);v.put("normalized_name",key);v.put("phone",p==null?"":p.trim());return d.insertOrThrow("customers",null,v);}
             catch(SQLiteConstraintException e){Cursor x=d.rawQuery("SELECT id FROM customers WHERE normalized_name=? LIMIT 1",new String[]{key});long id=x.moveToFirst()?x.getLong(0):-1;x.close();return id;}
+        }
+        long addInvoiceAuto(String c,double t,double paid,String date){
+            SQLiteDatabase d=getWritableDatabase();
+            ContentValues v=new ContentValues();v.put("no",String.valueOf(nextInvoice()));
+            v.put("customer",c);v.put("total",t);v.put("paid",paid);v.put("date",date);
+            try{return d.insertOrThrow("invoices",null,v);}catch(SQLiteConstraintException e){return -2;}
+        }
+        long addPurchaseAuto(String supplier,double total,String date){
+            SQLiteDatabase d=getWritableDatabase();
+            ContentValues v=new ContentValues();v.put("no",String.valueOf(nextPurchaseNo()));
+            v.put("supplier",supplier);v.put("total",total);v.put("date",date);
+            try{return d.insertOrThrow("purchase_invoices",null,v);}catch(SQLiteConstraintException e){return -2;}
         }
         long addInvoice(String no,String c,double t,double paid,String date){
             SQLiteDatabase d=getWritableDatabase(); String requested=canon(no); if(requested.isEmpty())requested=String.valueOf(nextInvoice());
