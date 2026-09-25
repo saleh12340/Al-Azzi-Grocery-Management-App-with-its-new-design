@@ -5662,13 +5662,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
 
         box.addView(actionsGrid,new LinearLayout.LayoutParams(-1,-2));
 
-        dlg.setContentView(box);
-        if(dlg.getWindow()!=null){
-            dlg.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-            dlg.getWindow().setLayout(dp(340),dp(480));
-            dlg.getWindow().setGravity(Gravity.CENTER);
-        }
-        dlg.show();
+        showCompactDialog(dlg,box,380);
     }
 
 
@@ -6670,13 +6664,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         okBtn.setOnClickListener(v->dlg.dismiss());
         box.addView(okBtn,new LinearLayout.LayoutParams(-1,dp(52)));
 
-        dlg.setContentView(box);
-        if(dlg.getWindow()!=null){
-            dlg.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-            dlg.getWindow().setLayout(dp(350),WindowManager.LayoutParams.WRAP_CONTENT);
-            dlg.getWindow().setGravity(Gravity.CENTER);
-        }
-        dlg.show();
+        showCompactDialog(dlg,box,380);
     }
 
 
