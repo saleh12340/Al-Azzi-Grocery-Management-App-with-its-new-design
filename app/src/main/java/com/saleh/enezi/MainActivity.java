@@ -485,13 +485,6 @@ public class MainActivity extends Activity {
         titleBox.addView(logo,new LinearLayout.LayoutParams(-1,-2));
         titleBox.addView(pt,new LinearLayout.LayoutParams(-1,-2));
         bar.addView(titleBox,new LinearLayout.LayoutParams(0,-2,1));
-
-        TextView badge=tv("إدارة",11);
-        badge.setTextColor(Color.WHITE); badge.setGravity(Gravity.CENTER);
-        GradientDrawable badgeBg=new GradientDrawable();
-        badgeBg.setColor(Color.argb(55,255,255,255)); badgeBg.setCornerRadius(dp(18));
-        badge.setBackground(badgeBg);
-        bar.addView(badge,new LinearLayout.LayoutParams(dp(54),dp(32)));
         root.addView(bar,new LinearLayout.LayoutParams(-1,-2));
 
         ScrollView sv=new ScrollView(this);
@@ -2323,10 +2316,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
     static class NoteItem { String name; double qty; int side; NoteItem(String n,double q,int s){name=n;qty=q;side=s;} }
     void transfers(){
         base("الحوالات");
-        TextView title=tv("💸 الحوالات المالية",19);
-        title.setTextColor(GREEN); title.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-        content.addView(title,new LinearLayout.LayoutParams(-1,-2));
-        addSpace(6);
+        addSpace(4);
 
         LinearLayout form=card();
         form.setPadding(dp(12),dp(10),dp(12),dp(10));
@@ -2417,7 +2407,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
         // 5. المعاينة
         LinearLayout previewBox=card();
         previewBox.setPadding(dp(12),dp(8),dp(12),dp(8));
-        TextView previewTitle=tv("معاينة الحوالة",15);
+        TextView previewTitle=tv("النتيجة",15);
         previewTitle.setTextColor(GREEN); previewTitle.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         previewBox.addView(previewTitle,new LinearLayout.LayoutParams(-1,-2));
         addSpaceTo(previewBox,4);
