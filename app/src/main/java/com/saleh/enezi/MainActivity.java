@@ -6053,6 +6053,54 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
             }
             c.close();
 
+            // سجل الفواتير الموحد: المبيعات والمشتريات في شاشة واحدة فقط.
+            Cursor pc=db.getReadableDatabase().rawQuery("SELECT id,no,supplier,total,date FROM purchase_invoices ORDER BY datetime(date) DESC,id DESC LIMIT 100",null);
+            while(pc.moveToNext()){
+                long pid=pc.getLong(0);
+                String pno=pc.getString(1)==null?"":pc.getString(1);
+                String supplier=pc.getString(2)==null?"بدون مورد":pc.getString(2);
+                double ptotal=pc.getDouble(3);
+                String pdate=pc.getString(4)==null?"":pc.getString(4);
+                if(!query.isEmpty() && !pno.toLowerCase().contains(query) && !supplier.toLowerCase().contains(query)) continue;
+                displayedCount++;
+
+                LinearLayout pcard=card();
+                pcard.setPadding(dp(10),dp(8),dp(10),dp(8));
+                pcard.setBackground(outline(Color.rgb(255,250,240),1,12));
+
+                LinearLayout pr=new LinearLayout(this);
+                pr.setOrientation(LinearLayout.HORIZONTAL);
+                pr.setGravity(Gravity.CENTER_VERTICAL);
+                pr.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+
+                TextView pb=tv("شراء #"+pno,11.5f);
+                pb.setTextColor(GOLD);pb.setTypeface(Typeface.DEFAULT,Typeface.BOLD);pb.setGravity(Gravity.CENTER);
+                pb.setBackground(outline(Color.rgb(255,250,235),1,8));
+                pr.addView(pb,new LinearLayout.LayoutParams(dp(72),dp(28)));
+
+                LinearLayout pi=new LinearLayout(this);
+                pi.setOrientation(LinearLayout.VERTICAL);
+                pi.setPadding(dp(8),0,dp(8),0);
+                TextView ps=tv("المورد: "+supplier,13);
+                ps.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+                TextView pd=tv("📅 "+pdate,10);
+                pd.setTextColor(MUTED);
+                pi.addView(ps,new LinearLayout.LayoutParams(-1,dp(20)));
+                pi.addView(pd,new LinearLayout.LayoutParams(-1,dp(16)));
+                pr.addView(pi,new LinearLayout.LayoutParams(0,-2,1));
+
+                TextView pv=tv(fmt(ptotal)+" ر.ي",14);
+                pv.setTextColor(GOLD);pv.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+                pr.addView(pv,new LinearLayout.LayoutParams(-2,-2));
+                pcard.addView(pr,new LinearLayout.LayoutParams(-1,-2));
+
+                pcard.setOnClickListener(v->showPurchaseInvoiceDialog(pid,pno,supplier,ptotal,pdate));
+                LinearLayout.LayoutParams pp=new LinearLayout.LayoutParams(-1,-2);
+                pp.setMargins(0,0,0,dp(6));
+                list.addView(pcard,pp);
+            }
+            pc.close();
+
             if(displayedCount==0){
                 LinearLayout emptyBox=card();
                 emptyBox.setOrientation(LinearLayout.VERTICAL);
