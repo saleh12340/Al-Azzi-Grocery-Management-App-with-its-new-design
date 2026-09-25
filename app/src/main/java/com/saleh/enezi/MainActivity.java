@@ -4719,7 +4719,13 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         }
         Cursor customers(String q){return getReadableDatabase().rawQuery("SELECT id,name,COALESCE(phone,'') FROM customers WHERE name LIKE ? OR phone LIKE ? ORDER BY name",new String[]{"%"+q+"%","%"+q+"%"});}
         Cursor transactions(long id){return getReadableDatabase().rawQuery("SELECT id,date,details,amount,type FROM transactions WHERE customer_id=? ORDER BY datetime(date) DESC, id DESC",new String[]{String.valueOf(id)});}
-        int nextPurchaseNo(){Cursor c=getReadableDatabase().rawQuery("SELECT COALESCE(MAX(CAST(no AS INTEGER)),0)+1 FROM purchase_invoices",null);int x=c.moveToFirst()?c.getInt(0):1;c.close();return x;}
+        int nextPurchaseNo(){return nextSequentialInvoiceNo("purchase_invoices");}
+        int nextInvoice(){return nextSequentialInvoiceNo("invoices");}
+        int nextSequentialInvoiceNo(String table){
+            Cursor c=getReadableDatabase().rawQuery("SELECT no FROM "+table+" ORDER BY id ASC",null);HashSet<Integer> used=new HashSet<>();int max=0;
+            while(c.moveToNext()){try{int n=Integer.parseInt(c.getString(0).replaceAll("[^0-9]",""));if(n>0){used.add(n);max=Math.max(max,n);}}catch(Exception ignored){}}
+            c.close();int n=1;while(used.contains(n))n++;return Math.max(n,max+1);
+        }
         String[] supplierNames(){Cursor c=getReadableDatabase().rawQuery("SELECT name FROM suppliers ORDER BY name",null);ArrayList<String>a=new ArrayList<>();while(c.moveToNext())a.add(c.getString(0));c.close();return a.toArray(new String[0]);}
         long supplier(String n,String p){Cursor c=getReadableDatabase().rawQuery("SELECT id FROM suppliers WHERE name=? LIMIT 1",new String[]{n});if(c.moveToFirst()){long x=c.getLong(0);c.close();return x;}c.close();ContentValues v=new ContentValues();v.put("name",n);v.put("phone",p);return getWritableDatabase().insert("suppliers",null,v);}
         long addPurchase(String no,String supplier,double total,String date){
