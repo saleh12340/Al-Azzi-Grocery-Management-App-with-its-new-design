@@ -3010,7 +3010,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
             if(sale){
                 double paidAmount=parseDoubleSafe(paidRef==null?"":paidRef.getText().toString(),0);
                 if(paidAmount<0){Toast.makeText(this,"المبلغ المدفوع غير صحيح",Toast.LENGTH_SHORT).show();return;}
-                String no=String.valueOf(db.nextInvoice());
+                String no=displayInvoiceNo(String.valueOf(db.nextInvoice()));
                 String knownPhone=db.phoneByName(partyName).trim();
                 if(knownPhone.isEmpty() && !"نقدي".equals(partyName) && !"عميل نقدي".equals(partyName)){
                     showPhoneDialog(partyName,no,salesLines,sum,paidAmount,false,-1);
@@ -3032,7 +3032,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
             double sum=0;
             ArrayList<Line> previewLines=new ArrayList<>();
             for(UnifiedInvoiceItem x:items){sum+=x.total;previewLines.add(new Line(x.name,x.qty,x.total));}
-            if(sale)preview(String.valueOf(db.nextInvoice()),party.getText().toString().trim(),previewLines,sum,false,-1);
+            if(sale)preview(displayInvoiceNo(String.valueOf(db.nextInvoice())),party.getText().toString().trim(),previewLines,sum,false,-1);
             else{
                 StringBuilder p=new StringBuilder("بقالة العزي للمواد الغذائية\\nفاتورة شراء\\nالمورد: ").append(party.getText().toString().trim())
                     .append("\\nرقم الفاتورة: ").append(invNo.getText().toString().trim()).append("\\n");
