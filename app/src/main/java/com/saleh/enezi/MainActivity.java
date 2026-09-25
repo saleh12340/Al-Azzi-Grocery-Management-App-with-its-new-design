@@ -136,7 +136,7 @@ public class MainActivity extends Activity {
         box.addView(title,new LinearLayout.LayoutParams(-1,-2));
 
         TextView msg=new TextView(this);
-        msg.setText("تعذر تشغيل الشاشة الرئيسية.\\nتم إيقاف الخطأ لمنع ظهور شاشة بيضاء.\\nاضغط «إعادة المحاولة».");
+        msg.setText("تعذر تشغيل الشاشة الرئيسية.\nاضغط «إعادة المحاولة».");
         msg.setTextSize(15);
         msg.setTextColor(MUTED);
         msg.setGravity(Gravity.CENTER);
@@ -1609,7 +1609,7 @@ void showGeneralActions(){
                 ch.setDescription("إشعار عند الحفظ");nm.createNotificationChannel(ch);
             }
             android.app.Notification.Builder b=android.os.Build.VERSION.SDK_INT>=26?new android.app.Notification.Builder(this,channelId):new android.app.Notification.Builder(this);
-            b.setSmallIcon(com.saleh.enezi.R.drawable.ic_store).setContentTitle("بقالة العزي للمواد الغذائية").setContentText(title+" — "+text).setStyle(new android.app.Notification.BigTextStyle().bigText("بقالة العزي للمواد الغذائية — مستقبل تجارتك يبدأ من هنا\n"+title+" — "+text)).setAutoCancel(true);
+            b.setSmallIcon(com.saleh.enezi.R.drawable.ic_store).setContentTitle("بقالة العزي للمواد الغذائية").setContentText(title+" — "+text).setAutoCancel(true);
             nm.notify((int)(System.currentTimeMillis()%100000),b.build());
         }catch(Exception ignored){}
     }
@@ -2591,7 +2591,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
     void notes(){
         base("الملاحظات");
         TextView title=tv("📝 الملاحظات",20);title.setTextColor(GREEN);title.setTypeface(Typeface.DEFAULT,Typeface.BOLD);content.addView(title,new LinearLayout.LayoutParams(-1,dp(42)));
-        TextView sub=tv("الملاحظات",14);sub.setTextColor(MUTED);content.addView(sub,new LinearLayout.LayoutParams(-1,-2));addSpace(5);
+        addSpace(5);
         LinearLayout top1=new LinearLayout(this);top1.setOrientation(LinearLayout.HORIZONTAL);top1.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         Button fresh=action("＋ ملاحظة جديدة",GREEN);Button search=button("🔎 بحث");Button history=button("📚 السجل");
         top1.addView(fresh,new LinearLayout.LayoutParams(0,dp(46),1));LinearLayout.LayoutParams x1=new LinearLayout.LayoutParams(0,dp(46),1);x1.setMargins(dp(5),0,0,0);top1.addView(search,x1);LinearLayout.LayoutParams x2=new LinearLayout.LayoutParams(0,dp(46),1);x2.setMargins(dp(5),0,0,0);top1.addView(history,x2);content.addView(top1);
@@ -3966,12 +3966,11 @@ void operationActions(long customerId,String customerName,long tid,String detail
 
     void settingsHub(){
         base("الإعدادات");
-        String[] titles={"إعدادات التطبيق","إعدادات العرض","إعدادات البيانات","النسخ الاحتياطي","الاستعادة","إعدادات المشاركة","إعدادات الطباعة"};
+        String[] titles={"إعدادات التطبيق","إعدادات العرض","إعدادات البيانات","الاستعادة","إعدادات المشاركة","إعدادات الطباعة"};
         for(String title:titles){Button b=button(title);b.setTextSize(14);content.addView(b,new LinearLayout.LayoutParams(-1,dp(48)));addSpace(5);
             if(title.equals("إعدادات التطبيق")) b.setOnClickListener(v->showAppSettingsDialog());
             else if(title.equals("إعدادات العرض")) b.setOnClickListener(v->showDisplaySettingsDialog());
             else if(title.equals("إعدادات البيانات")) b.setOnClickListener(v->showBackupRestore());
-            else if(title.equals("النسخ الاحتياطي")) b.setOnClickListener(v->showBackupRestore());
             else if(title.equals("الاستعادة")) b.setOnClickListener(v->openRestorePicker());
             else if(title.equals("إعدادات المشاركة")) b.setOnClickListener(v->showSharingSettingsDialog());
             else b.setOnClickListener(v->showPrintSettingsDialog());
@@ -6522,7 +6521,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
     void confirmDeletePurchaseInvoice(long id,String no){
         new AlertDialog.Builder(this)
             .setTitle("حذف فاتورة الشراء")
-            .setMessage("حذف فاتورة الشراء رقم #؟"+no+"؟ سيتم خصم الكميات من المخزون.")
+            .setMessage("حذف فاتورة الشراء رقم #"+no+"؟ سيتم خصم الكميات من المخزون.")
             .setPositiveButton("حذف",(d,w)->{
                 db.deletePurchase(id);
                 Toast.makeText(this,"تم حذف فاتورة الشراء وتعديل المخزون",Toast.LENGTH_SHORT).show();
@@ -8303,7 +8302,6 @@ void customers(){
         searchBar.addView(search,new LinearLayout.LayoutParams(0,dp(54),1));
         LinearLayout.LayoutParams ap=new LinearLayout.LayoutParams(dp(92),dp(54));ap.setMargins(dp(5),0,0,0);searchBar.addView(add,ap);
         content.addView(searchBar); addSpace(6);
-        // قائمة العملاء تعرض الاسم والرصيد مباشرة بدون بطاقات إحصائية إضافية.\n        addSpace(6);
         LinearLayout list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);list.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);content.addView(list);
         Runnable render=()->{
             list.removeAllViews(); String q=search.getText().toString().trim(); Cursor cur=db.customers(q); int count=0;
