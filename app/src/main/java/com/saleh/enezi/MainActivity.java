@@ -4732,7 +4732,7 @@ void notes(){ base("الملاحظات");
 
     static class DB extends SQLiteOpenHelper{
         static final String DB_NAME="alazzi_grocery_runtime_v5.db";
-        DB(Context c){super(c,DB_NAME,null,2);}
+        DB(Context c){super(c,DB_NAME,null,3);}
         @Override public void onConfigure(SQLiteDatabase d){
             super.onConfigure(d);
             try{d.execSQL("PRAGMA busy_timeout=1500");}catch(Exception ignored){}
@@ -4747,12 +4747,12 @@ void notes(){ base("الملاحظات");
             d.execSQL("ALTER TABLE "+table+" ADD COLUMN "+column+" "+definition);
         }
         void create(SQLiteDatabase d){
-            d.execSQL("CREATE TABLE IF NOT EXISTS customers(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,phone TEXT)");
+            d.execSQL("CREATE TABLE IF NOT EXISTS customers(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,phone TEXT,normalized_name TEXT)");
             d.execSQL("CREATE TABLE IF NOT EXISTS invoices(id INTEGER PRIMARY KEY AUTOINCREMENT,no TEXT,customer TEXT,total REAL,paid REAL DEFAULT 0,date TEXT)");
             d.execSQL("CREATE TABLE IF NOT EXISTS transactions(id INTEGER PRIMARY KEY AUTOINCREMENT,customer_id INTEGER,amount REAL,details TEXT,type INTEGER,date TEXT)");
-            d.execSQL("CREATE TABLE IF NOT EXISTS items(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT,qty REAL,min_qty REAL,cost REAL DEFAULT 0,sale REAL DEFAULT 0)");
+            d.execSQL("CREATE TABLE IF NOT EXISTS items(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT,qty REAL,min_qty REAL,cost REAL DEFAULT 0,sale REAL DEFAULT 0,normalized_name TEXT)");
             d.execSQL("CREATE TABLE IF NOT EXISTS invoice_items(id INTEGER PRIMARY KEY AUTOINCREMENT,invoice_id INTEGER,name TEXT,qty REAL,total REAL,unit_cost REAL DEFAULT 0)");
-            d.execSQL("CREATE TABLE IF NOT EXISTS suppliers(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,phone TEXT)");
+            d.execSQL("CREATE TABLE IF NOT EXISTS suppliers(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,phone TEXT,normalized_name TEXT)");
             d.execSQL("CREATE TABLE IF NOT EXISTS purchase_invoices(id INTEGER PRIMARY KEY AUTOINCREMENT,no TEXT,supplier TEXT,total REAL,paid REAL DEFAULT 0,date TEXT)");
             d.execSQL("CREATE TABLE IF NOT EXISTS purchase_items(id INTEGER PRIMARY KEY AUTOINCREMENT,purchase_id INTEGER,name TEXT,qty REAL,cost REAL,sale REAL,total REAL)");
             d.execSQL("CREATE TABLE IF NOT EXISTS note_pages(id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT,date TEXT)");
@@ -4763,46 +4763,72 @@ void notes(){ base("الملاحظات");
             d.execSQL("CREATE TABLE IF NOT EXISTS supplier_transactions(id INTEGER PRIMARY KEY AUTOINCREMENT,supplier_id INTEGER NOT NULL,amount REAL NOT NULL,details TEXT,type INTEGER DEFAULT 2,date TEXT,invoice_no TEXT)");
             d.execSQL("CREATE INDEX IF NOT EXISTS idx_supplier_transactions_supplier ON supplier_transactions(supplier_id,date,id)");
         }
-        public void onUpgrade(SQLiteDatabase d,int o,int n){ create(d); cleanupDuplicateCustomers(d); }
-        @Override public void onOpen(SQLiteDatabase d){ super.onOpen(d); cleanupDuplicateCustomers(d); }
-        void cleanupDuplicateCustomers(SQLiteDatabase d){
-            Cursor c=null;
+        public void onUpgrade(SQLiteDatabase d,int o,int n){ create(d); normalizeAndConstrain(d); }
+        @Override public void onOpen(SQLiteDatabase d){ super.onOpen(d); normalizeAndConstrain(d); }
+        String norm(String s){ return s==null?"":s.trim().replaceAll("\\s+"," ").toLowerCase(Locale.ROOT); }
+        String canon(String s){ return s==null?"":s.trim().replaceAll("\\s+"," "); }
+
+        void normalizeAndConstrain(SQLiteDatabase d){
             try{
-                c=d.rawQuery("SELECT id,name,COALESCE(phone,'') FROM customers ORDER BY id ASC",null);
-                HashMap<String,Long> primary=new HashMap<>();
-                HashMap<String,String> canonical=new HashMap<>();
-                ArrayList<Long> duplicateIds=new ArrayList<>();
-                ArrayList<String> duplicateNames=new ArrayList<>();
-                while(c.moveToNext()){
-                    long id=c.getLong(0);
-                    String raw=c.getString(1)==null?"":c.getString(1).trim();
-                    String key=raw.replaceAll("\\s+"," ").toLowerCase(Locale.ROOT);
-                    if(key.isEmpty()) continue;
-                    String canon=raw.replaceAll("\\s+"," ").trim();
-                    if(!primary.containsKey(key)){
-                        primary.put(key,id); canonical.put(key,canon);
-                        if(!canon.equals(raw)){
-                            ContentValues v=new ContentValues();v.put("name",canon);d.update("customers",v,"id=?",new String[]{String.valueOf(id)});
-                            d.update("invoices",v,"customer=?",new String[]{raw});
-                        }
-                    }else{
-                        long keep=primary.get(key);
-                        duplicateIds.add(id); duplicateNames.add(raw);
-                        String keepName=canonical.get(key);
-                        d.execSQL("UPDATE transactions SET customer_id=? WHERE customer_id=?",new Object[]{keep,id});
-                        d.execSQL("UPDATE invoices SET customer=? WHERE customer=?",new Object[]{keepName,raw});
-                        String phone=c.getString(2)==null?"":c.getString(2).trim();
-                        if(!phone.isEmpty()){
-                            Cursor pc=d.rawQuery("SELECT COALESCE(phone,'') FROM customers WHERE id=?",new String[]{String.valueOf(keep)});
-                            String kp=pc.moveToFirst()?pc.getString(0):"";pc.close();
-                            if(kp==null||kp.trim().isEmpty()){
-                                ContentValues pv=new ContentValues();pv.put("phone",phone);d.update("customers",pv,"id=?",new String[]{String.valueOf(keep)});
-                            }
-                        }
-                    }
+                d.beginTransaction();
+                ensureColumn(d,"customers","normalized_name","TEXT");
+                ensureColumn(d,"suppliers","normalized_name","TEXT");
+                ensureColumn(d,"items","normalized_name","TEXT");
+                mergeCustomers(d);
+                mergeSuppliers(d);
+                mergeItems(d);
+                normalizeInvoiceNumbers(d,"invoices");
+                normalizeInvoiceNumbers(d,"purchase_invoices");
+                d.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS ux_customers_normalized_name ON customers(normalized_name)");
+                d.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS ux_suppliers_normalized_name ON suppliers(normalized_name)");
+                d.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS ux_items_normalized_name ON items(normalized_name)");
+                d.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS ux_invoices_no ON invoices(no)");
+                d.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS ux_purchase_invoices_no ON purchase_invoices(no)");
+                d.setTransactionSuccessful();
+            }catch(Exception e){
+                android.util.Log.e("AlAzziDB","Integrity migration failed",e);
+            }finally{ if(d.inTransaction()) d.endTransaction(); }
+        }
+        void mergeCustomers(SQLiteDatabase d){
+            Cursor c=d.rawQuery("SELECT id,name,COALESCE(phone,'') FROM customers ORDER BY id ASC",null);
+            HashMap<String,Long> keep=new HashMap<>(); HashMap<String,String> names=new HashMap<>();
+            ArrayList<Long> del=new ArrayList<>();
+            while(c.moveToNext()){
+                long id=c.getLong(0); String raw=c.getString(1); String key=norm(raw); String cn=canon(raw);
+                if(key.isEmpty())continue;
+                if(!keep.containsKey(key)){keep.put(key,id);names.put(key,cn);ContentValues v=new ContentValues();v.put("name",cn);v.put("normalized_name",key);d.update("customers",v,"id=?",new String[]{String.valueOf(id)});}
+                else{
+                    long k=keep.get(key); String kn=names.get(key);
+                    d.execSQL("UPDATE transactions SET customer_id=? WHERE customer_id=?",new Object[]{k,id});
+                    d.execSQL("UPDATE invoices SET customer=? WHERE customer=?",new Object[]{kn,raw});
+                    String phone=c.getString(2); if(phone!=null&&!phone.trim().isEmpty()){Cursor pc=d.rawQuery("SELECT COALESCE(phone,'') FROM customers WHERE id=?",new String[]{String.valueOf(k)});String kp=pc.moveToFirst()?pc.getString(0):"";pc.close();if(kp.trim().isEmpty()){ContentValues pv=new ContentValues();pv.put("phone",phone.trim());d.update("customers",pv,"id=?",new String[]{String.valueOf(k)});}}
+                    del.add(id);
                 }
-                for(Long id:duplicateIds) d.delete("customers","id=?",new String[]{String.valueOf(id)});
-            }catch(Exception ignored){}finally{if(c!=null)c.close();}
+            } c.close(); for(Long id:del)d.delete("customers","id=?",new String[]{String.valueOf(id)});
+        }
+        void mergeSuppliers(SQLiteDatabase d){
+            Cursor c=d.rawQuery("SELECT id,name,COALESCE(phone,'') FROM suppliers ORDER BY id ASC",null);
+            HashMap<String,Long> keep=new HashMap<>();HashMap<String,String> names=new HashMap<>();ArrayList<Long> del=new ArrayList<>();
+            while(c.moveToNext()){
+                long id=c.getLong(0);String raw=c.getString(1);String key=norm(raw);String cn=canon(raw);if(key.isEmpty())continue;
+                if(!keep.containsKey(key)){keep.put(key,id);names.put(key,cn);ContentValues v=new ContentValues();v.put("name",cn);v.put("normalized_name",key);d.update("suppliers",v,"id=?",new String[]{String.valueOf(id)});}
+                else{long k=keep.get(key);String kn=names.get(key);d.execSQL("UPDATE supplier_transactions SET supplier_id=? WHERE supplier_id=?",new Object[]{k,id});d.execSQL("UPDATE purchase_invoices SET supplier=? WHERE supplier=?",new Object[]{kn,raw});String phone=c.getString(2);if(phone!=null&&!phone.trim().isEmpty()){Cursor pc=d.rawQuery("SELECT COALESCE(phone,'') FROM suppliers WHERE id=?",new String[]{String.valueOf(k)});String kp=pc.moveToFirst()?pc.getString(0):"";pc.close();if(kp.trim().isEmpty()){ContentValues pv=new ContentValues();pv.put("phone",phone.trim());d.update("suppliers",pv,"id=?",new String[]{String.valueOf(k)});}}del.add(id);}
+            } c.close();for(Long id:del)d.delete("suppliers","id=?",new String[]{String.valueOf(id)});
+        }
+        void mergeItems(SQLiteDatabase d){
+            Cursor c=d.rawQuery("SELECT id,name,COALESCE(qty,0),COALESCE(cost,0),COALESCE(sale,0) FROM items ORDER BY id ASC",null);
+            HashMap<String,Long> keep=new HashMap<>();HashMap<String,String> names=new HashMap<>();ArrayList<Long> del=new ArrayList<>();
+            while(c.moveToNext()){
+                long id=c.getLong(0);String raw=c.getString(1);String key=norm(raw);String cn=canon(raw);if(key.isEmpty())continue;
+                if(!keep.containsKey(key)){keep.put(key,id);names.put(key,cn);ContentValues v=new ContentValues();v.put("name",cn);v.put("normalized_name",key);d.update("items",v,"id=?",new String[]{String.valueOf(id)});}
+                else{long k=keep.get(key);String kn=names.get(key);Cursor kc=d.rawQuery("SELECT COALESCE(qty,0),COALESCE(cost,0),COALESCE(sale,0) FROM items WHERE id=?",new String[]{String.valueOf(k)});double q=0,cost=0,sale=0;if(kc.moveToFirst()){q=kc.getDouble(0);cost=kc.getDouble(1);sale=kc.getDouble(2);}kc.close();ContentValues v=new ContentValues();v.put("qty",q+c.getDouble(2));if(cost==0)cost=c.getDouble(3);if(sale==0)sale=c.getDouble(4);v.put("cost",cost);v.put("sale",sale);d.update("items",v,"id=?",new String[]{String.valueOf(k)});d.execSQL("UPDATE invoice_items SET name=? WHERE lower(trim(name))=?",new Object[]{kn,key});d.execSQL("UPDATE purchase_items SET name=? WHERE lower(trim(name))=?",new Object[]{kn,key});d.execSQL("UPDATE stock_movements SET item_id=?,item_name=? WHERE item_id=?",new Object[]{k,kn,id});del.add(id);}
+            } c.close();for(Long id:del)d.delete("items","id=?",new String[]{String.valueOf(id)});
+        }
+        void normalizeInvoiceNumbers(SQLiteDatabase d,String table){
+            Cursor c=d.rawQuery("SELECT id,no FROM "+table+" ORDER BY id ASC",null);HashSet<String> used=new HashSet<>();int next=1;
+            ArrayList<long[]> fixes=new ArrayList<>();ArrayList<String> vals=new ArrayList<>();
+            while(c.moveToNext()){long id=c.getLong(0);String no=c.getString(1)==null?"":c.getString(1).trim();String digits=no.replaceAll("[^0-9]","");if(!digits.isEmpty()&&!used.contains(digits)){used.add(digits);try{next=Math.max(next,Integer.parseInt(digits)+1);}catch(Exception ignored){}continue;}while(used.contains(String.valueOf(next)))next++;fixes.add(new long[]{id});vals.add(String.valueOf(next));used.add(String.valueOf(next));next++;}
+            c.close();for(int i=0;i<fixes.size();i++){ContentValues v=new ContentValues();v.put("no",vals.get(i));d.update(table,v,"id=?",new String[]{String.valueOf(fixes.get(i)[0])});}
         }
         Cursor scannedInvoices(String q,String category){
             String sel="";
@@ -4863,23 +4889,23 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         void updateSupplierPayment(long id,double amount,String details,String invoiceNo){ContentValues v=new ContentValues();v.put("amount",Math.abs(amount));v.put("details",details==null?"":details);v.put("invoice_no",invoiceNo==null?"":invoiceNo);getWritableDatabase().update("supplier_transactions",v,"id=?",new String[]{String.valueOf(id)});}
         void deleteSupplierPayment(long id){getWritableDatabase().delete("supplier_transactions","id=?",new String[]{String.valueOf(id)});}
         long customer(String n){
-            String name=n==null?"":n.trim().replaceAll("\\s+"," ");
-            if(name.isEmpty()) return -1;
-            Cursor c=getReadableDatabase().rawQuery("SELECT id FROM customers WHERE lower(trim(name))=lower(?) ORDER BY id ASC LIMIT 1",new String[]{name});
+            String name=canon(n); String key=norm(name); if(key.isEmpty())return -1;
+            Cursor c=getReadableDatabase().rawQuery("SELECT id FROM customers WHERE normalized_name=? LIMIT 1",new String[]{key});
             if(c.moveToFirst()){long x=c.getLong(0);c.close();return x;} c.close();
-            ContentValues v=new ContentValues();v.put("name",name);return getWritableDatabase().insert("customers",null,v);
+            try{ContentValues v=new ContentValues();v.put("name",name);v.put("normalized_name",key);return getWritableDatabase().insertOrThrow("customers",null,v);}
+            catch(SQLiteConstraintException e){Cursor x=getReadableDatabase().rawQuery("SELECT id FROM customers WHERE normalized_name=? LIMIT 1",new String[]{key});long id=x.moveToFirst()?x.getLong(0):-1;x.close();return id;}
         }
         void updateCustomer(long id,String oldName,String newName,String phone){
             SQLiteDatabase d=getWritableDatabase(); ContentValues v=new ContentValues();v.put("name",newName);v.put("phone",phone);
             d.update("customers",v,"id=?",new String[]{String.valueOf(id)});
             if(oldName!=null&&!oldName.equals(newName)){ContentValues iv=new ContentValues();iv.put("customer",newName);d.update("invoices",iv,"customer=?",new String[]{oldName});}
         }
-        void addCustomer(String n,String p){
-            String name=n==null?"":n.trim().replaceAll("\\s+"," "); if(name.isEmpty()) return;
-            SQLiteDatabase d=getWritableDatabase();
-            Cursor c=d.rawQuery("SELECT id FROM customers WHERE lower(trim(name))=lower(?) ORDER BY id ASC LIMIT 1",new String[]{name});
-            if(c.moveToFirst()){long id=c.getLong(0);c.close(); if(p!=null&&!p.trim().isEmpty()){ContentValues v=new ContentValues();v.put("phone",p.trim());d.update("customers",v,"id=?",new String[]{String.valueOf(id)});} return;} c.close();
-            ContentValues v=new ContentValues();v.put("name",name);v.put("phone",p==null?"":p.trim());d.insert("customers",null,v);
+        long addCustomer(String n,String p){
+            String name=canon(n), key=norm(name); if(key.isEmpty())return -1;
+            SQLiteDatabase d=getWritableDatabase(); Cursor c=d.rawQuery("SELECT id FROM customers WHERE normalized_name=? LIMIT 1",new String[]{key});
+            if(c.moveToFirst()){long id=c.getLong(0);c.close();if(p!=null&&!p.trim().isEmpty()){ContentValues v=new ContentValues();v.put("phone",p.trim());d.update("customers",v,"id=?",new String[]{String.valueOf(id)});}return id;}c.close();
+            try{ContentValues v=new ContentValues();v.put("name",name);v.put("normalized_name",key);v.put("phone",p==null?"":p.trim());return d.insertOrThrow("customers",null,v);}
+            catch(SQLiteConstraintException e){Cursor x=d.rawQuery("SELECT id FROM customers WHERE normalized_name=? LIMIT 1",new String[]{key});long id=x.moveToFirst()?x.getLong(0):-1;x.close();return id;}
         }
         long addInvoice(String no,String c,double t,double paid,String date){ContentValues v=new ContentValues();v.put("no",no);v.put("customer",c);v.put("total",t);v.put("paid",paid);v.put("date",date);return getWritableDatabase().insert("invoices",null,v);}
         void addTransaction(long id,double a,String d,int type,String date){if(id<1)return;ContentValues v=new ContentValues();v.put("customer_id",id);v.put("amount",a);v.put("details",d);v.put("type",type);v.put("date",date);getWritableDatabase().insert("transactions",null,v);}
