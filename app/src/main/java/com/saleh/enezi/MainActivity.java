@@ -4907,7 +4907,12 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
             try{ContentValues v=new ContentValues();v.put("name",name);v.put("normalized_name",key);v.put("phone",p==null?"":p.trim());return d.insertOrThrow("customers",null,v);}
             catch(SQLiteConstraintException e){Cursor x=d.rawQuery("SELECT id FROM customers WHERE normalized_name=? LIMIT 1",new String[]{key});long id=x.moveToFirst()?x.getLong(0):-1;x.close();return id;}
         }
-        long addInvoice(String no,String c,double t,double paid,String date){ContentValues v=new ContentValues();v.put("no",no);v.put("customer",c);v.put("total",t);v.put("paid",paid);v.put("date",date);return getWritableDatabase().insert("invoices",null,v);}
+        long addInvoice(String no,String c,double t,double paid,String date){
+            SQLiteDatabase d=getWritableDatabase(); String requested=canon(no); if(requested.isEmpty())requested=String.valueOf(nextInvoice());
+            ContentValues v=new ContentValues();v.put("no",requested);v.put("customer",c);v.put("total",t);v.put("paid",paid);v.put("date",date);
+            try{return d.insertOrThrow("invoices",null,v);}
+            catch(SQLiteConstraintException e){String fresh=String.valueOf(nextSequentialInvoiceNo("invoices"));v.put("no",fresh);return d.insertOrThrow("invoices",null,v);}
+        }
         void addTransaction(long id,double a,String d,int type,String date){if(id<1)return;ContentValues v=new ContentValues();v.put("customer_id",id);v.put("amount",a);v.put("details",d);v.put("type",type);v.put("date",date);getWritableDatabase().insert("transactions",null,v);}
         double balance(long id){Cursor c=getReadableDatabase().rawQuery("SELECT COALESCE(SUM(CASE WHEN type=1 THEN amount ELSE -amount END),0) FROM transactions WHERE customer_id=?",new String[]{String.valueOf(id)});double x=c.moveToFirst()?c.getDouble(0):0;c.close();return x;}
         double totalDebts(){
@@ -4935,9 +4940,26 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         int nextPurchaseNo(){Cursor c=getReadableDatabase().rawQuery("SELECT COALESCE(MAX(CAST(no AS INTEGER)),0)+1 FROM purchase_invoices",null);int x=c.moveToFirst()?c.getInt(0):1;c.close();return x;}
         String[] supplierNames(){Cursor c=getReadableDatabase().rawQuery("SELECT name FROM suppliers ORDER BY name",null);ArrayList<String>a=new ArrayList<>();while(c.moveToNext())a.add(c.getString(0));c.close();return a.toArray(new String[0]);}
         long supplier(String n,String p){Cursor c=getReadableDatabase().rawQuery("SELECT id FROM suppliers WHERE name=? LIMIT 1",new String[]{n});if(c.moveToFirst()){long x=c.getLong(0);c.close();return x;}c.close();ContentValues v=new ContentValues();v.put("name",n);v.put("phone",p);return getWritableDatabase().insert("suppliers",null,v);}
-        long addPurchase(String no,String supplier,double total,String date){ContentValues v=new ContentValues();v.put("no",no);v.put("supplier",supplier);v.put("total",total);v.put("date",date);return getWritableDatabase().insert("purchase_invoices",null,v);}
+        long addPurchase(String no,String supplier,double total,String date){
+            SQLiteDatabase d=getWritableDatabase(); String requested=canon(no); if(requested.isEmpty())requested=String.valueOf(nextPurchaseNo());
+            ContentValues v=new ContentValues();v.put("no",requested);v.put("supplier",supplier);v.put("total",total);v.put("date",date);
+            try{return d.insertOrThrow("purchase_invoices",null,v);}
+            catch(SQLiteConstraintException e){String fresh=String.valueOf(nextSequentialInvoiceNo("purchase_invoices"));v.put("no",fresh);return d.insertOrThrow("purchase_invoices",null,v);}
+        }
         void replacePurchaseLines(long id,ArrayList<PurchaseLine> ls){SQLiteDatabase d=getWritableDatabase();for(PurchaseLine l:ls){ContentValues v=new ContentValues();v.put("purchase_id",id);v.put("name",l.name);v.put("qty",l.qty);v.put("cost",l.cost);v.put("sale",l.sale);v.put("total",l.total);d.insert("purchase_items",null,v);}}
-        void updateStockFromPurchase(ArrayList<PurchaseLine> ls){SQLiteDatabase d=getWritableDatabase();for(PurchaseLine l:ls){Cursor c=d.rawQuery("SELECT id,qty FROM items WHERE name=? LIMIT 1",new String[]{l.name});if(c.moveToFirst()){long id=c.getLong(0);double q=c.getDouble(1);c.close();ContentValues v=new ContentValues();v.put("qty",q+l.qty);v.put("cost",l.cost);v.put("sale",l.sale);d.update("items",v,"id=?",new String[]{String.valueOf(id)});}else{c.close();ContentValues v=new ContentValues();v.put("name",l.name);v.put("qty",l.qty);v.put("min_qty",0);v.put("cost",l.cost);v.put("sale",l.sale);d.insert("items",null,v);}}}
+        void updateStockFromPurchase(ArrayList<PurchaseLine> ls){
+            SQLiteDatabase d=getWritableDatabase();
+            for(PurchaseLine l:ls){
+                String name=canon(l.name),key=norm(name);
+                Cursor c=d.rawQuery("SELECT id,qty FROM items WHERE normalized_name=? LIMIT 1",new String[]{key});
+                if(c.moveToFirst()){
+                    long id=c.getLong(0); double q=c.getDouble(1); c.close();
+                    ContentValues v=new ContentValues();v.put("qty",q+l.qty);v.put("cost",l.cost);v.put("sale",l.sale);d.update("items",v,"id=?",new String[]{String.valueOf(id)});
+                }else{
+                    c.close(); ContentValues v=new ContentValues();v.put("name",name);v.put("normalized_name",key);v.put("qty",l.qty);v.put("min_qty",0);v.put("cost",l.cost);v.put("sale",l.sale);d.insertOrThrow("items",null,v);
+                }
+            }
+        }
         boolean canApplySaleStock(ArrayList<Line> ls,long oldInvoiceId){
             // البيع مسموح حتى عند نفاد المخزون؛ يتم تسجيل العجز في المخزون بالسالب.
             return true;
