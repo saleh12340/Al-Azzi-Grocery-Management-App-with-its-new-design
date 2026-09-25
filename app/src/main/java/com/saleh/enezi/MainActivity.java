@@ -2471,7 +2471,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
         supplier.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_dropdown_item_1line,db.supplierNames()));
 
         EditText invoiceNo=field("رقم فاتورة الشراء");
-        invoiceNo.setText(displayInvoiceNo(edit?db.purchaseNo(purchaseId):String.valueOf(db.nextPurchaseNo()))); invoiceNo.setTextSize(13);
+        invoiceNo.setText(displayInvoiceNo(edit?db.purchaseNo(purchaseId):String.valueOf(db.nextPurchaseNo()))); invoiceNo.setTextSize(13); invoiceNo.setEnabled(false); invoiceNo.setFocusable(false);
         if(edit) supplier.setText(db.purchaseSupplier(purchaseId));
 
         meta.addView(supplier,new LinearLayout.LayoutParams(0,dp(52),1.35f));
@@ -2814,7 +2814,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
         if(sale){
             invNo.setVisibility(View.GONE);
         }else{
-            invNo.setText(displayInvoiceNo(String.valueOf(db.nextPurchaseNo())));
+            invNo.setText(displayInvoiceNo(String.valueOf(db.nextPurchaseNo()))); invNo.setEnabled(false); invNo.setFocusable(false);
             content.addView(invNo,new LinearLayout.LayoutParams(-1,dp(48)));
             addSpace(5);
         }
