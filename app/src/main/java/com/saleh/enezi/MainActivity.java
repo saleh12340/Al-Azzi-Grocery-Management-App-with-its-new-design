@@ -3322,7 +3322,7 @@ void notes(){ base("الملاحظات");
                     .append("\\nرقم الفاتورة: ").append(invNo.getText().toString().trim()).append("\\n");
                 for(UnifiedInvoiceItem x:items)p.append(x.name).append(" | ").append(fmt(x.qty)).append(" | ").append(fmt(x.total)).append("\\n");
                 p.append("الإجمالي: ").append(fmt(sum)).append(" ريال");
-                showTextPreview("معاينة فاتورة الشراء",p.toString());
+                previewTextForPrint(p.toString(),party.getText().toString().trim());
             }
         });
 
