@@ -6066,7 +6066,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
 
                 LinearLayout pcard=card();
                 pcard.setPadding(dp(10),dp(8),dp(10),dp(8));
-                pcard.setBackground(outline(Color.rgb(255,250,240),1,12));
+                pcard.setBackground(outline(Color.rgb(255,250,240),12));
 
                 LinearLayout pr=new LinearLayout(this);
                 pr.setOrientation(LinearLayout.HORIZONTAL);
@@ -6075,7 +6075,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
 
                 TextView pb=tv("شراء #"+pno,11.5f);
                 pb.setTextColor(GOLD);pb.setTypeface(Typeface.DEFAULT,Typeface.BOLD);pb.setGravity(Gravity.CENTER);
-                pb.setBackground(outline(Color.rgb(255,250,235),1,8));
+                pb.setBackground(outline(Color.rgb(255,250,235),8));
                 pr.addView(pb,new LinearLayout.LayoutParams(dp(72),dp(28)));
 
                 LinearLayout pi=new LinearLayout(this);
