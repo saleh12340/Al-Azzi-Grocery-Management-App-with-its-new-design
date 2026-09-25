@@ -2730,6 +2730,10 @@ void operationActions(long customerId,String customerName,long tid,String detail
     }
     void printCurrentNotes(){if(currentNotePageId>0)printTextBluetooth(notesReceiptText());else Toast.makeText(this,"لا توجد صفحة ملاحظات للطباعة",Toast.LENGTH_SHORT).show();}
     void purchaseInvoices(){
+        // المسار القديم للمشتريات لم يعد شاشة مستقلة؛ جميع عمليات البيع والشراء تمر عبر نموذج الفواتير الموحد.
+        unifiedInvoiceForm(InvoiceType.PURCHASE);
+        return;
+        /*
         base("فواتير الشراء");
 
         // شريط الإحصائيات السريع لفواتير الشراء
@@ -2897,8 +2901,11 @@ void operationActions(long customerId,String customerName,long tid,String detail
         renderList.run();
     }
 
+        */
+    }
+
     void newPurchaseInvoice(){
-        purchaseInvoiceForm(false,0);
+        unifiedInvoiceForm(InvoiceType.PURCHASE);
     }
 
     void purchaseInvoiceForm(boolean edit,long purchaseId){
