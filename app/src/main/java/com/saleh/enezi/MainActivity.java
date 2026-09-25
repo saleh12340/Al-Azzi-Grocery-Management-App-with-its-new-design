@@ -3086,7 +3086,7 @@ void notes(){ base("الملاحظات");
         party.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         party.setTextDirection(View.TEXT_DIRECTION_RTL);
         party.setPadding(dp(9),dp(4),dp(9),dp(4));
-        party.setBackground(outline(CARD,1,10));
+        party.setBackground(outlined(CARD,1,dp(10)));
         party.setSelectAllOnFocus(true);
         party.setThreshold(1);
         party.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_dropdown_item_1line,
