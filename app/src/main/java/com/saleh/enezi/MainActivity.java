@@ -839,57 +839,14 @@ void showMoreMenu(){
         TextView welcome=tv("بقالة العزي للمواد الغذائية",18);
         welcome.setTextColor(GREEN); welcome.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         hero.addView(welcome,new LinearLayout.LayoutParams(-1,-2));
-
-        TextView sub=tv("الرئيسية",12.5f);
-        sub.setTextColor(MUTED);
-        hero.addView(sub,new LinearLayout.LayoutParams(-1,-2));
         content.addView(hero,new LinearLayout.LayoutParams(-1,-2));
         addSpace(6);
-
-        // Quick Metrics Strip
-        LinearLayout stats=new LinearLayout(this);
-        stats.setOrientation(LinearLayout.HORIZONTAL);
-        stats.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-
-        TextView mSales=tv("💰 مبيعات اليوم:\n"+fmt(safeTodaySales())+" ر.ي",12);
-        mSales.setTextColor(GREEN); mSales.setTypeface(Typeface.DEFAULT,Typeface.BOLD); mSales.setGravity(Gravity.CENTER);
-        mSales.setBackground(rounded(Color.rgb(240,250,244),dp(10)));
-        mSales.setPadding(dp(4),dp(6),dp(4),dp(6));
-        stats.addView(mSales,new LinearLayout.LayoutParams(0,-2,1.2f));
-
-        TextView mInvoices=tv("🧾 الفواتير:\n"+safeTodayInvoiceCount()+" فواتير",12);
-        mInvoices.setTextColor(DARK); mInvoices.setTypeface(Typeface.DEFAULT,Typeface.BOLD); mInvoices.setGravity(Gravity.CENTER);
-        mInvoices.setBackground(rounded(Color.rgb(245,248,252),dp(10)));
-        mInvoices.setPadding(dp(4),dp(6),dp(4),dp(6));
-        LinearLayout.LayoutParams mip=new LinearLayout.LayoutParams(0,-2,1f); mip.setMargins(dp(4),0,0,0);
-        stats.addView(mInvoices,mip);
-
-        TextView mCust=tv("👥 العملاء:\n"+safeCustomerCount()+" عميل",12);
-        mCust.setTextColor(BLUE); mCust.setTypeface(Typeface.DEFAULT,Typeface.BOLD); mCust.setGravity(Gravity.CENTER);
-        mCust.setBackground(rounded(Color.rgb(244,247,255),dp(10)));
-        mCust.setPadding(dp(4),dp(6),dp(4),dp(6));
-        LinearLayout.LayoutParams mcp=new LinearLayout.LayoutParams(0,-2,1f); mcp.setMargins(dp(4),0,0,0);
-        stats.addView(mCust,mcp);
-
-        int lowStock=safeLowStockCount();
-        if(lowStock>0){
-            TextView mLow=tv("⚠️ نواقص:\n"+lowStock+" أصناف",12);
-            mLow.setTextColor(RED); mLow.setTypeface(Typeface.DEFAULT,Typeface.BOLD); mLow.setGravity(Gravity.CENTER);
-            mLow.setBackground(rounded(Color.rgb(255,244,244),dp(10)));
-            mLow.setPadding(dp(4),dp(6),dp(4),dp(6));
-            LinearLayout.LayoutParams mlp=new LinearLayout.LayoutParams(0,-2,1.1f); mlp.setMargins(dp(4),0,0,0);
-            stats.addView(mLow,mlp);
-        }
-
-        content.addView(stats,new LinearLayout.LayoutParams(-1,-2));
-        addSpace(8);
 
         // Grid of Modules
         GridLayout grid=new GridLayout(this);
         grid.setColumnCount(2); grid.setUseDefaultMargins(false);
         grid.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         String[] labels={"🧾 الفواتير","👥 العملاء والحسابات","🏪 الموردون","📦 المخزون والأصناف","📊 التقارير","💸 الحوالات","📝 الملاحظات","⚙️ الإعدادات"};
-        String[] desc={"مبيعات وشراء وفواتير محفوظة","الأرصدة والحركات وكشوف الحساب","حسابات الموردين وسدادهم","الأصناف والكميات والأسعار","ملخص الحركات والتقارير","إنشاء ومراجعة الحوالات","دفتر الملاحظات الذكي","النسخ الاحتياطي والإعدادات"};
         View.OnClickListener[] actions={v->invoicesHub(),v->customers(),v->suppliers(),v->inventory(),v->reports(),v->transfers(),v->notes(),v->settingsHub()};
         for(int i=0;i<labels.length;i++){
             LinearLayout cardBox=new LinearLayout(this);
@@ -898,10 +855,7 @@ void showMoreMenu(){
             GradientDrawable bg=new GradientDrawable(); bg.setColor(CARD); bg.setCornerRadius(dp(14)); bg.setStroke(dp(1),BORDER);
             cardBox.setBackground(bg); cardBox.setElevation(dp(2)); cardBox.setOnClickListener(actions[i]);
             TextView t=tv(labels[i],15.5f); t.setTextColor(TEXT); t.setTypeface(Typeface.DEFAULT,Typeface.BOLD); t.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
-            TextView d=tv(desc[i],11.5f); d.setTextColor(MUTED); d.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL); d.setMaxLines(2);
-            cardBox.addView(t,new LinearLayout.LayoutParams(-1,-2));
-            addSpaceTo(cardBox,2);
-            cardBox.addView(d,new LinearLayout.LayoutParams(-1,-2));
+            cardBox.addView(t,new LinearLayout.LayoutParams(-1,dp(44)));
             GridLayout.LayoutParams gp;
             if(i==labels.length-1 && labels.length%2!=0){
                 gp=new GridLayout.LayoutParams(GridLayout.spec(i/2,1),GridLayout.spec(0,2,2f));
