@@ -2127,7 +2127,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
     }
     ArrayList<String> transferSuggestionNames(boolean receiver){return transferSuggestionNames(receiver,"");}
     ArrayList<String> transferSuggestionNames(boolean receiver,String query){
-        ArrayList<String> out=new ArrayList<>();String q=query==null?:"";
+        ArrayList<String> out=new ArrayList<>();String q=query==null?"":query;
         Cursor c=db.rawQuery("SELECT DISTINCT name FROM transfers WHERE "+(receiver?"receiver_name":"sender_name")+" LIKE ? ORDER BY id DESC LIMIT 30",new String[]{"%"+q+"%"});
         while(c.moveToNext())out.add(c.getString(0));c.close();return out;
     }
