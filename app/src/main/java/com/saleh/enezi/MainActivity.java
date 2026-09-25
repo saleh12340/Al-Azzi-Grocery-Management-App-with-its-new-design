@@ -6642,96 +6642,9 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
     }
 
     Bitmap purchaseReceiptBitmap(String no,String supplier,ArrayList<PurchaseLine> lines,double total,String date){
-        final int width=480;
-        final int margin=18;
-        final int lineH=28;
-        int rowCount=lines==null?0:lines.size();
-        int baseHeight=320+rowCount*lineH+160;
-        Bitmap b=Bitmap.createBitmap(width,baseHeight,Bitmap.Config.ARGB_8888);
-        Canvas canvas=new Canvas(b);canvas.drawColor(Color.WHITE);
-
-        Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);
-        Paint strokeP=new Paint(Paint.ANTI_ALIAS_FLAG);strokeP.setStyle(Paint.Style.STROKE);strokeP.setStrokeWidth(2);strokeP.setColor(Color.rgb(240,225,190));
-        Paint fillP=new Paint(Paint.ANTI_ALIAS_FLAG);
-
-        canvas.drawRoundRect(8,8,width-8,b.getHeight()-8,14,14,strokeP);
-
-        fillP.setColor(Color.rgb(255,250,240));
-        canvas.drawRoundRect(12,12,width-12,82,10,10,fillP);
-
-        p.setTypeface(Typeface.create("sans",Typeface.BOLD));
-        p.setTextSize(22);p.setColor(GOLD);p.setTextAlign(Paint.Align.RIGHT);
-        canvas.drawText("بقالة العزي للمواد الغذائية",width-margin-10,40,p);
-        p.setTextSize(11.5f);p.setTypeface(Typeface.create("sans",Typeface.BOLD));
-        canvas.drawText("مستقبل تجارتك يبدأ من هنا",width-margin-10,58,p);
-
-        p.setTextSize(12f);p.setColor(DARK);p.setTypeface(Typeface.create("sans",Typeface.NORMAL));
-        canvas.drawText("فاتورة شراء #"+no+"  •  "+(date==null||date.isEmpty()?db.now():date),width-margin-10,68,p);
-
-        int y=106;
-        String suppName=supplier==null||supplier.trim().isEmpty()?"مورد عام":supplier.trim();
-        fillP.setColor(Color.rgb(255,252,245));
-        canvas.drawRoundRect(margin,y,width-margin,y+38,8,8,fillP);
-        strokeP.setColor(Color.rgb(245,230,200));
-        canvas.drawRoundRect(margin,y,width-margin,y+38,8,8,strokeP);
-
-        p.setTextSize(13);p.setTypeface(Typeface.create("sans",Typeface.BOLD));p.setColor(DARK);p.setTextAlign(Paint.Align.RIGHT);
-        canvas.drawText("المورد: "+suppName,width-margin-12,y+24,p);
-        y+=48;
-
-        fillP.setColor(GOLD);
-        canvas.drawRoundRect(margin,y,width-margin,y+28,5,5,fillP);
-        p.setColor(Color.WHITE);p.setTextSize(12.5f);p.setTypeface(Typeface.create("sans",Typeface.BOLD));
-        p.setTextAlign(Paint.Align.RIGHT);
-        canvas.drawText("الصنف",width-margin-12,y+19,p);
-        p.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText("الكمية",width-margin-210,y+19,p);
-        p.setTextAlign(Paint.Align.LEFT);
-        canvas.drawText("الإجمالي",margin+12,y+19,p);
-        y+=32;
-
-        p.setTypeface(Typeface.create("sans",Typeface.NORMAL));p.setTextSize(12);
-        if(lines!=null){
-            for(int i=0;i<lines.size();i++){
-                PurchaseLine l=lines.get(i);
-                fillP.setColor(i%2==0?Color.rgb(255,254,250):Color.WHITE);
-                canvas.drawRect(margin,y,width-margin,y+lineH,fillP);
-                strokeP.setColor(Color.rgb(245,240,230));
-                canvas.drawLine(margin,y+lineH,width-margin,y+lineH,strokeP);
-
-                p.setColor(TEXT);p.setTextAlign(Paint.Align.RIGHT);
-                String iname=l.name==null?"":l.name.trim();
-                if(iname.length()>22) iname=iname.substring(0,22)+"…";
-                canvas.drawText(iname,width-margin-12,y+18,p);
-
-                p.setTextAlign(Paint.Align.CENTER);p.setColor(MUTED);
-                canvas.drawText("× "+fmt(l.qty),width-margin-210,y+18,p);
-
-                p.setTextAlign(Paint.Align.LEFT);p.setColor(GOLD);p.setTypeface(Typeface.create("sans",Typeface.BOLD));
-                canvas.drawText(fmt(l.total)+" ر.ي",margin+12,y+18,p);
-                p.setTypeface(Typeface.create("sans",Typeface.NORMAL));
-                y+=lineH;
-            }
-        }
-
-        y+=10;
-        fillP.setColor(Color.rgb(255,250,240));
-        canvas.drawRoundRect(margin,y,width-margin,y+38,8,8,fillP);
-        strokeP.setColor(Color.rgb(240,220,180));
-        canvas.drawRoundRect(margin,y,width-margin,y+38,8,8,strokeP);
-
-        p.setColor(GOLD);p.setTextSize(15);p.setTypeface(Typeface.create("sans",Typeface.BOLD));
-        p.setTextAlign(Paint.Align.RIGHT);
-        canvas.drawText("إجمالي فاتورة الشراء:",width-margin-12,y+24,p);
-        p.setTextAlign(Paint.Align.LEFT);
-        canvas.drawText(fmt(total)+" ريال",margin+12,y+24,p);
-        y+=48;
-
-        p.setTextAlign(Paint.Align.CENTER);p.setColor(MUTED);p.setTextSize(11);p.setTypeface(Typeface.create("sans",Typeface.NORMAL));
-        canvas.drawText("✨ بقالة العزي للمواد الغذائية • سجل المشتريات والمخزون ✨",width/2,y+12,p);
-        y+=22;
-
-        return Bitmap.createBitmap(b,0,0,width,Math.min(y+16,b.getHeight()));
+        // نفس مولد الإيصال الحراري 58mm المستخدم للمبيعات: لا A4 ولا 480px.
+        String text=purchaseReceiptText(no,supplier,lines==null?new ArrayList<PurchaseLine>():lines,total,date);
+        return receiptBitmap(text,384);
     }
 
 
@@ -6841,13 +6754,17 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
 
     void sharePurchaseInvoice(long id,String no,String supplier,double total,String date){
         try{
+            // Re-read the saved purchase and share only its generated receipt image.
             ArrayList<PurchaseLine> lines=loadPurchaseLines(id);
             String text=purchaseReceiptText(no,supplier,lines,total,date);
             Bitmap b=purchaseReceiptBitmap(no,supplier,lines,total,date);
             Uri uri=saveReceiptBitmap(b,"purchase_"+no);
-            String phone=db.supplierPhoneByName(supplier);
-            shareWhatsAppToCustomer(phone,text,uri);
-        }catch(Exception e){shareText(purchaseReceiptText(no,supplier,loadPurchaseLines(id),total,date));}
+            if(uri==null||!"content".equalsIgnoreCase(uri.getScheme())) throw new IllegalStateException("invalid purchase receipt URI");
+            shareWhatsAppToCustomer(db.supplierPhoneByName(supplier),text,uri);
+        }catch(Exception e){
+            android.util.Log.e("AlAzziShare","Purchase receipt share failed",e);
+            Toast.makeText(this,"تعذر إنشاء إيصال شراء 58mm للمشاركة",Toast.LENGTH_LONG).show();
+        }
     }
 
 
@@ -7276,16 +7193,10 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
 
     void shareInvoiceImage(String no,String customer,ArrayList<Line> lines,double total,double paid,double balanceAfter,String date){
         try{
-            Bitmap b=invoiceReceiptBitmap(no,customer,lines,total,paid,balanceAfter,date);
-            Uri uri=saveReceiptBitmap(b,no);
-            Intent i=new Intent(Intent.ACTION_SEND);
-            i.setType("image/png");
-            i.putExtra(Intent.EXTRA_STREAM,uri);
-            String text=invoiceWhatsAppText(no,customer,lines,total,paid,balanceAfter,date);
-            i.putExtra(Intent.EXTRA_TEXT,text);
-            i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            startActivity(Intent.createChooser(i,"مشاركة صورة الإيصال"));
-        }catch(Exception e){Toast.makeText(this,"تعذر مشاركة صورة الإيصال",Toast.LENGTH_SHORT).show();}
+            shareSavedInvoiceReceipt(no);
+        }catch(Exception e){
+            Toast.makeText(this,"تعذر مشاركة صورة الإيصال",Toast.LENGTH_SHORT).show();
+        }
     }
 
 
@@ -7848,9 +7759,9 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         p.setTextAlign(Paint.Align.RIGHT);
         canvas.drawText("اسم الصنف",width-margin-4,y+17,p);
         p.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText("الكمية",margin+nameWidth+qtyWidth/2,y+17,p);
+        canvas.drawText("الكمية",margin+totalWidth+qtyWidth/2,y+17,p);
         p.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText("الإجمالي",margin+nameWidth+qtyWidth+totalWidth/2,y+17,p);
+        canvas.drawText("الإجمالي",margin+totalWidth/2,y+17,p);
         y+=30;
 
         // Rows: item names wrap; quantity and total stay in their columns.
@@ -7865,16 +7776,16 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
             }
             StaticLayout sl=nameLayouts.get(idx);
             canvas.save();
-            canvas.translate(width-margin-nameWidth,y+1);
+            canvas.translate(margin+totalWidth+qtyWidth,y+1);
             sl.draw(canvas);
             canvas.restore();
 
             p.setColor(TEXT);
             p.setTextAlign(Paint.Align.CENTER);
-            canvas.drawText(fmt(l.qty),margin+nameWidth+qtyWidth/2,y+Math.min(rh-5,17),p);
+            canvas.drawText(fmt(l.qty),margin+totalWidth+qtyWidth/2,y+Math.max(15,rh/2+5),p);
             p.setColor(GREEN);
             p.setTypeface(Typeface.create("sans",Typeface.BOLD));
-            canvas.drawText(fmt(l.total),margin+nameWidth+qtyWidth+totalWidth/2,y+Math.min(rh-5,17),p);
+            canvas.drawText(fmt(l.total),margin+totalWidth/2,y+Math.max(15,rh/2+5),p);
             p.setTypeface(Typeface.create("sans",Typeface.NORMAL));
             y+=rh;
         }
