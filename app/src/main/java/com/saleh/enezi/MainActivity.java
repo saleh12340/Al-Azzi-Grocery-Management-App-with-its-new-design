@@ -3455,8 +3455,12 @@ void notes(){ base("الملاحظات");
         out.append("------------------------------\nالرصيد الحالي: ").append(fmt(Math.abs(supplierBalance(name)))).append(" ").append(supplierBalanceLabel(supplierBalance(name)));return out.toString();
     }
     void shareSupplierStatement(String name,String phone,String statement){
-        Bitmap b=supplierStatementBitmap(statement);Uri uri=saveReceiptBitmap(b,"حساب_مورد_"+System.currentTimeMillis());
-        shareWhatsAppToCustomer(phone,statement,uri);
+        try{
+            Bitmap b=supplierStatementBitmap(statement);Uri uri=saveReceiptBitmap(b,"حساب_مورد_"+System.currentTimeMillis());
+            shareWhatsAppToCustomer(phone,statement,uri);
+        }catch(Exception e){
+            Toast.makeText(this,"تعذر تجهيز كشف حساب المورد للمشاركة",Toast.LENGTH_SHORT).show();
+        }
     }
     Bitmap supplierStatementBitmap(String text){
         String[] lines=text.split("\n",-1);int h=Math.max(420,lines.length*34+80);Bitmap b=Bitmap.createBitmap(480,h,Bitmap.Config.ARGB_8888);Canvas c=new Canvas(b);c.drawColor(Color.WHITE);Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);p.setColor(Color.BLACK);p.setTextSize(25);p.setTextAlign(Paint.Align.RIGHT);float y=42;for(String line:lines){c.drawText(line,460,y,p);y+=32;if(y>h-20)break;}return b;
