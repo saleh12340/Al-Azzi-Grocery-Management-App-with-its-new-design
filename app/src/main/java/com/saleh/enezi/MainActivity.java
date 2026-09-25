@@ -1289,7 +1289,7 @@ void showGeneralActions(){
         Runnable updateCustomerBalance=()->{
             String cn=customer.getText().toString().trim();
             double cb=getCustomerPriorBalance(cn,edit,origCustomer,origNetImpact);
-            customerBalance.setText((edit?"رصيد العميل السابق (قبل هذه الفاتورة): ":"رصيد العميل السابق: ")+balanceText(cb));
+            customerBalance.setText("رصيد العميل: "+balanceText(cb));
             double paidPreview=0;try{paidPreview=Double.parseDouble(paid.getText().toString().trim());}catch(Exception ignored){}
             double invPreview=0;for(Line lx:lines)invPreview+=lx.total;
             double net=cb+invPreview-paidPreview;
