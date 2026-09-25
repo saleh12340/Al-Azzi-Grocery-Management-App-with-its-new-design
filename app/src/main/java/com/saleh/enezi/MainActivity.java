@@ -44,7 +44,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class MainActivity extends Activity {
-    static final int REQ_CONTACTS=4101, PICK_CONTACT=4102, REQ_CAMERA_SCAN=4103, REQ_GALLERY_SCAN=4104, REQ_PERM_CAMERA=4105, REQ_AUDIO=5110, REQ_VOICE_SEARCH=5111, REQ_VOICE_DETAIL=5112;
+    static final int REQ_CONTACTS=4101, PICK_CONTACT=4102, PICK_TRANSFER_RECEIVER=4110, PICK_TRANSFER_SENDER=4111, REQ_CAMERA_SCAN=4103, REQ_GALLERY_SCAN=4104, REQ_PERM_CAMERA=4105, REQ_AUDIO=5110, REQ_VOICE_SEARCH=5111, REQ_VOICE_DETAIL=5112;
     EditText customerNameInput, customerPhoneInput;
     static final int GREEN=Color.rgb(23,107,91), DARK=Color.rgb(18,63,54), GOLD=Color.rgb(217,154,43), BLUE=Color.rgb(37,99,235), RED=Color.rgb(184,74,58);
     static final int BG=Color.rgb(247,244,236), TEXT=Color.rgb(23,33,31), MUTED=Color.rgb(82,92,88), CARD=Color.WHITE;
@@ -52,6 +52,7 @@ public class MainActivity extends Activity {
     volatile boolean startupFinished=false; DB db; LinearLayout root,content,bottom; PopupWindow learningPopup; TextView pageTitle; int textSize=16; String currentPage="الرئيسية"; ArrayDeque<String> pageStack=new ArrayDeque<>(); long currentNotePageId=-1; int noteFontSize=14; boolean noteScrollMode=true;
     Uri cameraScanTempUri; Bitmap scanRawBitmap; String scanFilterMode="magic"; float scanRotation=0; String scanCategoryFilter="الكل"; String scanSearchQuery="";
     EditText transferSenderName,transferSenderPhone,transferReceiverName,transferReceiverPhone,transferContactNameTarget,transferContactPhoneTarget;
+    boolean invoiceSaveInProgress=false;
     EditText activeVoiceField;
 
     @Override public void onCreate(Bundle b){
@@ -326,9 +327,9 @@ public class MainActivity extends Activity {
             }
         });
         if(isNumericOrFinancial(h)){
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                e.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);
-            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) e.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);
+            e.setPrivateImeOptions("noAutoCorrect noSuggestions noLearning");
+            e.setAutofillHints(new String[0]); e.setSaveEnabled(false);
         } else {
             attachLearning(e,h);
         }
@@ -409,8 +410,9 @@ public class MainActivity extends Activity {
     }
     EditText numberField(String h){
         EditText e=field(h);
-        e.setInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);
-        e.setRawInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        e.setInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL|InputType.TYPE_NUMBER_VARIATION_NORMAL);
+        e.setRawInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL|InputType.TYPE_NUMBER_VARIATION_NORMAL);
+        e.setPrivateImeOptions("noAutoCorrect noSuggestions noLearning");
         e.setKeyListener(DigitsKeyListener.getInstance("0123456789."));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             e.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);
@@ -422,6 +424,7 @@ public class MainActivity extends Activity {
         EditText e=field(h);
         e.setInputType(InputType.TYPE_CLASS_PHONE);
         e.setRawInputType(InputType.TYPE_CLASS_PHONE);
+        e.setPrivateImeOptions("noAutoCorrect noSuggestions noLearning");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             e.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);
         }
@@ -829,9 +832,9 @@ void showMoreMenu(){
         GridLayout grid=new GridLayout(this);
         grid.setColumnCount(2); grid.setUseDefaultMargins(false);
         grid.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        String[] labels={"🧾 الفواتير","👥 العملاء والحسابات","🏪 الموردون","🛒 المشتريات","📦 المخزون والأصناف","📊 التقارير","💸 الحوالات","📝 الملاحظات","⚙️ الإعدادات"};
-        String[] desc={"مبيعات وشراء وفواتير محفوظة","الأرصدة والحركات وكشوف الحساب","حسابات الموردين وسدادهم","فواتير الشراء وتحديث المخزون","الأصناف والكميات والأسعار","ملخص الحركات والتقارير","إنشاء ومراجعة الحوالات","دفتر الملاحظات الذكي","النسخ الاحتياطي والإعدادات"};
-        View.OnClickListener[] actions={v->invoicesHub(),v->customers(),v->suppliers(),v->purchaseInvoices(),v->inventory(),v->reports(),v->transfers(),v->notes(),v->settingsHub()};
+        String[] labels={"🧾 الفواتير","👥 العملاء والحسابات","🏪 الموردون","📦 المخزون والأصناف","📊 التقارير","💸 الحوالات","📝 الملاحظات","⚙️ الإعدادات"};
+        String[] desc={"مبيعات وشراء وفواتير محفوظة","الأرصدة والحركات وكشوف الحساب","حسابات الموردين وسدادهم","الأصناف والكميات والأسعار","ملخص الحركات والتقارير","إنشاء ومراجعة الحوالات","دفتر الملاحظات الذكي","النسخ الاحتياطي والإعدادات"};
+        View.OnClickListener[] actions={v->invoicesHub(),v->customers(),v->suppliers(),v->inventory(),v->reports(),v->transfers(),v->notes(),v->settingsHub()};
         for(int i=0;i<labels.length;i++){
             LinearLayout cardBox=new LinearLayout(this);
             cardBox.setOrientation(LinearLayout.VERTICAL); cardBox.setGravity(Gravity.CENTER_VERTICAL);
@@ -856,7 +859,6 @@ void showMoreMenu(){
         content.addView(grid,new LinearLayout.LayoutParams(-1,-2));
         addSpace(8);
 
-        addHomeFab();
     }
     void addHomeFab(){
         if(root==null||root.getChildCount()<3) return;
@@ -3203,7 +3205,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
          * The UI, item model, validation, navigation order and calculations are shared.
          * Only persistence delegates to the existing real sales/purchase database paths.
          */
-        base(type==InvoiceType.SALE?"فاتورة مبيعات":"فاتورة شراء");
+        base("الفواتير");
         final boolean sale=type==InvoiceType.SALE;
 
         LinearLayout toggle=new LinearLayout(this);
@@ -3218,7 +3220,12 @@ void operationActions(long customerId,String customerName,long tid,String detail
         pp.setMargins(dp(5),0,0,0);
         toggle.addView(pb,pp);
         content.addView(toggle);
-        addSpace(7);
+        addSpace(5);
+        TextView invoiceHeaderNo=tv((sale?"فاتورة مبيعات رقم ":"فاتورة شراء رقم ")+displayInvoiceNo(String.valueOf(sale?db.nextInvoice():db.nextPurchaseNo())),15.5f);
+        invoiceHeaderNo.setTextColor(sale?GREEN:GOLD); invoiceHeaderNo.setTypeface(Typeface.DEFAULT,Typeface.BOLD); invoiceHeaderNo.setGravity(Gravity.CENTER);
+        invoiceHeaderNo.setBackground(outlined(Color.WHITE,1,dp(10)));
+        content.addView(invoiceHeaderNo,new LinearLayout.LayoutParams(-1,dp(40)));
+        addSpace(5);
 
         AutoCompleteTextView party=new AutoCompleteTextView(this);
         party.setHint(sale?"اسم العميل":"اسم المورد");
@@ -3238,14 +3245,8 @@ void operationActions(long customerId,String customerName,long tid,String detail
         content.addView(party,new LinearLayout.LayoutParams(-1,dp(48)));
         addSpace(5);
 
-        EditText invNo=field("رقم فاتورة الشراء");
-        if(sale){
-            invNo.setVisibility(View.GONE);
-        }else{
-            invNo.setText(displayInvoiceNo(String.valueOf(db.nextPurchaseNo()))); invNo.setEnabled(false); invNo.setFocusable(false);
-            content.addView(invNo,new LinearLayout.LayoutParams(-1,dp(48)));
-            addSpace(5);
-        }
+        TextView invNo=tv(displayInvoiceNo(String.valueOf(sale?db.nextInvoice():db.nextPurchaseNo())),13.5f);
+        invNo.setVisibility(View.GONE);
 
         LinearLayout itemBox=card();
         itemBox.setPadding(dp(6),dp(6),dp(6),dp(6));
@@ -3439,6 +3440,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
                 double paidAmount=parseDoubleSafe(paidRef==null?"":paidRef.getText().toString(),0);
                 if(paidAmount<0){Toast.makeText(this,"المبلغ المدفوع غير صحيح",Toast.LENGTH_SHORT).show();return;}
                 String no=displayInvoiceNo(String.valueOf(db.nextInvoice()));
+                invoiceHeaderNo.setText("فاتورة مبيعات رقم "+no);
                 String knownPhone=db.phoneByName(partyName).trim();
                 if(knownPhone.isEmpty() && !"نقدي".equals(partyName) && !"عميل نقدي".equals(partyName)){
                     showPhoneDialog(partyName,no,salesLines,sum,paidAmount,false,-1);
@@ -3447,6 +3449,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
                 }
             }else{
                 String no=invNo.getText().toString().trim();
+                invoiceHeaderNo.setText("فاتورة شراء رقم "+no);
                 if(no.isEmpty()){invNo.setError("رقم الفاتورة مطلوب");return;}
                 saveUnifiedPurchase(partyName,no,purchaseLines,sum);
             }
@@ -5395,7 +5398,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
             SQLiteDatabase d=getWritableDatabase(); String requested=canon(no); if(requested.isEmpty())requested=String.valueOf(nextInvoice());
             ContentValues v=new ContentValues();v.put("no",requested);v.put("customer",c);v.put("total",t);v.put("paid",paid);v.put("date",date);
             try{return d.insertOrThrow("invoices",null,v);}
-            catch(SQLiteConstraintException e){String fresh=String.valueOf(nextSequentialInvoiceNo("invoices"));v.put("no",fresh);return d.insertOrThrow("invoices",null,v);}
+            catch(SQLiteConstraintException e){ return -2; }
         }
         void addTransaction(long id,double a,String d,int type,String date){if(id<1)return;ContentValues v=new ContentValues();v.put("customer_id",id);v.put("amount",a);v.put("details",d);v.put("type",type);v.put("date",date);getWritableDatabase().insert("transactions",null,v);}
         double balance(long id){Cursor c=getReadableDatabase().rawQuery("SELECT COALESCE(SUM(CASE WHEN type=1 THEN amount ELSE -amount END),0) FROM transactions WHERE customer_id=?",new String[]{String.valueOf(id)});double x=c.moveToFirst()?c.getDouble(0):0;c.close();return x;}
@@ -5434,7 +5437,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
             SQLiteDatabase d=getWritableDatabase(); String requested=canon(no); if(requested.isEmpty())requested=String.valueOf(nextPurchaseNo());
             ContentValues v=new ContentValues();v.put("no",requested);v.put("supplier",supplier);v.put("total",total);v.put("date",date);
             try{return d.insertOrThrow("purchase_invoices",null,v);}
-            catch(SQLiteConstraintException e){String fresh=String.valueOf(nextSequentialInvoiceNo("purchase_invoices"));v.put("no",fresh);return d.insertOrThrow("purchase_invoices",null,v);}
+            catch(SQLiteConstraintException e){ return -2; }
         }
         void replacePurchaseLines(long id,ArrayList<PurchaseLine> ls){SQLiteDatabase d=getWritableDatabase();for(PurchaseLine l:ls){ContentValues v=new ContentValues();v.put("purchase_id",id);v.put("name",l.name);v.put("qty",l.qty);v.put("cost",l.cost);v.put("sale",l.sale);v.put("total",l.total);d.insert("purchase_items",null,v);}}
         void updateStockFromPurchase(ArrayList<PurchaseLine> ls){
@@ -7140,7 +7143,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         double bal=db.balanceByName(customer);
         String phone=db.phoneByName(customer);
         StringBuilder s=new StringBuilder();
-        s.append("بقالة العزي للمواد الغذائية :\n");
+        s.append("بقالة العزي\nفاتورة ").append((no==null||no.trim().isEmpty())?"":("#"+no.trim())).append("\n");
         if(customer!=null&&!customer.trim().isEmpty()) s.append(customer.trim()).append("\n");
         if(Math.abs(bal)<0.005){
             s.append("الإجمالي - خالص (0 يمني)");
@@ -7517,7 +7520,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         }else{
             s.append("عليك ").append(fmt(total)).append(" يمني\n");
         }
-        s.append("حق ");
+        s.append("الأصناف: ");
         if(lines!=null&&!lines.isEmpty()){
             StringBuilder items=new StringBuilder();
             for(int i=0;i<lines.size();i++){
@@ -7534,15 +7537,10 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
             s.append(!cust.isEmpty()?cust:"مشتريات");
         }
         s.append("\n\n");
-        if(!cust.isEmpty()&&Math.abs(balanceAfter)>=0.005){
-            if(balanceAfter>0.005){
-                s.append("الإجمالي - عليك ").append(fmt(balanceAfter)).append(" يمني");
-            }else{
-                s.append("الإجمالي - له ").append(fmt(Math.abs(balanceAfter))).append(" يمني");
-            }
-        }else{
-            s.append("الإجمالي - خالص (0 يمني)");
-        }
+        s.append("المتبقي: ").append(fmt(Math.max(0,total-paid))).append(" ريال\n");
+        if(balanceAfter>0.005) s.append("الرصيد التراكمي: ").append(fmt(balanceAfter)).append(" ريال عليك");
+        else if(balanceAfter<-0.005) s.append("الرصيد التراكمي: ").append(fmt(Math.abs(balanceAfter))).append(" ريال له");
+        else s.append("الرصيد التراكمي: 0 ريال");
         return s.toString();
     }
 
@@ -7749,7 +7747,7 @@ Uri saveReceiptBitmap(Bitmap bitmap,String no)throws Exception{
             long cid=customer==null||customer.trim().isEmpty()?-1:db.customerIdByName(customer.trim());
             double bal=cid>0?db.balance(cid):0;
             String text=invoiceWhatsAppText(no,customer,lines,total,paid,bal,db.now());
-            Bitmap b=invoiceReceiptBitmap(no,customer,lines,total,paid,bal,db.now());
+            Bitmap b=receiptBitmap(text,384);
             Uri uri=saveReceiptBitmap(b,no);
             String phone=db.phoneByName(customer);
             shareWhatsAppToCustomer(phone,text,uri);
