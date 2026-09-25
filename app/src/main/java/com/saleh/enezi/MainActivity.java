@@ -3422,7 +3422,7 @@ void notes(){ base("الملاحظات");
         TextView head=tv(name,18);head.setTextColor(DARK);head.setTypeface(Typeface.DEFAULT,Typeface.BOLD);head.setGravity(Gravity.CENTER);
         content.addView(head,new LinearLayout.LayoutParams(-1,dp(42)));
         double current=supplierBalance(name);
-        TextView bal=tv("الرصيد الحالي: "+fmt(Math.abs(current))+" ر.ي • "+supplierBalanceLabel(current),16);bal.setGravity(Gravity.CENTER);bal.setTypeface(Typeface.DEFAULT,Typeface.BOLD);bal.setTextColor(current>0.005?RED:(current< -0.005?BLUE:GREEN));bal.setBackground(outline(Color.WHITE,1,12));content.addView(bal,new LinearLayout.LayoutParams(-1,dp(52)));addSpace(5);
+        TextView bal=tv("الرصيد الحالي: "+fmt(Math.abs(current))+" ر.ي • "+supplierBalanceLabel(current),16);bal.setGravity(Gravity.CENTER);bal.setTypeface(Typeface.DEFAULT,Typeface.BOLD);bal.setTextColor(current>0.005?RED:(current< -0.005?BLUE:GREEN));bal.setBackground(outlined(Color.WHITE,1,dp(12)));content.addView(bal,new LinearLayout.LayoutParams(-1,dp(52)));addSpace(5);
         LinearLayout top=new LinearLayout(this);top.setOrientation(LinearLayout.HORIZONTAL);top.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         Button pay=action("＋ سداد للمورد",RED),share=button("مشاركة الحساب");
         top.addView(pay,new LinearLayout.LayoutParams(0,dp(42),1));LinearLayout.LayoutParams shp=new LinearLayout.LayoutParams(0,dp(42),1);shp.setMargins(dp(5),0,0,0);top.addView(share,shp);content.addView(top);addSpace(6);
