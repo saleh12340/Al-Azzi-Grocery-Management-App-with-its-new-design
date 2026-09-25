@@ -1415,7 +1415,7 @@ void showGeneralActions(){
         fSave.setOnClickListener(v->{
             if(invoiceSaveInProgress || !fSave.isEnabled()) return;
             fSave.setEnabled(false);
-            if(lines.isEmpty(){ fSave.setEnabled(true);{Toast.makeText(this,"أضف صنفاً واحداً على الأقل",Toast.LENGTH_SHORT).show();return;}
+            if(lines.isEmpty()){ fSave.setEnabled(true); Toast.makeText(this,"أضف صنفاً واحداً على الأقل",Toast.LENGTH_SHORT).show(); return; }
             String cn=customer.getText().toString().trim();
             // السماح بالفاتورة النقدية بدون إنشاء حساب عميل.
             if(cn.isEmpty() || "نقدي".equals(cn) || "عميل نقدي".equals(cn)){
