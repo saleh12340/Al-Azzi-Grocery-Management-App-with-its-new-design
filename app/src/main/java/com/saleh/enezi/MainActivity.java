@@ -5668,7 +5668,17 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
             Cursor c=getReadableDatabase().rawQuery("SELECT COALESCE(SUM(amount),0) FROM transactions WHERE customer_id=? AND type=0",new String[]{String.valueOf(id)});
             double x=c.moveToFirst()?c.getDouble(0):0;c.close();return x;
         }
-        Cursor customers(String q){return getReadableDatabase().rawQuery("SELECT id,name,COALESCE(phone,'') FROM customers WHERE name LIKE ? OR phone LIKE ? ORDER BY name",new String[]{"%"+q+"%","%"+q+"%"});}
+        Cursor customers(String q){
+            // ترتيب العملاء حسب آخر نشاط فعلي على الحساب، وليس حسب تاريخ إضافة العميل أو الاسم.
+            // نأخذ أحدث تاريخ من الحركات والفواتير المرتبطة بالعميل، ثم نستخدم ID لكسر التعادل.
+            return getReadableDatabase().rawQuery(
+                "SELECT c.id,c.name,COALESCE(c.phone,'')," +
+                "MAX(COALESCE((SELECT MAX(t.date) FROM transactions t WHERE t.customer_id=c.id),'')," +
+                "COALESCE((SELECT MAX(i.date) FROM invoices i WHERE i.customer=c.name),'')) AS last_activity " +
+                "FROM customers c WHERE c.name LIKE ? OR c.phone LIKE ? " +
+                "ORDER BY datetime(last_activity) DESC, c.id DESC",
+                new String[]{"%"+q+"%","%"+q+"%"});
+        }
         Cursor transactions(long id){return getReadableDatabase().rawQuery("SELECT id,date,details,amount,type FROM transactions WHERE customer_id=? ORDER BY datetime(date) DESC, id DESC",new String[]{String.valueOf(id)});}
         Cursor transactionsChronological(long id){return getReadableDatabase().rawQuery("SELECT id,date,details,amount,type FROM transactions WHERE customer_id=? ORDER BY datetime(date) ASC, id ASC",new String[]{String.valueOf(id)});}
         int nextPurchaseNo(){return nextSequentialInvoiceNo("purchase_invoices");}
