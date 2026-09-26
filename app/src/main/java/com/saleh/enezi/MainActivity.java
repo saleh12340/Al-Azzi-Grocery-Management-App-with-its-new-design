@@ -1996,8 +1996,8 @@ void operationActions(long customerId,String customerName,long tid,String detail
     Bitmap operationBitmap(String customer,String details,double amount,int type,String invNo){
         double balanceAfter=operationBalanceAtTime(customer,details,amount,type);
         String text=compactOperationText(customer,details,amount,type,invNo)
-                +"\\nالتاريخ والوقت: "+db.now()
-                +"\\n"+operationBalanceLabel(balanceAfter);
+                +"\nالتاريخ والوقت: "+db.now()
+                +"\n"+operationBalanceLabel(balanceAfter);
         return receiptBitmap(text,384);
     }
 
@@ -3471,7 +3471,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
             else{
                 StringBuilder p=new StringBuilder("بقالة العزي للمواد الغذائية\nفاتورة شراء\\nالمورد: ").append(party.getText().toString().trim())
                     .append("\nرقم الفاتورة: ").append(invNo.getText().toString().trim()).append("\n");
-                for(UnifiedInvoiceItem x:items)p.append(x.name).append(" | ").append(fmt(x.qty)).append(" | ").append(fmt(x.total)).append("\\n");
+                for(UnifiedInvoiceItem x:items)p.append(x.name).append(" | ").append(fmt(x.qty)).append(" | ").append(fmt(x.total)).append("\n");
                 p.append("الإجمالي: ").append(fmt(sum)).append(" ريال");
                 previewTextForPrint(p.toString(),party.getText().toString().trim());
             }
