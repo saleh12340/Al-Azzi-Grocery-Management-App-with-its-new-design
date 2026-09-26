@@ -2806,7 +2806,52 @@ void operationActions(long customerId,String customerName,long tid,String detail
         addSpace(6);
         LinearLayout split=new LinearLayout(this);split.setOrientation(LinearLayout.HORIZONTAL);split.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);split.addView(noteColumn("الشق الأيسر",left,1,pid),new LinearLayout.LayoutParams(0,-2,1));LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(0,-2,1);rp.setMargins(dp(4),0,0,0);split.addView(noteColumn("الشق الأيمن",right,2,pid),rp);content.addView(split,new LinearLayout.LayoutParams(-1,-2));
     }
-    LinearLayout noteColumn(String title,ArrayList<NoteItem> items,int side,long pid){LinearLayout col=new LinearLayout(this);col.setOrientation(LinearLayout.VERTICAL);col.setPadding(dp(3),dp(3),dp(3),dp(5));col.setBackground(outlined(Color.WHITE,1,12));TextView h=tv(title,11);h.setTextColor(side==1?GREEN:BLUE);h.setTypeface(Typeface.DEFAULT,Typeface.BOLD);h.setGravity(Gravity.CENTER);col.addView(h,new LinearLayout.LayoutParams(-1,dp(30)));if(items.isEmpty()){TextView e=tv("لا توجد عناصر",9);e.setTextColor(MUTED);e.setGravity(Gravity.CENTER);col.addView(e,new LinearLayout.LayoutParams(-1,dp(52)));return col;}for(NoteItem it:items){LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);row.setGravity(Gravity.CENTER_VERTICAL);row.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);row.setPadding(dp(2),dp(3),dp(2),dp(3));row.setBackground(outlined(CARD,1,9));Button del=button("🗑");del.setTextColor(RED);del.setOnClickListener(v->{db.deleteNoteItem(pid,it.name,it.qty,it.side);notes();});TextView nm=tv(it.name,noteFontSize);nm.setTextColor(Color.BLACK);nm.setMaxLines(Integer.MAX_VALUE);nm.setEllipsize(null);TextView q=tv(fmt(it.qty),noteFontSize);q.setGravity(Gravity.CENTER);q.setTypeface(Typeface.DEFAULT,Typeface.BOLD);row.addView(del,new LinearLayout.LayoutParams(dp(38),dp(44)));row.addView(nm,new LinearLayout.LayoutParams(0,dp(44),1));row.addView(q,new LinearLayout.LayoutParams(dp(45),dp(44)));col.addView(row,new LinearLayout.LayoutParams(-1,-2));spaceTo(col,2);}return col;}
+    LinearLayout noteColumn(String title,ArrayList<NoteItem> items,int side,long pid){
+        LinearLayout col=new LinearLayout(this);
+        col.setOrientation(LinearLayout.VERTICAL);
+        col.setPadding(dp(4),dp(4),dp(4),dp(6));
+        col.setBackground(outlined(Color.WHITE,1,12));
+        TextView h=tv(title,12);
+        h.setTextColor(side==1?GREEN:BLUE);
+        h.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        h.setGravity(Gravity.CENTER);
+        col.addView(h,new LinearLayout.LayoutParams(-1,dp(32)));
+        if(items.isEmpty()){
+            TextView e=tv("لا توجد عناصر",10);
+            e.setTextColor(MUTED);
+            e.setGravity(Gravity.CENTER);
+            col.addView(e,new LinearLayout.LayoutParams(-1,dp(52)));
+            return col;
+        }
+        for(NoteItem it:items){
+            LinearLayout row=new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+            row.setPadding(dp(4),dp(6),dp(4),dp(6));
+            row.setBackground(outlined(CARD,1,9));
+            Button del=button("🗑");
+            del.setTextColor(RED);
+            del.setTextSize(12f);
+            del.setOnClickListener(v->{db.deleteNoteItem(pid,it.name,it.qty,it.side);notes();});
+            TextView nm=tv(it.name,noteFontSize);
+            nm.setTextColor(Color.BLACK);
+            nm.setSingleLine(false);
+            nm.setMaxLines(10);
+            nm.setEllipsize(null);
+            TextView q=tv(fmt(it.qty),noteFontSize);
+            q.setGravity(Gravity.CENTER);
+            q.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+            row.addView(del,new LinearLayout.LayoutParams(dp(36),dp(40)));
+            row.addView(nm,new LinearLayout.LayoutParams(0,-2,1));
+            row.addView(q,new LinearLayout.LayoutParams(dp(45),dp(40)));
+            LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,-2);
+            rp.setMargins(0,0,0,dp(4));
+            col.addView(row,rp);
+            spaceTo(col,2);
+        }
+        return col;
+    }
     void addNoteItem(long pid,EditText name,EditText qty,int side){String n=name.getText().toString().trim();double q=0; try { q=Double.parseDouble(qty.getText().toString().trim().replace(",", ".")); } catch(Exception ignored) {}if(n.isEmpty()){Toast.makeText(this,"اكتب اسم الصنف أولاً",Toast.LENGTH_SHORT).show();return;}if(q<=0){Toast.makeText(this,"العدد يجب أن يكون أكبر من صفر",Toast.LENGTH_SHORT).show();return;}db.addNoteItem(pid,n,q,side);name.setText("");qty.setText("1");notes();}
     void clearNotesPage(){if(currentNotePageId<1)return;new AlertDialog.Builder(this).setTitle("تفريغ الصفحة").setMessage("سيتم حذف عناصر الصفحة الحالية فقط. هل تريد المتابعة؟").setNegativeButton("إلغاء",null).setPositiveButton("تفريغ",(d,w)->{db.clearNoteItems(currentNotePageId);notes();}).show();}
     void newNotesPage(){if(currentNotePageId>0)db.touchNotePage(currentNotePageId);currentNotePageId=db.createNotePage("ملاحظة جديدة",db.now());notes();}
@@ -2849,12 +2894,83 @@ void operationActions(long customerId,String customerName,long tid,String detail
         s.append("------------------------------\n");
         return s.toString();
     }
+    Bitmap notesReceiptBitmap(){
+        final int width=384, margin=10, contentWidth=width-(margin*2);
+        final float bodyPx=13f*(203f/160f), smallPx=bodyPx*0.86f;
+        TextPaint body=new TextPaint(Paint.ANTI_ALIAS_FLAG|Paint.SUBPIXEL_TEXT_FLAG);
+        body.setColor(TEXT); body.setTypeface(Typeface.create("sans",Typeface.NORMAL));
+        body.setTextSize(bodyPx);
+
+        ArrayList<NoteItem> left=new ArrayList<>(), right=new ArrayList<>();
+        db.loadNoteItems(currentNotePageId,left,right);
+
+        ArrayList<String> lines=new ArrayList<>();
+        lines.add("بقالة العزي للمواد الغذائية");
+        lines.add("الملاحظات الذكية (شقين)");
+        lines.add("التاريخ: "+db.now());
+
+        if(!left.isEmpty()){
+            lines.add("--- الشق الأيسر ---");
+            for(NoteItem x:left){
+                lines.add(x.name+" × "+fmt(x.qty));
+            }
+        }
+        if(!right.isEmpty()){
+            lines.add("--- الشق الأيمن ---");
+            for(NoteItem x:right){
+                lines.add(x.name+" × "+fmt(x.qty));
+            }
+        }
+
+        ArrayList<StaticLayout> layouts=new ArrayList<>();
+        int height=12;
+        for(int i=0; i<lines.size(); i++){
+            String value=lines.get(i);
+            TextPaint p=new TextPaint(body);
+            if(i<3 || value.startsWith("---")){
+                p.setTypeface(Typeface.create("sans",Typeface.BOLD));
+                if(i==0) p.setTextSize(bodyPx); else p.setTextSize(smallPx);
+            }
+            StaticLayout sl=StaticLayout.Builder.obtain(value,0,value.length(),p,contentWidth)
+                .setAlignment(i<3 || value.startsWith("---")?Layout.Alignment.ALIGN_CENTER:Layout.Alignment.ALIGN_OPPOSITE)
+                .setIncludePad(true).setLineSpacing(0,1)
+                .setTextDirection(android.text.TextDirectionHeuristics.RTL).build();
+            layouts.add(sl); height+=sl.getHeight()+6;
+        }
+        height+=15;
+
+        Bitmap bmp=Bitmap.createBitmap(width,Math.max(150,height),Bitmap.Config.ARGB_8888);
+        Canvas canvas=new Canvas(bmp); canvas.drawColor(Color.WHITE);
+        int y=6;
+        for(int i=0; i<layouts.size(); i++){
+            StaticLayout sl=layouts.get(i);
+            canvas.save(); canvas.translate(margin,y); sl.draw(canvas); canvas.restore();
+            y+=sl.getHeight()+6;
+            if(i==2 || (i>2 && lines.get(i).startsWith("---"))){
+                Paint divider=new Paint(Paint.ANTI_ALIAS_FLAG); divider.setColor(DARK);
+                canvas.drawRect(margin, y, width-margin, y+2, divider);
+                y+=6;
+            }
+        }
+        return Bitmap.createBitmap(bmp,0,0,width,Math.min(y+10,bmp.getHeight()));
+    }
     void shareCurrentNotes(){
         if(currentNotePageId>0){
             shareText(notesWhatsAppText());
         }else Toast.makeText(this,"لا توجد صفحة ملاحظات للمشاركة",Toast.LENGTH_SHORT).show();
     }
-    void printCurrentNotes(){if(currentNotePageId>0)printTextBluetooth(notesReceiptText());else Toast.makeText(this,"لا توجد صفحة ملاحظات للطباعة",Toast.LENGTH_SHORT).show();}
+    void printCurrentNotes(){
+        if(currentNotePageId>0){
+            try{
+                Bitmap bmp=notesReceiptBitmap();
+                printBitmapBluetooth(bmp);
+            }catch(Exception e){
+                printTextBluetooth(notesReceiptText());
+            }
+        }else{
+            Toast.makeText(this,"لا توجد صفحة ملاحظات للطباعة",Toast.LENGTH_SHORT).show();
+        }
+    }
     void purchaseInvoices(){
         // المسار القديم للمشتريات لم يعد شاشة مستقلة؛ جميع عمليات البيع والشراء تمر عبر نموذج الفواتير الموحد.
         unifiedInvoiceForm(InvoiceType.PURCHASE);
