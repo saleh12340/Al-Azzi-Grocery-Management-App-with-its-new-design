@@ -859,19 +859,19 @@ void showMoreMenu(){
         View.OnClickListener[] actions={v->invoicesHub(),v->customers(),v->suppliers(),v->inventory(),v->reports(),v->transfers(),v->notes(),v->settingsHub()};
         for(int i=0;i<labels.length;i++){
             LinearLayout cardBox=new LinearLayout(this);
-            cardBox.setOrientation(LinearLayout.VERTICAL); cardBox.setGravity(Gravity.CENTER_VERTICAL);
-            cardBox.setPadding(dp(10),dp(9),dp(10),dp(9)); cardBox.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-            GradientDrawable bg=new GradientDrawable(); bg.setColor(CARD); bg.setCornerRadius(dp(14)); bg.setStroke(dp(1),BORDER);
-            cardBox.setBackground(bg); cardBox.setElevation(dp(2)); cardBox.setOnClickListener(actions[i]);
-            TextView t=tv(labels[i],16f); t.setTextColor(TEXT); t.setTypeface(Typeface.DEFAULT,Typeface.BOLD); t.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
-            cardBox.addView(t,new LinearLayout.LayoutParams(-1,dp(44)));
+            cardBox.setOrientation(LinearLayout.VERTICAL); cardBox.setGravity(Gravity.CENTER);
+            cardBox.setPadding(dp(14),dp(14),dp(14),dp(14)); cardBox.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+            GradientDrawable bg=new GradientDrawable(); bg.setColor(CARD); bg.setCornerRadius(dp(16)); bg.setStroke(dp(1.5f),BORDER);
+            cardBox.setBackground(bg); cardBox.setElevation(dp(4)); cardBox.setOnClickListener(actions[i]);
+            TextView t=tv(labels[i],18f); t.setTextColor(TEXT); t.setTypeface(Typeface.DEFAULT,Typeface.BOLD); t.setGravity(Gravity.CENTER);
+            cardBox.addView(t,new LinearLayout.LayoutParams(-1,-2));
             GridLayout.LayoutParams gp;
             if(i==labels.length-1 && labels.length%2!=0){
                 gp=new GridLayout.LayoutParams(GridLayout.spec(i/2,1),GridLayout.spec(0,2,2f));
-                gp.width=0; gp.height=dp(88); gp.setMargins(dp(3),dp(3),dp(3),dp(3));
+                gp.width=0; gp.height=dp(105); gp.setMargins(dp(6),dp(6),dp(6),dp(6));
             }else{
                 gp=new GridLayout.LayoutParams(GridLayout.spec(i/2,1),GridLayout.spec(i%2,1,1f));
-                gp.width=0; gp.height=dp(88); gp.setMargins(dp(3),dp(3),dp(3),dp(3));
+                gp.width=0; gp.height=dp(105); gp.setMargins(dp(6),dp(6),dp(6),dp(6));
             }
             grid.addView(cardBox,gp);
         }
@@ -2178,6 +2178,19 @@ void operationActions(long customerId,String customerName,long tid,String detail
         return Bitmap.createBitmap(bmp,0,0,width,Math.min(y+8,bmp.getHeight()));
     }
 
+    Bitmap statementReceiptBitmap(long customerId,String name){
+        String text=statement(customerId,name);
+        return receiptBitmap(text,384);
+    }
+    void printAccountStatementBluetooth(long customerId,String name){
+        try{
+            Bitmap bmp=statementReceiptBitmap(customerId,name);
+            printBitmapBluetooth(bmp);
+        }catch(Exception e){
+            Toast.makeText(this,"تعذر تجهيز كشف الحساب الكامل للطباعة",Toast.LENGTH_SHORT).show();
+        }
+    }
+
     void printBitmapBluetooth(Bitmap bitmap){
         if(bitmap==null){Toast.makeText(this,"لا يوجد كشف للطباعة",Toast.LENGTH_SHORT).show();return;}
         if(Build.VERSION.SDK_INT>=31&&checkSelfPermission("android.permission.BLUETOOTH_CONNECT")!=PackageManager.PERMISSION_GRANTED){
@@ -2207,15 +2220,11 @@ void operationActions(long customerId,String customerName,long tid,String detail
 
     void printOperation(String customer,String details,double amount,int type,String invNo){
         try{
-            ArrayList<Line> ls=new ArrayList<>();
-            if(invNo!=null&&!invNo.isEmpty()){
-                long iid=db.invoiceIdByNo(invNo);
-                if(iid>0){Cursor c=db.invoiceLines(iid);while(c.moveToNext())ls.add(new Line(c.getString(1),c.getDouble(2),c.getDouble(3)));c.close();}
-            }
-            String text=!ls.isEmpty()?receiptTextFromLines(invNo,customer,ls,totalOf(ls),db.customer(customer)):
-                "بقالة العزي للمواد الغذائية\nعملية مالية\nالعميل: "+customer+"\n"+(details==null||details.isEmpty()?"":details+"\n")+(type==1?"عليه: ":"له: ")+fmt(amount)+" ريال\n"+balanceText(db.balanceByName(customer))+"\nالتاريخ: "+db.now();
-            previewTextForPrint(text,customer);
-        }catch(Exception e){Toast.makeText(this,"تعذر تجهيز العملية للطباعة",Toast.LENGTH_LONG).show();}
+            Bitmap bmp=operationBitmap(customer,details,amount,type,invNo);
+            printBitmapBluetooth(bmp);
+        }catch(Exception e){
+            Toast.makeText(this,"تعذر تجهيز العملية للطباعة",Toast.LENGTH_LONG).show();
+        }
     }
 
     void previewTextForPrint(String text,String customer){
@@ -8305,10 +8314,10 @@ void account(long id,String name){
         LinearLayout tools=new LinearLayout(this);
         tools.setOrientation(LinearLayout.HORIZONTAL);
         tools.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        Button pdf=button("📄 PDF"), img=button("🖼️ صورة"), waShare=button("📲 واتساب"), shareSel=button("📤 كشف محدد"), printSel=button("🖨️ 58mm");
-        Button[] toolBtns={pdf,img,waShare,shareSel,printSel};
+        Button pdf=button("📄 PDF"), img=button("🖼️ صورة"), waShare=button("📲 واتساب"), printAll=button("🖨️ كشف كامل"), shareSel=button("📤 كشف محدد"), printSel=button("🖨️ 58mm محددة");
+        Button[] toolBtns={pdf,img,waShare,printAll,shareSel,printSel};
         for(Button b:toolBtns){
-            b.setTextSize(11f);
+            b.setTextSize(9.5f);
             b.setPadding(0,0,0,0);
             b.setBackground(glassFill(Color.argb(185,245,248,252)));
             b.setTextColor(DARK);
@@ -8316,6 +8325,7 @@ void account(long id,String name){
         pdf.setOnClickListener(v->shareAccountPdfToWhatsApp(id,name));
         img.setOnClickListener(v->saveAccountStatementImage(id,name));
         waShare.setOnClickListener(v->shareAccountPdfToWhatsApp(id,name));
+        printAll.setOnClickListener(v->printAccountStatementBluetooth(id,name));
         shareSel.setOnClickListener(v->{if(selectedIds.isEmpty())Toast.makeText(this,"حدد عملية أولاً",Toast.LENGTH_SHORT).show();else shareSelectedTransactions(id,name,new ArrayList<>(selectedIds));});
         printSel.setOnClickListener(v->{if(selectedIds.isEmpty())Toast.makeText(this,"حدد عملية أولاً",Toast.LENGTH_SHORT).show();else printSelectedTransactions(id,name,new ArrayList<>(selectedIds));});
         for(int i=0;i<toolBtns.length;i++){
