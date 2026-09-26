@@ -46,9 +46,9 @@ import java.util.*;
 public class MainActivity extends Activity {
     static final int REQ_CONTACTS=4101, PICK_CONTACT=4102, PICK_TRANSFER_RECEIVER=4110, PICK_TRANSFER_SENDER=4111, REQ_CAMERA_SCAN=4103, REQ_GALLERY_SCAN=4104, REQ_PERM_CAMERA=4105, REQ_AUDIO=5110, REQ_VOICE_SEARCH=5111, REQ_VOICE_DETAIL=5112;
     EditText customerNameInput, customerPhoneInput;
-    static final int GREEN=Color.rgb(244,176,120), DARK=Color.rgb(111,78,112), GOLD=Color.rgb(244,176,120), BLUE=Color.rgb(111,78,112), RED=Color.rgb(111,78,112);
+    static final int ORANGE=Color.rgb(244,176,120), GRAPE=Color.rgb(111,78,112);\n    static final int ORANGE_SOFT=Color.argb(153,244,176,120), GRAPE_SOFT=Color.argb(153,111,78,112);\n    static final int GREEN=ORANGE, DARK=GRAPE, GOLD=ORANGE, BLUE=GRAPE, RED=GRAPE;
     static final int BG=Color.WHITE, TEXT=Color.rgb(45,35,45), MUTED=Color.rgb(105,90,105), CARD=Color.WHITE;
-    static final int SURFACE_ALT=Color.rgb(255,248,242), BORDER=Color.rgb(226,210,222);
+    static final int SURFACE_ALT=Color.rgb(255,248,242), BORDER=Color.rgb(226,210,222), ACCENT_LINE=ORANGE_SOFT;
     volatile boolean startupFinished=false; DB db; LinearLayout root,content,bottom; boolean darkCardMode=false; PopupWindow learningPopup; TextView pageTitle; int textSize=16; String currentPage="الرئيسية"; ArrayDeque<String> pageStack=new ArrayDeque<>(); long currentNotePageId=-1; int noteFontSize=14; boolean noteScrollMode=true;
     Uri cameraScanTempUri; Bitmap scanRawBitmap; String scanFilterMode="magic"; float scanRotation=0; String scanCategoryFilter="الكل"; String scanSearchQuery="";
     EditText transferSenderName,transferSenderPhone,transferReceiverName,transferReceiverPhone,transferContactNameTarget,transferContactPhoneTarget;
@@ -59,8 +59,8 @@ public class MainActivity extends Activity {
     @Override public void onCreate(Bundle b){
         super.onCreate(b);
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
-        getWindow().setStatusBarColor(DARK);
-        getWindow().setNavigationBarColor(DARK);
+        getWindow().setStatusBarColor(ORANGE_SOFT);
+        getWindow().setNavigationBarColor(GRAPE_SOFT);
 
         // تجهيز قاعدة البيانات قبل فتح أي شاشة يمنع سباقاً كان يسمح للمستخدم
         // بفتح شاشة تعتمد على db قبل اكتمال تهيئتها، وهو سبب محتمل لانهيار التطبيق.
