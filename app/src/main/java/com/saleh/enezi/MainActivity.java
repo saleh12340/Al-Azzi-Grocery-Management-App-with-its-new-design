@@ -2069,24 +2069,140 @@ void operationActions(long customerId,String customerName,long tid,String detail
     }
 
     void printSelectedTransactions(long customerId,String name,ArrayList<Long> ids){
-        StringBuilder text=new StringBuilder("بقالة العزي للمواد الغذائية\nكشف عمليات: ").append(name).append("\nالتاريخ: ").append(db.now()).append("\n");
-        text.append("------------------------------\n");
-        double debit=0,credit=0;
-        for(Long tid:ids){
-            Cursor c=db.transactionById(tid);
-            if(c.moveToFirst()){
-                String d=c.getString(3);double a=c.getDouble(4);int t=c.getInt(5);
-                text.append(c.getString(2)).append("\n");
-                text.append(t==1?"عليه: ":"له: ").append(fmt(a)).append(" ريال");
-                if(d!=null&&!d.trim().isEmpty())text.append(" | ").append(d.trim());
-                text.append("\n");
-                if(t==1)debit+=a;else credit+=a;
-            }c.close();
+        try{
+            Bitmap receipt=selectedTransactionsReceiptBitmap(customerId,name,ids);
+            printBitmapBluetooth(receipt);
+        }catch(Throwable e){
+            android.util.Log.e("AlAzziBluetooth","Selected transactions receipt generation failed",e);
+            Toast.makeText(this,"تعذر تجهيز كشف العمليات للطباعة 58mm",Toast.LENGTH_LONG).show();
         }
-        text.append("------------------------------\nإجمالي المحدد عليه: ").append(fmt(debit)).append(" ريال\n");
-        text.append("إجمالي المحدد له: ").append(fmt(credit)).append(" ريال\n");
-        text.append("الرصيد الحالي: ").append(balanceText(db.balance(customerId)));
-        previewTextForPrint(text.toString(),name);
+    }
+
+    Bitmap selectedTransactionsReceiptBitmap(long customerId,String name,ArrayList<Long> ids){
+        final int width=384, margin=14, contentWidth=width-(margin*2);
+        final float bodyPx=13f*(203f/160f), smallPx=bodyPx*0.86f;
+        TextPaint body=new TextPaint(Paint.ANTI_ALIAS_FLAG|Paint.SUBPIXEL_TEXT_FLAG);
+        body.setColor(TEXT); body.setTypeface(Typeface.create("sans",Typeface.NORMAL));
+        body.setTextSize(bodyPx);
+
+        ArrayList<String> rows=new ArrayList<>();
+        double debit=0,credit=0;
+        if(ids!=null){
+            for(Long tid:ids){
+                if(tid==null) continue;
+                Cursor c=null;
+                try{
+                    c=db.transactionById(tid);
+                    if(c.moveToFirst()){
+                        String date=c.getString(2)==null?"":c.getString(2).replace('T',' ');
+                        if(date.length()>16) date=date.substring(0,16);
+                        String details=c.getString(3)==null?"":c.getString(3).trim();
+                        double amount=c.getDouble(4);
+                        int type=c.getInt(5);
+                        String kind=type==1?"عليه":"له";
+                        String line=kind+": "+fmt(amount)+" ريال";
+                        if(!details.isEmpty()) line+="\n"+details;
+                        if(!date.isEmpty()) line+="\n"+date;
+                        rows.add(line);
+                        if(type==1) debit+=amount; else credit+=amount;
+                    }
+                }finally{if(c!=null)c.close();}
+            }
+        }
+
+        ArrayList<StaticLayout> layouts=new ArrayList<>();
+        int height=12;
+        String header="بقالة العزي للمواد الغذائية";
+        String title="كشف عمليات محددة";
+        String customer="العميل: "+(name==null?"":name.trim());
+        for(String value:new String[]{header,title,customer}){
+            TextPaint p=new TextPaint(body);
+            p.setTypeface(Typeface.create("sans",Typeface.BOLD));
+            p.setTextSize(value.equals(header)?bodyPx:smallPx);
+            StaticLayout sl=StaticLayout.Builder.obtain(value,0,value.length(),p,contentWidth)
+                .setAlignment(Layout.Alignment.ALIGN_CENTER)
+                .setIncludePad(true).setLineSpacing(0,1)
+                .setTextDirection(android.text.TextDirectionHeuristics.RTL).build();
+            layouts.add(sl); height+=sl.getHeight()+5;
+        }
+        for(String value:rows){
+            StaticLayout sl=StaticLayout.Builder.obtain(value,0,value.length(),body,contentWidth)
+                .setAlignment(Layout.Alignment.ALIGN_OPPOSITE)
+                .setIncludePad(true).setLineSpacing(0,1)
+                .setTextDirection(android.text.TextDirectionHeuristics.RTL).build();
+            layouts.add(sl); height+=sl.getHeight()+8;
+        }
+        String[] totals={
+            "إجمالي المحدد عليه: "+fmt(debit)+" ريال",
+            "إجمالي المحدد له: "+fmt(credit)+" ريال",
+            "الرصيد الحالي: "+balanceText(db.balance(customerId))
+        };
+        for(String value:totals){
+            TextPaint p=new TextPaint(body);
+            p.setTypeface(Typeface.create("sans",Typeface.BOLD)); p.setTextSize(smallPx);
+            StaticLayout sl=StaticLayout.Builder.obtain(value,0,value.length(),p,contentWidth)
+                .setAlignment(Layout.Alignment.ALIGN_OPPOSITE)
+                .setIncludePad(true).setLineSpacing(0,1)
+                .setTextDirection(android.text.TextDirectionHeuristics.RTL).build();
+            layouts.add(sl); height+=sl.getHeight()+5;
+        }
+        height+=12;
+
+        Bitmap bmp=Bitmap.createBitmap(width,Math.max(150,height),Bitmap.Config.ARGB_8888);
+        Canvas canvas=new Canvas(bmp); canvas.drawColor(Color.WHITE);
+        int y=6;
+        int index=0;
+        for(String ignored:new String[]{header,title,customer}){
+            StaticLayout sl=layouts.get(index++);
+            canvas.save(); canvas.translate(margin,y); sl.draw(canvas); canvas.restore();
+            y+=sl.getHeight()+5;
+        }
+        Paint divider=new Paint(Paint.ANTI_ALIAS_FLAG);
+        divider.setColor(DARK);
+        canvas.drawRect(margin,y,width-margin,y+3,divider); y+=8;
+        for(int i=0;i<rows.size();i++){
+            StaticLayout sl=layouts.get(index++);
+            if((i&1)==0){
+                Paint bgp=new Paint(Paint.ANTI_ALIAS_FLAG); bgp.setColor(SURFACE_ALT);
+                canvas.drawRect(margin,y,width-margin,y+sl.getHeight()+5,bgp);
+            }
+            canvas.save(); canvas.translate(margin,y+2); sl.draw(canvas); canvas.restore();
+            y+=sl.getHeight()+8;
+        }
+        canvas.drawRect(margin,y,width-margin,y+3,divider); y+=8;
+        for(int i=0;i<totals.length;i++){
+            StaticLayout sl=layouts.get(index++);
+            canvas.save(); canvas.translate(margin,y); sl.draw(canvas); canvas.restore();
+            y+=sl.getHeight()+5;
+        }
+        return Bitmap.createBitmap(bmp,0,0,width,Math.min(y+8,bmp.getHeight()));
+    }
+
+    void printBitmapBluetooth(Bitmap bitmap){
+        if(bitmap==null){Toast.makeText(this,"لا يوجد كشف للطباعة",Toast.LENGTH_SHORT).show();return;}
+        if(Build.VERSION.SDK_INT>=31&&checkSelfPermission("android.permission.BLUETOOTH_CONNECT")!=PackageManager.PERMISSION_GRANTED){
+            Toast.makeText(this,"يلزم السماح باتصال Bluetooth للطباعة.",Toast.LENGTH_LONG).show();
+            return;
+        }
+        BluetoothAdapter a=BluetoothAdapter.getDefaultAdapter();
+        if(a==null){Toast.makeText(this,"هذا الجهاز لا يدعم البلوتوث",Toast.LENGTH_LONG).show();return;}
+        if(!a.isEnabled()){Toast.makeText(this,"فعّل البلوتوث ثم أعد الضغط على الطباعة",Toast.LENGTH_LONG).show();return;}
+        String addr=getSharedPreferences("printer_settings",MODE_PRIVATE).getString("printer_address","");
+        BluetoothDevice saved=null;
+        if(!addr.isEmpty()){try{saved=a.getRemoteDevice(addr);}catch(Exception ignored){}}
+        if(saved!=null){new Thread(()->sendBitmapToBluetooth(saved,bitmap)).start();return;}
+        Set<BluetoothDevice> paired=a.getBondedDevices();
+        if(paired==null||paired.isEmpty()){
+            Toast.makeText(this,"لا توجد طابعة مقترنة. اقترن بالطابعة من إعدادات البلوتوث أولاً.",Toast.LENGTH_LONG).show();
+            return;
+        }
+        BluetoothDevice[] ds=paired.toArray(new BluetoothDevice[0]);
+        String[] names=new String[ds.length];
+        for(int i=0;i<ds.length;i++)names[i]=(ds[i].getName()==null?"طابعة 58mm":ds[i].getName())+"\n"+ds[i].getAddress();
+        new AlertDialog.Builder(this).setTitle("اختيار طابعة 58mm — أول مرة فقط").setItems(names,(d,w)->{
+            getSharedPreferences("printer_settings",MODE_PRIVATE).edit().putString("printer_address",ds[w].getAddress()).apply();
+            new Thread(()->sendBitmapToBluetooth(ds[w],bitmap)).start();
+        }).setNegativeButton("إلغاء",null).show();
     }
 
     void printOperation(String customer,String details,double amount,int type,String invNo){
