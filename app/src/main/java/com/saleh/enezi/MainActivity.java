@@ -64,7 +64,7 @@ public class MainActivity extends Activity {
         super.onCreate(b);
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         getWindow().setStatusBarColor(ORANGE_SOFT);
-        getWindow().setNavigationBarColor(GRAPE_SOFT);
+        getWindow().setNavigationBarColor(BLUE_SOFT);
 
         // تجهيز قاعدة البيانات قبل فتح أي شاشة يمنع سباقاً كان يسمح للمستخدم
         // بفتح شاشة تعتمد على db قبل اكتمال تهيئتها، وهو سبب محتمل لانهيار التطبيق.
