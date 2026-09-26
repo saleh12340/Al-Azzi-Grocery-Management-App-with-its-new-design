@@ -44,7 +44,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class MainActivity extends Activity {
-    static final int REQ_CONTACTS=4101, PICK_CONTACT=4102, PICK_TRANSFER_RECEIVER=4110, PICK_TRANSFER_SENDER=4111, REQ_CAMERA_SCAN=4103, REQ_GALLERY_SCAN=4104, REQ_PERM_CAMERA=4105, REQ_AUDIO=5110, REQ_VOICE_SEARCH=5111, REQ_VOICE_DETAIL=5112;
+    static final int REQ_CONTACTS=4101, PICK_CONTACT=4102, PICK_TRANSFER_RECEIVER=4110, PICK_TRANSFER_SENDER=4111, REQ_CAMERA_SCAN=4103, REQ_GALLERY_SCAN=4104, REQ_PERM_CAMERA=4105, REQ_AUDIO=5110, REQ_VOICE_SEARCH=5111, REQ_VOICE_DETAIL=5112, REQ_VOICE_FIELD=5113;
     EditText customerNameInput, customerPhoneInput;
     static final int ORANGE=Color.rgb(242,142,54), BLUE_PRIMARY=Color.rgb(30,91,170);
     static final int ORANGE_SOFT=Color.argb(153,242,142,54), BLUE_SOFT=Color.argb(153,30,91,170);
@@ -322,6 +322,18 @@ public class MainActivity extends Activity {
         e.setTextDirection(View.TEXT_DIRECTION_RTL);
         e.setSelectAllOnFocus(true);
         e.setOnClickListener(v -> e.selectAll());
+        try{
+            e.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_btn_speak_now,0,0,0);
+            e.setCompoundDrawablePadding(dp(4));
+            e.setOnTouchListener((v,event)->{
+                if(event.getAction()==MotionEvent.ACTION_UP && event.getX()<=dp(34)){
+                    e.setTag("fieldVoice");
+                    startVoiceInput(e,"تحدث لإدخال النص",REQ_VOICE_FIELD);
+                    return true;
+                }
+                return false;
+            });
+        }catch(Throwable ignored){}
         e.setOnFocusChangeListener((v,has)->{
             if(has){
                 e.setBackground(outlined(Color.WHITE,dp(2),12));
@@ -610,7 +622,8 @@ void showMoreMenu(){
         if(requestCode==REQ_AUDIO){
             if(grantResults.length>0&&grantResults[0]==PackageManager.PERMISSION_GRANTED&&activeVoiceField!=null){
                 boolean detail=activeVoiceField.getTag()!=null&&"detailVoice".equals(activeVoiceField.getTag());
-                startVoiceInput(activeVoiceField,detail?"تحدث بالبيان أو تفاصيل العملية":"تحدث باسم العميل أو رقم الهاتف",detail?REQ_VOICE_DETAIL:REQ_VOICE_SEARCH);
+                int req=activeVoiceField.getTag()!=null&&"fieldVoice".equals(activeVoiceField.getTag())?REQ_VOICE_FIELD:(detail?REQ_VOICE_DETAIL:REQ_VOICE_SEARCH);
+                startVoiceInput(activeVoiceField,detail?"تحدث بالبيان أو تفاصيل العملية":"تحدث باسم العميل أو رقم الهاتف",req);
             }else Toast.makeText(this,"يلزم السماح بالميكروفون لاستخدام الإدخال الصوتي",Toast.LENGTH_SHORT).show();
         }
     }
@@ -647,7 +660,7 @@ void showMoreMenu(){
                 }
             }catch(Exception e){Toast.makeText(this,"تعذر قراءة بيانات جهة الاتصال",Toast.LENGTH_SHORT).show();}
             finally{if(c!=null)c.close();}
-        }else if((requestCode==REQ_VOICE_SEARCH||requestCode==REQ_VOICE_DETAIL)&&resultCode==RESULT_OK&&data!=null){
+        }else if((requestCode==REQ_VOICE_SEARCH||requestCode==REQ_VOICE_DETAIL||requestCode==REQ_VOICE_FIELD)&&resultCode==RESULT_OK&&data!=null){
             ArrayList<String> results=data.getStringArrayListExtra(android.speech.RecognizerIntent.EXTRA_RESULTS);
             if(activeVoiceField!=null&&results!=null&&!results.isEmpty()){
                 String spoken=results.get(0)==null?"":results.get(0).trim();
@@ -2325,7 +2338,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
     static class NoteItem { String name; double qty; int side; NoteItem(String n,double q,int s){name=n;qty=q;side=s;} }
     void transfers(){
         base("الحوالات");
-        darkCardMode=true;
+        darkCardMode=false;
         applyDenseGlassPage();
         addSpace(4);
 
@@ -2360,6 +2373,9 @@ void operationActions(long customerId,String customerName,long tid,String detail
         rn.setPadding(dp(10),0,dp(10),0);
         rn.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_dropdown_item_1line,transferSuggestionNames(true)));
         transferReceiverName=rn;
+        rn.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_btn_speak_now,0,0,0);
+        rn.setCompoundDrawablePadding(dp(4));
+        rn.setOnTouchListener((v,event)->{ if(event.getAction()==MotionEvent.ACTION_UP && event.getX()<=dp(34)){ rn.setTag("fieldVoice"); startVoiceInput(rn,"تحدث باسم المستلم",REQ_VOICE_FIELD); return true; } return false; });
         transferReceiverPhone=phoneField("رقم المستلم");
         transferReceiverPhone.setTextSize(15);
 
@@ -2385,6 +2401,9 @@ void operationActions(long customerId,String customerName,long tid,String detail
         sn.setPadding(dp(10),0,dp(10),0);
         sn.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_dropdown_item_1line,transferSuggestionNames(false)));
         transferSenderName=sn;
+        sn.setCompoundDrawablesWithIntrinsicBounds(android.R.drawable.ic_btn_speak_now,0,0,0);
+        sn.setCompoundDrawablePadding(dp(4));
+        sn.setOnTouchListener((v,event)->{ if(event.getAction()==MotionEvent.ACTION_UP && event.getX()<=dp(34)){ sn.setTag("fieldVoice"); startVoiceInput(sn,"تحدث باسم المرسل",REQ_VOICE_FIELD); return true; } return false; });
         transferSenderPhone=phoneField("رقم المرسل");
         transferSenderPhone.setTextSize(15);
 
@@ -2478,14 +2497,39 @@ void operationActions(long customerId,String customerName,long tid,String detail
 
         final String[] lastText={""},lastPhone={""};
 
+        Runnable updatePreview=()->{
+            String av=amount.getText().toString().trim();
+            String r=rn.getText().toString().trim(),rp=transferReceiverPhone.getText().toString().trim();
+            String sName=sn.getText().toString().trim(),sp=transferSenderPhone.getText().toString().trim();
+            if(av.isEmpty()&&r.isEmpty()&&rp.isEmpty()&&sName.isEmpty()&&sp.isEmpty()){
+                preview.setText("لم يتم إدخال بيانات الحوالة بعد.");
+                return;
+            }
+            double a=parseDoubleSafe(av.replace(",",""),0);
+            StringBuilder live=new StringBuilder();
+            live.append(a>0?fmt(a)+" صافي":"المبلغ: "+(av.isEmpty()?"—":av));
+            if(!r.isEmpty()) live.append("\nالمستلم ").append(r);
+            if(!rp.isEmpty()) live.append("\n").append(rp);
+            if(!sName.isEmpty()) live.append("\nالمرسل ").append(sName);
+            if(!sp.isEmpty()) live.append("\n").append(sp);
+            preview.setText(live.toString());
+        };
+        TextWatcher liveWatcher=new TextWatcher(){
+            public void beforeTextChanged(CharSequence s,int st,int c,int a){}
+            public void onTextChanged(CharSequence s,int st,int before,int count){ updatePreview.run(); }
+            public void afterTextChanged(Editable e){}
+        };
         amount.addTextChangedListener(new TextWatcher(){
             public void beforeTextChanged(CharSequence s,int st,int c,int a){}
             public void onTextChanged(CharSequence s,int st,int b,int c){
                 double a=parseDoubleSafe(amount.getText().toString().replace(",","").trim(),0);
                 netBadge.setText(a>0?fmt(a)+" صافي\n"+amountInWords(a):"0 صافي");
+                updatePreview.run();
             }
             public void afterTextChanged(Editable e){}
         });
+        rn.addTextChangedListener(liveWatcher); transferReceiverPhone.addTextChangedListener(liveWatcher);
+        sn.addTextChangedListener(liveWatcher); transferSenderPhone.addTextChangedListener(liveWatcher);
 
         Runnable build=()->{
             double a=parseDoubleSafe(amount.getText().toString().replace(",","").trim(),0);
@@ -8241,7 +8285,7 @@ void printTextBluetooth(String text,int requestedWidth){
 
 void account(long id,String name){
         base("حساب العميل");
-        darkCardMode=true;
+        darkCardMode=false;
         applyDenseGlassPage();
 
         final String customerPhone=db.phoneByName(name);
@@ -8432,7 +8476,7 @@ void account(long id,String name){
 
 
 void customers(){
-        base("الحسابات والعملاء"); darkCardMode=true; applyDenseGlassPage();
+        base("الحسابات والعملاء"); darkCardMode=false; applyDenseGlassPage();
         LinearLayout searchBar=new LinearLayout(this); searchBar.setOrientation(LinearLayout.HORIZONTAL); searchBar.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); searchBar.setGravity(Gravity.CENTER_VERTICAL);
         AutoCompleteTextView search=new AutoCompleteTextView(this);
         search.setHint("🔎 ابحث عن عميل"); search.setTextSize(16); search.setSingleLine(true); search.setThreshold(1); search.setSelectAllOnFocus(true);
