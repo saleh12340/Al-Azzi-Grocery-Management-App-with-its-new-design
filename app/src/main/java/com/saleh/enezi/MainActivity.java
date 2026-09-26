@@ -1397,6 +1397,7 @@ void showGeneralActions(){
         invoiceSaveInProgress=true;
         String customerName=(name==null?"":name.trim());
         boolean cashCustomer=customerName.isEmpty() || "نقدي".equals(customerName) || "عميل نقدي".equals(customerName);
+        String saleType=(total>0 && paid>=total)?"cash":"credit";
         if(paid<0 || total<0){invoiceSaveInProgress=false;Toast.makeText(this,"بيانات الفاتورة غير صحيحة.",Toast.LENGTH_SHORT).show();return;}
         if(lines==null||lines.isEmpty()){invoiceSaveInProgress=false;Toast.makeText(this,"أضف صنفاً واحداً على الأقل.",Toast.LENGTH_SHORT).show();return;}
         String stockWarning=db.saleStockWarning(lines,edit?oldId:-1);
@@ -1410,11 +1411,11 @@ void showGeneralActions(){
             if(edit){
                 String oldNo=db.invoiceNo(oldId);
                 db.deleteInvoiceTransactions(oldNo);
-                db.updateInvoice(oldId,no,storedCustomer,total,paid,date);
+                db.updateInvoice(oldId,no,storedCustomer,total,paid,date,saleType);
                 db.replaceInvoiceLines(oldId,lines);
                 if(!db.applyStockFromSale(lines,oldId)) throw new Exception("stock");
             }else{
-                long id=db.addInvoiceAuto(storedCustomer,total,paid,date);
+                long id=db.addInvoiceAuto(storedCustomer,total,paid,date,saleType);
                 if(id<=0) throw new Exception("invoice");
                 no=db.invoiceNo(id);
                 db.replaceInvoiceLines(id,lines);
@@ -2412,11 +2413,35 @@ void operationActions(long customerId,String customerName,long tid,String detail
         previewBox.addView(previewTitle,new LinearLayout.LayoutParams(-1,-2));
         addSpaceTo(previewBox,4);
 
-        TextView preview=tv("لم يتم تجهيز حوالة بعد.",14.5f);
-        preview.setTextColor(TEXT); preview.setMaxLines(20);
+        EditText preview=new EditText(this);
+        preview.setText("لم يتم تجهيز حوالة بعد.");
+        preview.setTextSize(14.5f);
+        preview.setTextColor(TEXT);
+        preview.setHintTextColor(MUTED);
+        preview.setGravity(Gravity.TOP|Gravity.RIGHT);
+        preview.setTextDirection(View.TEXT_DIRECTION_RTL);
+        preview.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        preview.setSingleLine(false);
+        preview.setHorizontallyScrolling(false);
+        preview.setInputType(InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE|InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+        preview.setImeOptions(android.view.inputmethod.EditorInfo.IME_FLAG_NO_EXTRACT_UI);
+        preview.setMaxLines(8);
+        preview.setMinLines(2);
+        preview.setVerticalScrollBarEnabled(true);
+        preview.setScrollBarStyle(View.SCROLLBARS_INSIDE_INSET);
+        preview.setOverScrollMode(View.OVER_SCROLL_IF_CONTENT_SCROLLS);
         preview.setBackground(rounded(Color.rgb(249,251,250),dp(8)));
-        preview.setPadding(dp(10),dp(8),dp(10),dp(8));
-        previewBox.addView(preview,new LinearLayout.LayoutParams(-1,-2));
+        preview.setPadding(dp(10),dp(10),dp(10),dp(10));
+        preview.setSelectAllOnFocus(false);
+        preview.setOnFocusChangeListener((v,has)->{
+            if(has) preview.postDelayed(()->((ScrollView)root.getChildAt(1)).smoothScrollTo(0,Math.max(0,preview.getBottom()-dp(260))),120);
+        });
+        preview.addTextChangedListener(new TextWatcher(){
+            public void beforeTextChanged(CharSequence s,int st,int c,int a){}
+            public void onTextChanged(CharSequence s,int st,int before,int count){preview.post(()->{preview.requestLayout();});}
+            public void afterTextChanged(Editable e){}
+        });
+        previewBox.addView(preview,new LinearLayout.LayoutParams(-1,dp(150)));
         addSpaceTo(previewBox,6);
 
         // 6. صف: نسخ | مشاركة
@@ -3917,9 +3942,143 @@ void operationActions(long customerId,String customerName,long tid,String detail
     void openRestorePicker(){Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.setType("*/*");i.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(i,8801);}
     void showSharingSettingsDialog(){android.content.SharedPreferences p=getSharedPreferences("app_settings",0);new AlertDialog.Builder(this).setTitle("إعدادات المشاركة").setMessage("WhatsApp الافتراضي: "+p.getString("share_phone","776425052")+"\nمشاركة النص والصورة متاحة عبر المشاركة النظامية.").setPositiveButton("تعديل الرقم",(d,w)->{EditText e=field("رقم WhatsApp");e.setText(p.getString("share_phone","776425052"));new AlertDialog.Builder(this).setTitle("رقم WhatsApp الافتراضي").setView(e).setPositiveButton("حفظ",(d2,w2)->p.edit().putString("share_phone",e.getText().toString().trim()).apply()).setNegativeButton("إلغاء",null).show();}).setNegativeButton("إغلاق",null).show();}
     void showPrintSettingsDialog(){new AlertDialog.Builder(this).setTitle("إعدادات الطباعة 58mm").setMessage("Bluetooth Thermal Printer — 58mm\nالمعاينة قبل الطباعة مفعلة في عمليات الطباعة.").setPositiveButton("معاينة",(d,w)->previewTextForPrint("بقالة العزي للمواد الغذائية\nاختبار طباعة 58mm\n----------------\n123,456 ر.ي","اختبار")).setNegativeButton("إغلاق",null).show();}
+    void saleTypeReport(boolean cashOnly){
+        final String reportTitle=cashOnly?"البيع النقدي":"البيع الآجل";
+        final String wantedType=cashOnly?"cash":"credit";
+        base(reportTitle);
+        section(reportTitle);
+
+        LinearLayout periodBar=new LinearLayout(this);
+        periodBar.setOrientation(LinearLayout.HORIZONTAL);
+        periodBar.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        Button pAll=button("🗂️ الكل"), pToday=button("☀️ اليوم"),
+               pYesterday=button("🌙 الأمس"), pMonth=button("🗓️ هذا الشهر");
+        for(Button b:new Button[]{pAll,pToday,pYesterday,pMonth}) b.setTextSize(11f);
+        periodBar.addView(pAll,new LinearLayout.LayoutParams(0,dp(44),1));
+        LinearLayout.LayoutParams p2=new LinearLayout.LayoutParams(0,dp(44),1); p2.setMargins(dp(3),0,0,0);
+        periodBar.addView(pToday,p2); periodBar.addView(pYesterday,p2); periodBar.addView(pMonth,p2);
+        content.addView(periodBar,new LinearLayout.LayoutParams(-1,-2));
+        addSpace(6);
+
+        EditText search=field("🔍 بحث");
+        search.setTextSize(15.5f);
+        content.addView(search,new LinearLayout.LayoutParams(-1,dp(48)));
+        addSpace(7);
+
+        LinearLayout summary=card();
+        summary.setPadding(dp(10),dp(8),dp(10),dp(8));
+        TextView countTv=tv("عدد الفواتير: 0",13);
+        TextView totalTv=tv("إجمالي البيع: 0 ر.ي",14);
+        countTv.setTextColor(DARK); totalTv.setTextColor(GREEN);
+        totalTv.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        summary.addView(countTv,new LinearLayout.LayoutParams(-1,dp(28)));
+        summary.addView(totalTv,new LinearLayout.LayoutParams(-1,dp(30)));
+        content.addView(summary,new LinearLayout.LayoutParams(-1,-2));
+        addSpace(8);
+
+        LinearLayout list=new LinearLayout(this);
+        list.setOrientation(LinearLayout.VERTICAL);
+        list.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        content.addView(list,new LinearLayout.LayoutParams(-1,-2));
+
+        final int[] period={0};
+        final String today=new SimpleDateFormat("yyyy-MM-dd",Locale.US).format(new Date());
+        final String yesterday=new SimpleDateFormat("yyyy-MM-dd",Locale.US).format(new Date(System.currentTimeMillis()-86400000L));
+        final String month=new SimpleDateFormat("yyyy-MM",Locale.US).format(new Date());
+
+        Runnable render=()->{
+            list.removeAllViews();
+            int count=0; double total=0;
+            Cursor cur=null;
+            try{
+                cur=db.getReadableDatabase().rawQuery(
+                    "SELECT id,no,COALESCE(customer,''),COALESCE(total,0),COALESCE(paid,0),COALESCE(date,''),COALESCE(sale_type,'') " +
+                    "FROM invoices WHERE sale_type=? ORDER BY datetime(date) DESC,id DESC",
+                    new String[]{wantedType});
+                String q=search.getText().toString().trim().toLowerCase(Locale.ROOT);
+                while(cur.moveToNext()){
+                    long id=cur.getLong(0);
+                    String no=cur.getString(1)==null?"":cur.getString(1);
+                    String customer=cur.getString(2)==null?"":cur.getString(2);
+                    double invoiceTotal=cur.getDouble(3), paid=cur.getDouble(4);
+                    String date=cur.getString(5)==null?"":cur.getString(5);
+
+                    if(period[0]==1&&!date.startsWith(today)) continue;
+                    if(period[0]==2&&!date.startsWith(yesterday)) continue;
+                    if(period[0]==3&&!date.startsWith(month)) continue;
+                    String searchable=(no+" "+customer+" "+date).toLowerCase(Locale.ROOT);
+                    if(!q.isEmpty()&&!searchable.contains(q)) continue;
+
+                    count++; total+=invoiceTotal;
+                    long tid=db.transactionIdForInvoice(no);
+                    double balance=tid>0?db.balanceAfterTransaction(tid):(customer.trim().isEmpty()||"نقدي".equals(customer)?0:db.balanceByName(customer));
+
+                    LinearLayout row=card();
+                    row.setPadding(dp(10),dp(8),dp(10),dp(8));
+                    TextView head=tv("فاتورة رقم "+no,13);
+                    head.setTextColor(GREEN); head.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+                    row.addView(head,new LinearLayout.LayoutParams(-1,dp(28)));
+                    row.addView(detailLine("التاريخ والوقت",date),new LinearLayout.LayoutParams(-1,-2));
+                    row.addView(detailLine("العميل",customer.trim().isEmpty()?"نقدي":customer),new LinearLayout.LayoutParams(-1,-2));
+                    row.addView(detailLine("إجمالي الفاتورة",fmt(invoiceTotal)+" ر.ي"),new LinearLayout.LayoutParams(-1,-2));
+                    row.addView(detailLine("المدفوع",fmt(paid)+" ر.ي"),new LinearLayout.LayoutParams(-1,-2));
+                    row.addView(detailLine("المتبقي",fmt(Math.max(0,invoiceTotal-paid))+" ر.ي"),new LinearLayout.LayoutParams(-1,-2));
+                    if(!cashOnly) row.addView(detailLine("الرصيد",balanceText(balance)),new LinearLayout.LayoutParams(-1,-2));
+                    row.setOnClickListener(v->showReportActivityDetails(1,no,"فاتورة "+no,invoiceTotal,date,id));
+                    LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,-2);
+                    rp.setMargins(0,0,0,dp(6));
+                    list.addView(row,rp);
+                }
+            }catch(Exception e){
+                TextView err=tv("تعذر تحميل التقرير.",12);
+                err.setTextColor(RED);
+                list.addView(err,new LinearLayout.LayoutParams(-1,dp(44)));
+            }finally{if(cur!=null)cur.close();}
+            countTv.setText("عدد الفواتير: "+count);
+            totalTv.setText("إجمالي البيع: "+fmt(total)+" ر.ي");
+            if(count==0){
+                TextView empty=tv("لا توجد فواتير مطابقة.",12.5f);
+                empty.setTextColor(MUTED); empty.setGravity(Gravity.CENTER);
+                list.addView(empty,new LinearLayout.LayoutParams(-1,dp(52)));
+            }
+        };
+
+        Runnable style=()->{
+            pAll.setTextColor(period[0]==0?Color.WHITE:TEXT); pAll.setBackground(period[0]==0?rounded(GREEN,dp(8)):outline(CARD,8));
+            pToday.setTextColor(period[0]==1?Color.WHITE:TEXT); pToday.setBackground(period[0]==1?rounded(GREEN,dp(8)):outline(CARD,8));
+            pYesterday.setTextColor(period[0]==2?Color.WHITE:TEXT); pYesterday.setBackground(period[0]==2?rounded(GOLD,dp(8)):outline(CARD,8));
+            pMonth.setTextColor(period[0]==3?Color.WHITE:TEXT); pMonth.setBackground(period[0]==3?rounded(BLUE,dp(8)):outline(CARD,8));
+            render.run();
+        };
+        pAll.setOnClickListener(v->{period[0]=0;style.run();});
+        pToday.setOnClickListener(v->{period[0]=1;style.run();});
+        pYesterday.setOnClickListener(v->{period[0]=2;style.run();});
+        pMonth.setOnClickListener(v->{period[0]=3;style.run();});
+        search.addTextChangedListener(new TextWatcher(){
+            public void beforeTextChanged(CharSequence s,int st,int c,int a){}
+            public void onTextChanged(CharSequence s,int st,int before,int count){render.run();}
+            public void afterTextChanged(Editable e){}
+        });
+        style.run();
+    }
+
     void reports(){
         base("التقارير المالية المفسّلة");
         section("التقارير");
+        LinearLayout saleReportsBar=new LinearLayout(this);
+        saleReportsBar.setOrientation(LinearLayout.HORIZONTAL);
+        saleReportsBar.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        Button cashSalesReport=button("💵 البيع النقدي");
+        Button creditSalesReport=button("⏳ البيع الآجل");
+        cashSalesReport.setTextSize(12f); creditSalesReport.setTextSize(12f);
+        saleReportsBar.addView(cashSalesReport,new LinearLayout.LayoutParams(0,dp(44),1));
+        LinearLayout.LayoutParams creditSalesLp=new LinearLayout.LayoutParams(0,dp(44),1);
+        creditSalesLp.setMargins(dp(6),0,0,0);
+        saleReportsBar.addView(creditSalesReport,creditSalesLp);
+        content.addView(saleReportsBar,new LinearLayout.LayoutParams(-1,-2));
+        addSpace(6);
+        cashSalesReport.setOnClickListener(v->saleTypeReport(true));
+        creditSalesReport.setOnClickListener(v->saleTypeReport(false));
 
         try{
             final String todayDate=new SimpleDateFormat("yyyy-MM-dd",Locale.US).format(new Date());
@@ -5188,7 +5347,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
 
     static class DB extends SQLiteOpenHelper{
         static final String DB_NAME="alazzi_grocery_runtime_v5.db";
-        DB(Context c){super(c,DB_NAME,null,4);}
+        DB(Context c){super(c,DB_NAME,null,5);}
         @Override public void onConfigure(SQLiteDatabase d){
             super.onConfigure(d);
             try{d.execSQL("PRAGMA busy_timeout=1500");}catch(Exception ignored){}
@@ -5204,7 +5363,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
         }
         void create(SQLiteDatabase d){
             d.execSQL("CREATE TABLE IF NOT EXISTS customers(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,phone TEXT,normalized_name TEXT)");
-            d.execSQL("CREATE TABLE IF NOT EXISTS invoices(id INTEGER PRIMARY KEY AUTOINCREMENT,no TEXT,customer TEXT,total REAL,paid REAL DEFAULT 0,date TEXT)");
+            d.execSQL("CREATE TABLE IF NOT EXISTS invoices(id INTEGER PRIMARY KEY AUTOINCREMENT,no TEXT,customer TEXT,total REAL,paid REAL DEFAULT 0,date TEXT,sale_type TEXT DEFAULT 'credit')");
             d.execSQL("CREATE TABLE IF NOT EXISTS transactions(id INTEGER PRIMARY KEY AUTOINCREMENT,customer_id INTEGER,amount REAL,details TEXT,type INTEGER,date TEXT)");
             d.execSQL("CREATE TABLE IF NOT EXISTS items(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT,qty REAL,min_qty REAL,cost REAL DEFAULT 0,sale REAL DEFAULT 0,normalized_name TEXT)");
             d.execSQL("CREATE TABLE IF NOT EXISTS invoice_items(id INTEGER PRIMARY KEY AUTOINCREMENT,invoice_id INTEGER,name TEXT,qty REAL,total REAL,unit_cost REAL DEFAULT 0)");
@@ -5227,6 +5386,8 @@ void operationActions(long customerId,String customerName,long tid,String detail
         void normalizeAndConstrain(SQLiteDatabase d){
             try{
                 d.beginTransaction();
+                ensureColumn(d,"invoices","sale_type","TEXT DEFAULT 'credit'");
+                d.execSQL("UPDATE invoices SET sale_type=CASE WHEN COALESCE(total,0)>0 AND COALESCE(paid,0)>=COALESCE(total,0) THEN 'cash' ELSE 'credit' END WHERE sale_type IS NULL OR trim(sale_type)=''");
                 ensureColumn(d,"customers","normalized_name","TEXT");
                 ensureColumn(d,"suppliers","normalized_name","TEXT");
                 ensureColumn(d,"items","normalized_name","TEXT");
@@ -5364,12 +5525,16 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
             catch(SQLiteConstraintException e){Cursor x=d.rawQuery("SELECT id FROM customers WHERE normalized_name=? LIMIT 1",new String[]{key});long id=x.moveToFirst()?x.getLong(0):-1;x.close();return id;}
         }
         long addInvoiceAuto(String c,double t,double paid,String date){
+            return addInvoiceAuto(c,t,paid,date,(t>0&&paid>=t)?"cash":"credit");
+        }
+        long addInvoiceAuto(String c,double t,double paid,String date,String saleType){
             synchronized(this){
                 SQLiteDatabase d=getWritableDatabase();
                 for(int attempt=0;attempt<8;attempt++){
                     int candidate=nextInvoice();
                     ContentValues v=new ContentValues();v.put("no",String.valueOf(candidate));
                     v.put("customer",c);v.put("total",t);v.put("paid",paid);v.put("date",date);
+                    v.put("sale_type","cash".equals(saleType)?"cash":"credit");
                     try{return d.insertOrThrow("invoices",null,v);}catch(SQLiteConstraintException collision){}
                 }
                 return -2;
@@ -5388,8 +5553,12 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
             }
         }
         long addInvoice(String no,String c,double t,double paid,String date){
+            return addInvoice(no,c,t,paid,date,(t>0&&paid>=t)?"cash":"credit");
+        }
+        long addInvoice(String no,String c,double t,double paid,String date,String saleType){
             SQLiteDatabase d=getWritableDatabase(); String requested=canon(no); if(requested.isEmpty())requested=String.valueOf(nextInvoice());
             ContentValues v=new ContentValues();v.put("no",requested);v.put("customer",c);v.put("total",t);v.put("paid",paid);v.put("date",date);
+            v.put("sale_type","cash".equals(saleType)?"cash":"credit");
             try{return d.insertOrThrow("invoices",null,v);}
             catch(SQLiteConstraintException e){ return -2; }
         }
@@ -5711,7 +5880,15 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         double balanceByName(String n){Cursor c=getReadableDatabase().rawQuery("SELECT id FROM customers WHERE name=? ORDER BY id DESC LIMIT 1",new String[]{n});if(!c.moveToFirst()){c.close();return 0;}long id=c.getLong(0);c.close();return balance(id);}
         String invoiceNo(long id){Cursor c=getReadableDatabase().rawQuery("SELECT no FROM invoices WHERE id=?",new String[]{String.valueOf(id)});String x=c.moveToFirst()?c.getString(0):"";c.close();return x==null?"":x;}
         String invoiceCustomer(long id){Cursor c=getReadableDatabase().rawQuery("SELECT customer FROM invoices WHERE id=?",new String[]{String.valueOf(id)});String x=c.moveToFirst()?c.getString(0):"";c.close();return x==null?"":x;}
-        void updateInvoice(long id,String no,String customer,double total,double paid,String date){ContentValues v=new ContentValues();v.put("no",no);v.put("customer",customer);v.put("total",total);v.put("paid",paid);v.put("date",date);getWritableDatabase().update("invoices",v,"id=?",new String[]{String.valueOf(id)});}
+        String invoiceSaleType(long id){Cursor c=getReadableDatabase().rawQuery("SELECT COALESCE(sale_type,'') FROM invoices WHERE id=?",new String[]{String.valueOf(id)});String x=c.moveToFirst()?c.getString(0):"";c.close();return x==null?"":x;}
+        void updateInvoice(long id,String no,String customer,double total,double paid,String date){
+            updateInvoice(id,no,customer,total,paid,date,(total>0&&paid>=total)?"cash":"credit");
+        }
+        void updateInvoice(long id,String no,String customer,double total,double paid,String date,String saleType){
+            ContentValues v=new ContentValues();v.put("no",no);v.put("customer",customer);v.put("total",total);v.put("paid",paid);
+            v.put("date",date);v.put("sale_type","cash".equals(saleType)?"cash":"credit");
+            getWritableDatabase().update("invoices",v,"id=?",new String[]{String.valueOf(id)});
+        }
         Cursor invoiceLines(long id){return getReadableDatabase().rawQuery("SELECT id,name,qty,total FROM invoice_items WHERE invoice_id=? ORDER BY id",new String[]{String.valueOf(id)});}
         void replaceInvoiceLines(long id,ArrayList<Line> ls){SQLiteDatabase d=getWritableDatabase();d.delete("invoice_items","invoice_id=?",new String[]{String.valueOf(id)});for(Line l:ls){ContentValues v=new ContentValues();v.put("invoice_id",id);v.put("name",l.name);v.put("qty",l.qty);v.put("total",l.total);v.put("unit_cost",itemCostPrice(l.name));d.insert("invoice_items",null,v);}}
         void deleteInvoice(long id){
