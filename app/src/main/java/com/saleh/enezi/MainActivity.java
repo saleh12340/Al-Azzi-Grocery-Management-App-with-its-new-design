@@ -514,7 +514,7 @@ public class MainActivity extends Activity {
         bottom.removeAllViews();
         LinearLayout nav=new LinearLayout(this); nav.setTag("fixedNavigation"); nav.setOrientation(LinearLayout.HORIZONTAL);
         nav.setGravity(Gravity.CENTER_VERTICAL); nav.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); nav.setPadding(dp(4),dp(3),dp(4),dp(3));
-        nav.setBackground(darkCardMode ? rounded(Color.rgb(38,50,56),dp(14)) : outlined(CARD,dp(1),dp(14))); nav.setElevation(dp(7));
+        nav.setBackground(darkCardMode ? rounded(Color.rgb(31,41,55),dp(14)) : outlined(CARD,dp(1),dp(14))); nav.setElevation(dp(7));
         String[] labels={"الفواتير","الحسابات","المخزون","المزيد"};
         String[] icons={"▤","●","□","⋮"};
         for(int i=0;i<labels.length;i++){
@@ -1572,7 +1572,7 @@ void showGeneralActions(){
     }
     GradientDrawable bg(int color,float radius){return rounded(color,dp((int)radius));}
     GradientDrawable outline(int color,float radius){return outlined(color,1,dp((int)radius));}
-    LinearLayout card(){LinearLayout c=new LinearLayout(this);c.setOrientation(LinearLayout.VERTICAL);c.setPadding(dp(12),dp(9),dp(12),dp(9));c.setBackground(darkCardMode ? rounded(Color.rgb(38,50,56),dp(14)) : outline(CARD,14));c.setElevation(dp(2));c.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);return c;}
+    LinearLayout card(){LinearLayout c=new LinearLayout(this);c.setOrientation(LinearLayout.VERTICAL);c.setPadding(dp(12),dp(9),dp(12),dp(9));c.setBackground(darkCardMode ? rounded(Color.rgb(31,41,55),dp(14)) : outline(CARD,14));c.setElevation(dp(2));c.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);return c;}
     void addCard(View v,int h){content.addView(v,new LinearLayout.LayoutParams(-1,dp(Math.max(50,h-18))));space(4);}
     void add(View v,int h){content.addView(v,new LinearLayout.LayoutParams(-1,dp(Math.max(42,h-12))));space(4);}
     void space(int h){addSpace(dp(h));}
@@ -8193,7 +8193,7 @@ void printTextBluetooth(String text,int requestedWidth){
             }
             if(bottom!=null&&bottom.getChildCount()>0){
                 View nav=bottom.getChildAt(0);
-                nav.setBackground(darkCardMode ? rounded(Color.rgb(38,50,56),dp(10)) : outlined(CARD,dp(1),dp(10)));
+                nav.setBackground(darkCardMode ? rounded(Color.rgb(31,41,55),dp(10)) : outlined(CARD,dp(1),dp(10)));
             }
         }catch(Throwable ignored){}
     }
@@ -8208,7 +8208,7 @@ void printTextBluetooth(String text,int requestedWidth){
         return t;
     }
     GradientDrawable glassFill(int color){
-        return darkCardMode ? rounded(Color.rgb(38,50,56),dp(12)) : outlined(color,dp(1),dp(12));
+        return darkCardMode ? rounded(Color.rgb(31,41,55),dp(12)) : outlined(color,dp(1),dp(12));
     }
 
 void account(long id,String name){
