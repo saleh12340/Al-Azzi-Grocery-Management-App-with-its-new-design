@@ -5386,7 +5386,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
         void normalizeAndConstrain(SQLiteDatabase d){
             try{
                 d.beginTransaction();
-                ensureColumn(d,"invoices","sale_type","TEXT DEFAULT 'credit'");
+                ensureColumn(d,"invoices","sale_type","TEXT");
                 d.execSQL("UPDATE invoices SET sale_type=CASE WHEN COALESCE(total,0)>0 AND COALESCE(paid,0)>=COALESCE(total,0) THEN 'cash' ELSE 'credit' END WHERE sale_type IS NULL OR trim(sale_type)=''");
                 ensureColumn(d,"customers","normalized_name","TEXT");
                 ensureColumn(d,"suppliers","normalized_name","TEXT");
