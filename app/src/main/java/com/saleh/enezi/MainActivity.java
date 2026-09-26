@@ -46,9 +46,9 @@ import java.util.*;
 public class MainActivity extends Activity {
     static final int REQ_CONTACTS=4101, PICK_CONTACT=4102, PICK_TRANSFER_RECEIVER=4110, PICK_TRANSFER_SENDER=4111, REQ_CAMERA_SCAN=4103, REQ_GALLERY_SCAN=4104, REQ_PERM_CAMERA=4105, REQ_AUDIO=5110, REQ_VOICE_SEARCH=5111, REQ_VOICE_DETAIL=5112;
     EditText customerNameInput, customerPhoneInput;
-    static final int GREEN=Color.rgb(23,107,91), DARK=Color.rgb(18,63,54), GOLD=Color.rgb(217,154,43), BLUE=Color.rgb(37,99,235), RED=Color.rgb(184,74,58);
-    static final int BG=Color.rgb(247,244,236), TEXT=Color.rgb(23,33,31), MUTED=Color.rgb(82,92,88), CARD=Color.WHITE;
-    static final int SURFACE_ALT=Color.rgb(242,239,231), BORDER=Color.rgb(218,213,201);
+    static final int GREEN=Color.BLACK, DARK=Color.BLACK, GOLD=Color.BLACK, BLUE=Color.BLACK, RED=Color.BLACK;
+    static final int BG=Color.WHITE, TEXT=Color.BLACK, MUTED=Color.BLACK, CARD=Color.WHITE;
+    static final int SURFACE_ALT=Color.WHITE, BORDER=Color.rgb(220,220,220);
     volatile boolean startupFinished=false; DB db; LinearLayout root,content,bottom; boolean darkCardMode=false; PopupWindow learningPopup; TextView pageTitle; int textSize=16; String currentPage="الرئيسية"; ArrayDeque<String> pageStack=new ArrayDeque<>(); long currentNotePageId=-1; int noteFontSize=14; boolean noteScrollMode=true;
     Uri cameraScanTempUri; Bitmap scanRawBitmap; String scanFilterMode="magic"; float scanRotation=0; String scanCategoryFilter="الكل"; String scanSearchQuery="";
     EditText transferSenderName,transferSenderPhone,transferReceiverName,transferReceiverPhone,transferContactNameTarget,transferContactPhoneTarget;
@@ -198,7 +198,7 @@ public class MainActivity extends Activity {
     }
 
     GradientDrawable rounded(int color,float radius){ GradientDrawable g=new GradientDrawable(); g.setColor(color); g.setCornerRadius(radius); return g; }
-    GradientDrawable outlined(int color,int stroke,float radius){ GradientDrawable g=rounded(color,radius); g.setStroke(stroke,Color.rgb(174,185,198)); return g; }
+    GradientDrawable outlined(int color,int stroke,float radius){ GradientDrawable g=rounded(color,radius); g.setStroke(stroke,Color.rgb(105,105,105)); return g; }
     float fitText(float z){return Math.max(9f, z);}
     void normalizeAppText(View v){
         if(v instanceof TextView){
@@ -309,9 +309,9 @@ public class MainActivity extends Activity {
         e.setSingleLine(true);
         e.setIncludeFontPadding(false);
         e.setTextColor(TEXT);
-        e.setHintTextColor(Color.rgb(120,135,145));
+        e.setHintTextColor(Color.rgb(105,105,105));
         e.setPadding(dp(10),0,dp(10),0);
-        e.setBackground(outlined(Color.rgb(252,253,255),dp(1),11));
+        e.setBackground(outlined(Color.WHITE,dp(1),11));
         e.setElevation(dp(1));
         e.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         e.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
@@ -320,10 +320,10 @@ public class MainActivity extends Activity {
         e.setOnClickListener(v -> e.selectAll());
         e.setOnFocusChangeListener((v,has)->{
             if(has){
-                e.setBackground(outlined(Color.rgb(247,251,255),dp(2),12));
+                e.setBackground(outlined(Color.WHITE,dp(2),12));
                 e.postDelayed(() -> e.selectAll(),60);
             }else{
-                e.setBackground(outlined(Color.rgb(252,253,255),dp(1),12));
+                e.setBackground(outlined(Color.WHITE,dp(1),12));
             }
         });
         if(isNumericOrFinancial(h)){
@@ -440,8 +440,8 @@ public class MainActivity extends Activity {
         v.setSingleLine(true); v.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         v.setPadding(dp(12),0,dp(12),0);
         GradientDrawable bg=new GradientDrawable();
-        bg.setColor(Color.rgb(235,242,249)); bg.setCornerRadius(dp(12));
-        bg.setStroke(dp(1),Color.rgb(211,223,236)); v.setBackground(bg);
+        bg.setColor(Color.WHITE); bg.setCornerRadius(dp(12));
+        bg.setStroke(dp(1),Color.rgb(220,220,220)); v.setBackground(bg);
         fitInside(v,14f,11f);
         content.addView(v,new LinearLayout.LayoutParams(-1,dp(38)));
         addSpace(5); return v;
@@ -514,16 +514,16 @@ public class MainActivity extends Activity {
         bottom.removeAllViews();
         LinearLayout nav=new LinearLayout(this); nav.setTag("fixedNavigation"); nav.setOrientation(LinearLayout.HORIZONTAL);
         nav.setGravity(Gravity.CENTER_VERTICAL); nav.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); nav.setPadding(dp(4),dp(3),dp(4),dp(3));
-        nav.setBackground(darkCardMode ? rounded(Color.rgb(31,41,55),dp(14)) : outlined(CARD,dp(1),dp(14))); nav.setElevation(dp(7));
+        nav.setBackground(darkCardMode ? rounded(Color.BLACK,dp(14)) : outlined(CARD,dp(1),dp(14))); nav.setElevation(dp(7));
         String[] labels={"الفواتير","الحسابات","المخزون","المزيد"};
         String[] icons={"▤","●","□","⋮"};
         for(int i=0;i<labels.length;i++){
             final int idx=i;
             LinearLayout tab=new LinearLayout(this); tab.setOrientation(LinearLayout.VERTICAL); tab.setGravity(Gravity.CENTER); tab.setPadding(0,dp(2),0,dp(2));
             boolean active=(i==0&&activeTitle!=null&&activeTitle.contains("فاتورة"))||(i==1&&activeTitle!=null&&activeTitle.contains("حساب"))||(i==2&&activeTitle!=null&&activeTitle.contains("مخزون"));
-            if(active) tab.setBackground(rounded(Color.rgb(231,242,238),dp(10)));
-            TextView ic=tv(icons[i],19); ic.setGravity(Gravity.CENTER); ic.setTextColor(darkCardMode ? (active?Color.rgb(129,199,132):Color.WHITE) : (active?GREEN:TEXT)); tab.addView(ic,new LinearLayout.LayoutParams(-1,dp(25)));
-            TextView lab=tv(labels[i],12.5f); lab.setGravity(Gravity.CENTER); lab.setTextColor(darkCardMode ? (active?Color.rgb(129,199,132):Color.WHITE) : (active?GREEN:MUTED)); if(active)lab.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+            if(active) tab.setBackground(rounded(Color.WHITE,dp(10)));
+            TextView ic=tv(icons[i],19); ic.setGravity(Gravity.CENTER); ic.setTextColor(darkCardMode ? (active?Color.rgb(105,105,105):Color.WHITE) : (active?GREEN:TEXT)); tab.addView(ic,new LinearLayout.LayoutParams(-1,dp(25)));
+            TextView lab=tv(labels[i],12.5f); lab.setGravity(Gravity.CENTER); lab.setTextColor(darkCardMode ? (active?Color.rgb(105,105,105):Color.WHITE) : (active?GREEN:MUTED)); if(active)lab.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
             tab.addView(lab,new LinearLayout.LayoutParams(-1,dp(23)));
             tab.setOnClickListener(v->{hideKeyboard(); if(idx==0)invoicesHub(); else if(idx==1)customers(); else if(idx==2)inventory(); else showMoreMenu();});
             LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(54),1); lp.setMargins(dp(2),0,dp(2),0); nav.addView(tab,lp);
@@ -686,7 +686,7 @@ void showMoreMenu(){
         GradientDrawable bg = new GradientDrawable();
         bg.setColor(CARD);
         bg.setCornerRadius(dp(10));
-        bg.setStroke(dp(1), Color.rgb(224, 232, 226));
+        bg.setStroke(dp(1), Color.rgb(220,220,220));
         card.setBackground(bg);
         card.setElevation(dp(3));
 
@@ -730,7 +730,7 @@ void showMoreMenu(){
         GradientDrawable bg = new GradientDrawable();
         bg.setColor(CARD);
         bg.setCornerRadius(dp(12));
-        bg.setStroke(dp(1), Color.rgb(224, 232, 226));
+        bg.setStroke(dp(1), Color.rgb(220,220,220));
         card.setBackground(bg);
         card.setElevation(dp(2));
         card.setClickable(true);
@@ -1006,7 +1006,7 @@ void showGeneralActions(){
         invFooter.setPadding(dp(6),dp(2),dp(6),dp(3));
         GradientDrawable ifBg=new GradientDrawable();
         ifBg.setColor(CARD);
-        ifBg.setStroke(dp(1),Color.rgb(215,225,218));
+        ifBg.setStroke(dp(1),Color.rgb(220,220,220));
         invFooter.setBackground(ifBg);
         if(Build.VERSION.SDK_INT>=21) invFooter.setElevation(dp(8));
 
@@ -1037,7 +1037,7 @@ void showGeneralActions(){
         fButtons.addView(fSave,new LinearLayout.LayoutParams(0,dp(32),1.5f));
 
         Button fPrint=button("🖨️ طباعة ومعاينة");
-        fPrint.setTextColor(GREEN); fPrint.setBackground(outline(Color.rgb(240,248,242),10));
+        fPrint.setTextColor(GREEN); fPrint.setBackground(outline(Color.WHITE,10));
         fPrint.setTextSize(12f);
         LinearLayout.LayoutParams fpp=new LinearLayout.LayoutParams(0,dp(32),1.1f); fpp.setMargins(dp(5),0,0,0);
         fButtons.addView(fPrint,fpp);
@@ -1084,9 +1084,9 @@ void showGeneralActions(){
         TextView no=tv(displayInvoiceNo(edit?db.invoiceNo(invoiceId):String.valueOf(db.nextInvoice())),14);
         no.setTextColor(GREEN); no.setTypeface(Typeface.DEFAULT,Typeface.BOLD); no.setGravity(Gravity.CENTER);
         GradientDrawable noBg=new GradientDrawable();
-        noBg.setColor(Color.rgb(240,248,242));
+        noBg.setColor(Color.WHITE);
         noBg.setCornerRadius(dp(10));
-        noBg.setStroke(dp(1),Color.rgb(190,225,200));
+        noBg.setStroke(dp(1),Color.rgb(220,220,220));
         no.setBackground(noBg);
         no.setContentDescription("رقم الفاتورة");
         metaRow.addView(no,new LinearLayout.LayoutParams(0,dp(36),0.75f));
@@ -1098,7 +1098,7 @@ void showGeneralActions(){
         GradientDrawable custBg=new GradientDrawable();
         custBg.setColor(Color.WHITE);
         custBg.setCornerRadius(dp(10));
-        custBg.setStroke(dp(1),Color.rgb(215,225,218));
+        custBg.setStroke(dp(1),Color.rgb(220,220,220));
         customer.setBackground(custBg);
         customer.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         customer.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); customer.setTextDirection(View.TEXT_DIRECTION_RTL);
@@ -1109,9 +1109,9 @@ void showGeneralActions(){
 
         TextView dt=tv(db.now(),11); dt.setTextColor(MUTED); dt.setGravity(Gravity.CENTER);
         GradientDrawable dtBg=new GradientDrawable();
-        dtBg.setColor(Color.rgb(248,250,248));
+        dtBg.setColor(Color.WHITE);
         dtBg.setCornerRadius(dp(10));
-        dtBg.setStroke(dp(1),Color.rgb(228,235,230));
+        dtBg.setStroke(dp(1),Color.rgb(220,220,220));
         dt.setBackground(dtBg);
         metaRow.addView(dt,new LinearLayout.LayoutParams(0,dp(36),1.1f));
 
@@ -1181,7 +1181,7 @@ void showGeneralActions(){
         head.setOrientation(LinearLayout.HORIZONTAL);
         head.setGravity(Gravity.CENTER_VERTICAL);
         head.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        head.setBackground(outlined(Color.rgb(240,248,242),1,8));
+        head.setBackground(outlined(Color.WHITE,1,8));
         String[] heads={"الإجمالي","الكمية","اسم الصنف","سعر الوحدة","حذف"};
         float[] weights={1.0f,.72f,1.35f,.9f,.55f};
         for(int i=0;i<heads.length;i++){
@@ -1207,9 +1207,9 @@ void showGeneralActions(){
         boxTotal.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         boxTotal.setPadding(dp(6),dp(2),dp(6),dp(2));
         GradientDrawable btBg=new GradientDrawable();
-        btBg.setColor(Color.rgb(255,249,230));
+        btBg.setColor(Color.WHITE);
         btBg.setCornerRadius(dp(12));
-        btBg.setStroke(dp(1),Color.rgb(245,225,175));
+        btBg.setStroke(dp(1),Color.rgb(220,220,220));
         boxTotal.setBackground(btBg);
         invoiceBox.addView(boxTotal,new LinearLayout.LayoutParams(-1,-2));
         spaceTo(invoiceBox,6);
@@ -1241,7 +1241,7 @@ void showGeneralActions(){
             cashMode.setTextColor(Color.WHITE); cashMode.setBackground(rounded(GREEN,dp(10)));
             creditMode.setTextColor(TEXT); creditMode.setBackground(outline(CARD,10));
         }
-        calcMode.setTextColor(Color.rgb(24,105,200)); calcMode.setBackground(outline(Color.rgb(240,248,255),10));
+        calcMode.setTextColor(Color.BLACK); calcMode.setBackground(outline(Color.WHITE,10));
         // تم نقل أزرار نقدي وآجل والحاسبة إلى الشريط السفلي الثابت.
         spaceTo(invoiceBox,4);
 
@@ -1263,7 +1263,7 @@ void showGeneralActions(){
         TextView customerBalance=tv("رصيد العميل: 0 ريال",10.5f);
         customerBalance.setTextColor(GREEN); customerBalance.setGravity(Gravity.CENTER);
         customerBalance.setPadding(dp(5),dp(2),dp(5),dp(2));
-        customerBalance.setBackground(outline(Color.rgb(241,247,242),8));
+        customerBalance.setBackground(outline(Color.WHITE,8));
         infoStrip.addView(customerBalance,new LinearLayout.LayoutParams(0,dp(28),1.05f));
 
         TextView paymentMode=tv("نوع السداد: نقدي",9.5f);
@@ -1572,7 +1572,7 @@ void showGeneralActions(){
     }
     GradientDrawable bg(int color,float radius){return rounded(color,dp((int)radius));}
     GradientDrawable outline(int color,float radius){return outlined(color,1,dp((int)radius));}
-    LinearLayout card(){LinearLayout c=new LinearLayout(this);c.setOrientation(LinearLayout.VERTICAL);c.setPadding(dp(12),dp(9),dp(12),dp(9));c.setBackground(darkCardMode ? rounded(Color.rgb(31,41,55),dp(14)) : outline(CARD,14));c.setElevation(dp(2));c.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);return c;}
+    LinearLayout card(){LinearLayout c=new LinearLayout(this);c.setOrientation(LinearLayout.VERTICAL);c.setPadding(dp(12),dp(9),dp(12),dp(9));c.setBackground(darkCardMode ? rounded(Color.BLACK,dp(14)) : outline(CARD,14));c.setElevation(dp(2));c.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);return c;}
     void addCard(View v,int h){content.addView(v,new LinearLayout.LayoutParams(-1,dp(Math.max(50,h-18))));space(4);}
     void add(View v,int h){content.addView(v,new LinearLayout.LayoutParams(-1,dp(Math.max(42,h-12))));space(4);}
     void space(int h){addSpace(dp(h));}
@@ -1588,7 +1588,7 @@ void showGeneralActions(){
         TextView item=tv(l.name,12);item.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);item.setMaxLines(4);item.setEllipsize(null);
         TextView unit=tv(l.qty==0?"0":fmt(l.total/l.qty),12);unit.setTextColor(MUTED);unit.setGravity(Gravity.CENTER);unit.setSingleLine(true);
         Button del=button("حذف");del.setTextSize(10);del.setTextColor(Color.RED);del.setBackgroundColor(Color.TRANSPARENT);
-        total.setBackground(outline(Color.rgb(248,250,248),6));qty.setBackground(outline(Color.rgb(248,250,248),6));item.setBackground(outline(Color.rgb(248,250,248),6));
+        total.setBackground(outline(Color.WHITE,6));qty.setBackground(outline(Color.WHITE,6));item.setBackground(outline(Color.WHITE,6));
         total.setContentDescription("تعديل إجمالي الصنف");qty.setContentDescription("تعديل كمية الصنف");item.setContentDescription("تعديل اسم الصنف أو التفاصيل");
         total.setMinHeight(dp(32)); qty.setMinHeight(dp(32)); item.setMinHeight(dp(32)); unit.setMinHeight(dp(32)); del.setMinHeight(dp(32));
         View[] cells={total,qty,item,unit,del};for(int i=0;i<cells.length;i++)r.addView(cells[i],new LinearLayout.LayoutParams(0,-2,w[i]));
@@ -1704,7 +1704,7 @@ void showGeneralActions(){
             Button btnHide=new Button(this);
             btnHide.setText("إخفاء");
             btnHide.setTextSize(13f);
-            btnHide.setTextColor(Color.rgb(210,225,220));
+            btnHide.setTextColor(Color.rgb(220,220,220));
             btnHide.setBackgroundColor(Color.TRANSPARENT);
             btnHide.setPadding(dp(8),0,dp(8),0);
             btnHide.setMinHeight(0); btnHide.setMinimumHeight(0);
@@ -1741,7 +1741,7 @@ void showGeneralActions(){
     void showOperationDetails(String customer,long tid,String details,double amount,int type){
         final Dialog dlg=new Dialog(this);
         String invNo=db.invoiceNoFromTransaction(details);boolean invoice=!invNo.isEmpty(),debit=type==1;
-        int accent=invoice?GREEN:(debit?RED:Color.rgb(20,185,110));
+        int accent=invoice?GREEN:(debit?RED:Color.rgb(105,105,105));
         LinearLayout box=new LinearLayout(this);box.setOrientation(LinearLayout.VERTICAL);box.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);box.setPadding(dp(12),dp(10),dp(12),dp(10));
         box.setBackground(glassFill(Color.argb(245,248,252,250)));
 
@@ -2136,9 +2136,9 @@ void operationActions(long customerId,String customerName,long tid,String detail
             alertBanner.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
             alertBanner.setPadding(dp(12),dp(8),dp(12),dp(8));
             GradientDrawable abBg=new GradientDrawable();
-            abBg.setColor(Color.rgb(255,245,242));
+            abBg.setColor(Color.WHITE);
             abBg.setCornerRadius(dp(12));
-            abBg.setStroke(dp(1),Color.rgb(255,190,180));
+            abBg.setStroke(dp(1),Color.rgb(220,220,220));
             alertBanner.setBackground(abBg);
 
             TextView abIcon=tv("⚠️",18);
@@ -2200,7 +2200,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
                 GradientDrawable rBg=new GradientDrawable();
                 rBg.setColor(CARD);
                 rBg.setCornerRadius(dp(12));
-                rBg.setStroke(dp(1),q<=m?Color.rgb(245,210,180):Color.rgb(225,232,226));
+                rBg.setStroke(dp(1),q<=m?Color.rgb(220,220,220):Color.rgb(220,220,220));
                 row.setBackground(rBg);
 
                 LinearLayout topR=new LinearLayout(this);
@@ -2217,7 +2217,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
                     warn.setTextColor(RED); warn.setGravity(Gravity.CENTER);
                     warn.setPadding(dp(6),dp(2),dp(6),dp(2));
                     GradientDrawable wBg=new GradientDrawable();
-                    wBg.setColor(Color.rgb(255,240,238));
+                    wBg.setColor(Color.WHITE);
                     wBg.setCornerRadius(dp(6));
                     warn.setBackground(wBg);
                     topR.addView(warn,new LinearLayout.LayoutParams(-2,-2));
@@ -2340,7 +2340,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
         TextView netBadge=tv("0 صافي",14.5f);
         netBadge.setTextColor(GREEN); netBadge.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         netBadge.setGravity(Gravity.CENTER);
-        netBadge.setBackground(rounded(Color.rgb(240,250,244),dp(10)));
+        netBadge.setBackground(rounded(Color.WHITE,dp(10)));
         netBadge.setPadding(dp(12),dp(5),dp(12),dp(5));
         form.addView(netBadge,new LinearLayout.LayoutParams(-1,-2));
         addSpaceTo(form,8);
@@ -2433,7 +2433,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
         preview.setVerticalScrollBarEnabled(true);
         preview.setScrollBarStyle(View.SCROLLBARS_INSIDE_INSET);
         preview.setOverScrollMode(View.OVER_SCROLL_IF_CONTENT_SCROLLS);
-        preview.setBackground(rounded(Color.rgb(249,251,250),dp(8)));
+        preview.setBackground(rounded(Color.WHITE,dp(8)));
         preview.setPadding(dp(10),dp(10),dp(10),dp(10));
         preview.setSelectAllOnFocus(false);
         preview.setOnFocusChangeListener((v,has)->{
@@ -2539,7 +2539,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
     void renderTransfers(LinearLayout list){
         list.removeAllViews();Cursor c=db.transfers();int count=0;
         while(c.moveToNext()){count++;long id=c.getLong(0);double a=c.getDouble(1);String sn=c.getString(2),sp=c.getString(3),rn=c.getString(4),rp=c.getString(5),dt=c.getString(6);int review=c.getInt(8);
-            LinearLayout row=card();row.setPadding(dp(10),dp(8),dp(10),dp(8));row.setBackground(outlined(review!=0?Color.rgb(255,247,247):Color.rgb(244,250,247),1,14));
+            LinearLayout row=card();row.setPadding(dp(10),dp(8),dp(10),dp(8));row.setBackground(outlined(review!=0?Color.WHITE:Color.WHITE,1,14));
             TextView top=tv(fmt(a)+" صافي   •   "+(review!=0?"تحتاج مراجعة":"مجهزة"),16);top.setTextColor(review!=0?RED:GREEN);top.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
             TextView who=tv("المستلم: "+rn+"   "+rp+"\nالمرسل: "+sn+"   "+sp,14);who.setTextColor(TEXT);who.setMaxLines(3);
             TextView date=tv(dt,12);date.setTextColor(MUTED);row.addView(top,new LinearLayout.LayoutParams(-1,-2));row.addView(who,new LinearLayout.LayoutParams(-1,-2));row.addView(date,new LinearLayout.LayoutParams(-1,-2));
@@ -2604,7 +2604,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
         addSpace(6);
         LinearLayout split=new LinearLayout(this);split.setOrientation(LinearLayout.HORIZONTAL);split.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);split.addView(noteColumn("الشق الأيسر",left,1,pid),new LinearLayout.LayoutParams(0,-2,1));LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(0,-2,1);rp.setMargins(dp(4),0,0,0);split.addView(noteColumn("الشق الأيمن",right,2,pid),rp);content.addView(split,new LinearLayout.LayoutParams(-1,-2));
     }
-    LinearLayout noteColumn(String title,ArrayList<NoteItem> items,int side,long pid){LinearLayout col=new LinearLayout(this);col.setOrientation(LinearLayout.VERTICAL);col.setPadding(dp(3),dp(3),dp(3),dp(5));col.setBackground(outlined(Color.rgb(252,253,252),1,12));TextView h=tv(title,11);h.setTextColor(side==1?GREEN:BLUE);h.setTypeface(Typeface.DEFAULT,Typeface.BOLD);h.setGravity(Gravity.CENTER);col.addView(h,new LinearLayout.LayoutParams(-1,dp(30)));if(items.isEmpty()){TextView e=tv("لا توجد عناصر",9);e.setTextColor(MUTED);e.setGravity(Gravity.CENTER);col.addView(e,new LinearLayout.LayoutParams(-1,dp(52)));return col;}for(NoteItem it:items){LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);row.setGravity(Gravity.CENTER_VERTICAL);row.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);row.setBackground(outlined(CARD,1,9));Button del=button("🗑");del.setTextColor(RED);del.setOnClickListener(v->{db.deleteNoteItem(pid,it.name,it.qty,it.side);notes();});TextView nm=tv(it.name,noteFontSize);nm.setTextColor(Color.rgb(20,65,120));nm.setMaxLines(2);TextView q=tv(fmt(it.qty),noteFontSize);q.setGravity(Gravity.CENTER);q.setTypeface(Typeface.DEFAULT,Typeface.BOLD);row.addView(del,new LinearLayout.LayoutParams(dp(38),dp(44)));row.addView(nm,new LinearLayout.LayoutParams(0,dp(44),1));row.addView(q,new LinearLayout.LayoutParams(dp(45),dp(44)));col.addView(row,new LinearLayout.LayoutParams(-1,dp(46)));spaceTo(col,2);}return col;}
+    LinearLayout noteColumn(String title,ArrayList<NoteItem> items,int side,long pid){LinearLayout col=new LinearLayout(this);col.setOrientation(LinearLayout.VERTICAL);col.setPadding(dp(3),dp(3),dp(3),dp(5));col.setBackground(outlined(Color.WHITE,1,12));TextView h=tv(title,11);h.setTextColor(side==1?GREEN:BLUE);h.setTypeface(Typeface.DEFAULT,Typeface.BOLD);h.setGravity(Gravity.CENTER);col.addView(h,new LinearLayout.LayoutParams(-1,dp(30)));if(items.isEmpty()){TextView e=tv("لا توجد عناصر",9);e.setTextColor(MUTED);e.setGravity(Gravity.CENTER);col.addView(e,new LinearLayout.LayoutParams(-1,dp(52)));return col;}for(NoteItem it:items){LinearLayout row=new LinearLayout(this);row.setOrientation(LinearLayout.HORIZONTAL);row.setGravity(Gravity.CENTER_VERTICAL);row.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);row.setBackground(outlined(CARD,1,9));Button del=button("🗑");del.setTextColor(RED);del.setOnClickListener(v->{db.deleteNoteItem(pid,it.name,it.qty,it.side);notes();});TextView nm=tv(it.name,noteFontSize);nm.setTextColor(Color.BLACK);nm.setMaxLines(2);TextView q=tv(fmt(it.qty),noteFontSize);q.setGravity(Gravity.CENTER);q.setTypeface(Typeface.DEFAULT,Typeface.BOLD);row.addView(del,new LinearLayout.LayoutParams(dp(38),dp(44)));row.addView(nm,new LinearLayout.LayoutParams(0,dp(44),1));row.addView(q,new LinearLayout.LayoutParams(dp(45),dp(44)));col.addView(row,new LinearLayout.LayoutParams(-1,dp(46)));spaceTo(col,2);}return col;}
     void addNoteItem(long pid,EditText name,EditText qty,int side){String n=name.getText().toString().trim();double q=0; try { q=Double.parseDouble(qty.getText().toString().trim().replace(",", ".")); } catch(Exception ignored) {}if(n.isEmpty()){Toast.makeText(this,"اكتب اسم الصنف أولاً",Toast.LENGTH_SHORT).show();return;}if(q<=0){Toast.makeText(this,"العدد يجب أن يكون أكبر من صفر",Toast.LENGTH_SHORT).show();return;}db.addNoteItem(pid,n,q,side);name.setText("");qty.setText("1");notes();}
     void clearNotesPage(){if(currentNotePageId<1)return;new AlertDialog.Builder(this).setTitle("تفريغ الصفحة").setMessage("سيتم حذف عناصر الصفحة الحالية فقط. هل تريد المتابعة؟").setNegativeButton("إلغاء",null).setPositiveButton("تفريغ",(d,w)->{db.clearNoteItems(currentNotePageId);notes();}).show();}
     void newNotesPage(){if(currentNotePageId>0)db.touchNotePage(currentNotePageId);currentNotePageId=db.createNotePage("ملاحظة جديدة",db.now());notes();}
@@ -2706,7 +2706,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
                 fabBg.setColor(GOLD);
                 if(Build.VERSION.SDK_INT>=21){
                     fab.setBackground(new android.graphics.drawable.RippleDrawable(
-                        android.content.res.ColorStateList.valueOf(Color.rgb(255,235,175)),fabBg,null));
+                        android.content.res.ColorStateList.valueOf(Color.rgb(220,220,220)),fabBg,null));
                 }else{
                     fab.setBackground(fabBg);
                 }
@@ -2762,7 +2762,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
                 GradientDrawable rBg=new GradientDrawable();
                 rBg.setColor(CARD);
                 rBg.setCornerRadius(dp(12));
-                rBg.setStroke(dp(1),Color.rgb(240,225,185));
+                rBg.setStroke(dp(1),Color.rgb(220,220,220));
                 row.setBackground(rBg);
 
                 LinearLayout topR=new LinearLayout(this);
@@ -2773,9 +2773,9 @@ void operationActions(long customerId,String customerName,long tid,String detail
                 TextView badge=tv("#"+displayInvoiceNo(no),11.5f);
                 badge.setTextColor(GOLD); badge.setTypeface(Typeface.DEFAULT,Typeface.BOLD); badge.setGravity(Gravity.CENTER);
                 GradientDrawable bBg=new GradientDrawable();
-                bBg.setColor(Color.rgb(255,250,235));
+                bBg.setColor(Color.WHITE);
                 bBg.setCornerRadius(dp(8));
-                bBg.setStroke(dp(1),Color.rgb(240,220,175));
+                bBg.setStroke(dp(1),Color.rgb(220,220,220));
                 badge.setBackground(bBg);
                 topR.addView(badge,new LinearLayout.LayoutParams(dp(50),dp(28)));
 
@@ -2843,7 +2843,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
         pFooter.setPadding(dp(10),dp(5),dp(10),dp(6));
         GradientDrawable pfBg=new GradientDrawable();
         pfBg.setColor(CARD);
-        pfBg.setStroke(dp(1),Color.rgb(240,225,185));
+        pfBg.setStroke(dp(1),Color.rgb(220,220,220));
         pFooter.setBackground(pfBg);
         if(Build.VERSION.SDK_INT>=21) pFooter.setElevation(dp(8));
 
@@ -3009,7 +3009,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
         head.setOrientation(LinearLayout.HORIZONTAL);
         head.setGravity(Gravity.CENTER_VERTICAL);
         head.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        head.setBackground(outlined(Color.rgb(255,250,240),1,8));
+        head.setBackground(outlined(Color.WHITE,1,8));
 
         for(int i=0;i<heads.length;i++){
             TextView h=tv(heads[i],8.5f);
@@ -3031,9 +3031,9 @@ void operationActions(long customerId,String customerName,long tid,String detail
         grand.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         grand.setPadding(dp(10),dp(4),dp(10),dp(4));
         GradientDrawable gBg=new GradientDrawable();
-        gBg.setColor(Color.rgb(255,249,235));
+        gBg.setColor(Color.WHITE);
         gBg.setCornerRadius(dp(10));
-        gBg.setStroke(dp(1),Color.rgb(245,225,185));
+        gBg.setStroke(dp(1),Color.rgb(220,220,220));
         grand.setBackground(gBg);
         box.addView(grand,new LinearLayout.LayoutParams(-1,dp(44)));
 
@@ -3059,7 +3059,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
                     TextView v=tv(vals[i],8.5f);
                     v.setGravity(i==2?Gravity.RIGHT|Gravity.CENTER_VERTICAL:Gravity.CENTER);
                     v.setMaxLines(4); v.setEllipsize(null);
-                    v.setBackground(outline(Color.rgb(248,250,248),6));
+                    v.setBackground(outline(Color.WHITE,6));
                     r.addView(v,new LinearLayout.LayoutParams(0,dp(32),w[i]));
                 }
                 Button del=button("✕");
@@ -4258,7 +4258,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
                         GradientDrawable rBg=new GradientDrawable();
                         rBg.setColor(CARD);
                         rBg.setCornerRadius(dp(12));
-                        rBg.setStroke(dp(1),kind==1?Color.rgb(205,235,215):(kind==3?Color.rgb(245,225,185):(operationType==1?Color.rgb(250,215,215):Color.rgb(215,230,250))));
+                        rBg.setStroke(dp(1),kind==1?Color.rgb(220,220,220):(kind==3?Color.rgb(220,220,220):(operationType==1?Color.rgb(220,220,220):Color.rgb(220,220,220))));
                         row.setBackground(rBg);
 
                         String label=kind==1?"🧾 فاتورة مبيعات":(kind==3?"🛒 فاتورة شراء":(operationType==1?"🔴 عليه (مدين)":"🔵 له (دائن)"));
@@ -4339,7 +4339,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
                     }
                 }catch(Exception e){
                     TextView err=tv("تعذر تحميل الحركات.",11);
-                    err.setTextColor(Color.rgb(170,75,35));
+                    err.setTextColor(Color.BLACK);
                     reportsListContainer.addView(err,new LinearLayout.LayoutParams(-1,dp(52)));
                 }
             };
@@ -4399,7 +4399,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
 
         }catch(Exception e){
             TextView err=tv("تعذر تحميل التقارير المالية.",11);
-            err.setTextColor(Color.rgb(170,75,35));
+            err.setTextColor(Color.BLACK);
             content.addView(err,new LinearLayout.LayoutParams(-1,dp(44)));
         }
     }
@@ -4441,7 +4441,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
                         String n=lines.getString(1);
                         double q=lines.getDouble(2),t=lines.getDouble(3);
                         TextView lr=tv(n+"   × "+fmt(q)+"   = "+fmt(t)+" ريال",11);
-                        lr.setBackground(outline(Color.rgb(248,250,248),7));
+                        lr.setBackground(outline(Color.WHITE,7));
                         lr.setMaxLines(2);lr.setEllipsize(null);
                         box.addView(lr,new LinearLayout.LayoutParams(-1,dp(30)));
                         spaceInside(box,2);count++;
@@ -4501,7 +4501,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
 
     TextView detailLine(String label,String value){
         TextView v=tv(label+": "+(value==null?"":value),11);
-        v.setBackground(outline(Color.rgb(248,250,248),7));
+        v.setBackground(outline(Color.WHITE,7));
         v.setMaxLines(3);v.setEllipsize(null);
         v.setPadding(dp(4),dp(1),dp(4),dp(1));
         return v;
@@ -4748,7 +4748,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
         Dialog dlg=new Dialog(this,android.R.style.Theme_DeviceDefault_Light_NoActionBar_Fullscreen);
         LinearLayout box=new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
-        box.setBackgroundColor(Color.rgb(18,22,20));
+        box.setBackgroundColor(Color.BLACK);
         box.setPadding(dp(10),dp(10),dp(10),dp(10));
         box.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
@@ -4918,7 +4918,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
         Button btnMagic=action("🪄 سحري",GREEN);
         Button btnBw=action("📄 أبيض/أسود",DARK);
         Button btnGray=action("🔘 رمادي",BLUE);
-        Button btnCrop=action("✂️ اقتصاص",Color.rgb(180,90,20));
+        Button btnCrop=action("✂️ اقتصاص",Color.BLACK);
         Button btnRotate=action("🔄 90°",GOLD);
 
         final Bitmap[] renderedBmp=new Bitmap[]{null};
@@ -4973,7 +4973,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
                 selectedCat[0]=cat;
                 for(int j=0;j<categories.length;j++){
                     catButtons[j].setTextColor(categories[j].equals(cat)?Color.WHITE:TEXT);
-                    catButtons[j].setBackgroundColor(categories[j].equals(cat)?GREEN:Color.rgb(235,238,235));
+                    catButtons[j].setBackgroundColor(categories[j].equals(cat)?GREEN:Color.rgb(220,220,220));
                 }
             });
             catRow.addView(cb,new LinearLayout.LayoutParams(0,dp(46),1));
@@ -5150,7 +5150,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
         // 1. واجهة المعاينة والكاميرا الذكية (Camera Preview Card)
         LinearLayout cameraPreviewCard=new LinearLayout(this);
         cameraPreviewCard.setOrientation(LinearLayout.VERTICAL);
-        cameraPreviewCard.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{Color.rgb(18,32,24),Color.rgb(10,18,14)}));
+        cameraPreviewCard.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR,new int[]{Color.BLACK,Color.BLACK}));
         cameraPreviewCard.setPadding(dp(12),dp(12),dp(12),dp(12));
         cameraPreviewCard.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
@@ -5158,7 +5158,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
         LinearLayout viewfinder=new LinearLayout(this);
         viewfinder.setOrientation(LinearLayout.VERTICAL);
         viewfinder.setGravity(Gravity.CENTER);
-        viewfinder.setBackground(outlined(Color.rgb(28,48,36),1,12));
+        viewfinder.setBackground(outlined(Color.BLACK,1,12));
         viewfinder.setPadding(dp(8),dp(10),dp(8),dp(10));
 
         TextView camIcon=tv("📷",28);
@@ -5171,7 +5171,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
         viewfinder.addView(camHint,new LinearLayout.LayoutParams(-1,dp(24)));
 
         TextView subHint=tv("اقتصاص وتحسين الفاتورة",10);
-        subHint.setTextColor(Color.rgb(180,210,190)); subHint.setGravity(Gravity.CENTER);
+        subHint.setTextColor(Color.rgb(220,220,220)); subHint.setGravity(Gravity.CENTER);
         viewfinder.addView(subHint,new LinearLayout.LayoutParams(-1,dp(22)));
 
         // زر الالتقاط العائم المميّز
@@ -5182,7 +5182,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
 
         // خيار استيراد صورة من المعرض
         Button galleryBtn=button("🖼️ أو اختيار صورة من المعرض");
-        galleryBtn.setTextColor(Color.rgb(200,230,210)); galleryBtn.setTextSize(11);
+        galleryBtn.setTextColor(Color.rgb(220,220,220)); galleryBtn.setTextSize(11);
         galleryBtn.setBackgroundColor(Color.TRANSPARENT);
         galleryBtn.setOnClickListener(v->launchScanGallery());
         viewfinder.addView(galleryBtn,new LinearLayout.LayoutParams(-1,dp(32)));
@@ -5222,13 +5222,13 @@ void operationActions(long customerId,String customerName,long tid,String detail
             chips[i]=chip;
             boolean active=cat.equals(scanCategoryFilter);
             chip.setTextColor(active?Color.WHITE:TEXT);
-            chip.setBackgroundColor(active?DARK:Color.rgb(230,235,230));
+            chip.setBackgroundColor(active?DARK:Color.rgb(220,220,220));
             chip.setOnClickListener(v->{
                 scanCategoryFilter=cat;
                 for(int j=0;j<cats.length;j++){
                     boolean sel=cats[j].equals(cat);
                     chips[j].setTextColor(sel?Color.WHITE:TEXT);
-                    chips[j].setBackgroundColor(sel?DARK:Color.rgb(230,235,230));
+                    chips[j].setBackgroundColor(sel?DARK:Color.rgb(220,220,220));
                 }
                 refreshScannedList(content);
             });
@@ -5276,7 +5276,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
                 // Thumbnail
                 ImageView thumb=new ImageView(this);
                 thumb.setScaleType(ImageView.ScaleType.CENTER_CROP);
-                thumb.setBackground(outlined(Color.rgb(220,225,220),1,6));
+                thumb.setBackground(outlined(Color.rgb(220,220,220),1,6));
                 if(imgPath!=null&&new File(imgPath).exists()){
                     Bitmap b=BitmapFactory.decodeFile(imgPath);
                     if(b!=null) thumb.setImageBitmap(b);
@@ -5976,7 +5976,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
                 fabBg.setShape(GradientDrawable.OVAL);
                 fabBg.setColor(GREEN);
                 if(Build.VERSION.SDK_INT>=21){
-                    fab.setBackground(new android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(Color.rgb(180,240,200)),fabBg,null));
+                    fab.setBackground(new android.graphics.drawable.RippleDrawable(android.content.res.ColorStateList.valueOf(Color.rgb(220,220,220)),fabBg,null));
                 }else{
                     fab.setBackground(fabBg);
                 }
@@ -6050,7 +6050,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
                 GradientDrawable cBg=new GradientDrawable();
                 cBg.setColor(CARD);
                 cBg.setCornerRadius(dp(12));
-                cBg.setStroke(dp(1),Color.rgb(222,230,224));
+                cBg.setStroke(dp(1),Color.rgb(220,220,220));
                 card.setBackground(cBg);
                 card.setElevation(dp(2));
 
@@ -6063,9 +6063,9 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
                 TextView badge=tv("#"+no,11.5f);
                 badge.setTextColor(GREEN); badge.setTypeface(Typeface.DEFAULT,Typeface.BOLD); badge.setGravity(Gravity.CENTER);
                 GradientDrawable bBg=new GradientDrawable();
-                bBg.setColor(Color.rgb(240,248,242));
+                bBg.setColor(Color.WHITE);
                 bBg.setCornerRadius(dp(8));
-                bBg.setStroke(dp(1),Color.rgb(190,225,200));
+                bBg.setStroke(dp(1),Color.rgb(220,220,220));
                 badge.setBackground(bBg);
                 topRow.addView(badge,new LinearLayout.LayoutParams(dp(54),dp(28)));
 
@@ -6141,7 +6141,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
 
                 LinearLayout pcard=card();
                 pcard.setPadding(dp(10),dp(8),dp(10),dp(8));
-                pcard.setBackground(outline(Color.rgb(255,250,240),12));
+                pcard.setBackground(outline(Color.WHITE,12));
 
                 LinearLayout pr=new LinearLayout(this);
                 pr.setOrientation(LinearLayout.HORIZONTAL);
@@ -6150,7 +6150,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
 
                 TextView pb=tv("شراء #"+pno,11.5f);
                 pb.setTextColor(GOLD);pb.setTypeface(Typeface.DEFAULT,Typeface.BOLD);pb.setGravity(Gravity.CENTER);
-                pb.setBackground(outline(Color.rgb(255,250,235),8));
+                pb.setBackground(outline(Color.WHITE,8));
                 pr.addView(pb,new LinearLayout.LayoutParams(dp(72),dp(28)));
 
                 LinearLayout pi=new LinearLayout(this);
@@ -6243,9 +6243,9 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         amountCard.setGravity(Gravity.CENTER);
         amountCard.setPadding(dp(10),dp(6),dp(10),dp(6));
         GradientDrawable acBg=new GradientDrawable();
-        acBg.setColor(Color.rgb(240,249,242));
+        acBg.setColor(Color.WHITE);
         acBg.setCornerRadius(dp(12));
-        acBg.setStroke(dp(1),Color.rgb(190,235,205));
+        acBg.setStroke(dp(1),Color.rgb(220,220,220));
         amountCard.setBackground(acBg);
 
         TextView amtVal=tv("الإجمالي: "+fmt(total)+" ريال",16);
@@ -6277,7 +6277,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
             row.setGravity(Gravity.CENTER_VERTICAL);
             row.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
             row.setPadding(dp(6),dp(4),dp(6),dp(4));
-            row.setBackground(outline(Color.rgb(248,250,248),8));
+            row.setBackground(outline(Color.WHITE,8));
 
             TextView nTv=tv(n,12); nTv.setTextColor(TEXT);            row.addView(nTv,new LinearLayout.LayoutParams(0,-2,1.2f));
 
@@ -6326,7 +6326,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         });
 
         Button pdfBtn=button("📄 PDF");
-        pdfBtn.setTextColor(Color.rgb(180,40,40)); pdfBtn.setBackground(outline(CARD,8));
+        pdfBtn.setTextColor(Color.BLACK); pdfBtn.setBackground(outline(CARD,8));
         pdfBtn.setTextSize(11f);
         pdfBtn.setOnClickListener(v->{
             dlg.dismiss();
@@ -6334,7 +6334,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         });
 
         Button imgBtn=button("🖼️ صورة");
-        imgBtn.setTextColor(Color.rgb(30,100,200)); imgBtn.setBackground(outline(CARD,8));
+        imgBtn.setTextColor(Color.BLACK); imgBtn.setBackground(outline(CARD,8));
         imgBtn.setTextSize(11f);
         imgBtn.setOnClickListener(v->{
             dlg.dismiss();
@@ -6342,7 +6342,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         });
 
         Button smsBtn=button("✉️ SMS");
-        smsBtn.setTextColor(Color.rgb(20,100,50)); smsBtn.setBackground(outline(CARD,8));
+        smsBtn.setTextColor(Color.BLACK); smsBtn.setBackground(outline(CARD,8));
         smsBtn.setTextSize(11f);
         smsBtn.setOnClickListener(v->{
             dlg.dismiss();
@@ -6449,9 +6449,9 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         amountCard.setGravity(Gravity.CENTER);
         amountCard.setPadding(dp(10),dp(6),dp(10),dp(6));
         GradientDrawable acBg=new GradientDrawable();
-        acBg.setColor(Color.rgb(255,250,242));
+        acBg.setColor(Color.WHITE);
         acBg.setCornerRadius(dp(12));
-        acBg.setStroke(dp(1),Color.rgb(240,215,160));
+        acBg.setStroke(dp(1),Color.rgb(220,220,220));
         amountCard.setBackground(acBg);
 
         TextView amtVal=tv("إجمالي المشتريات: "+fmt(total)+" ريال",16);
@@ -6480,7 +6480,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
             row.setOrientation(LinearLayout.VERTICAL);
             row.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
             row.setPadding(dp(8),dp(5),dp(8),dp(5));
-            row.setBackground(outline(Color.rgb(248,250,248),8));
+            row.setBackground(outline(Color.WHITE,8));
 
             LinearLayout rowTop=new LinearLayout(this);
             rowTop.setOrientation(LinearLayout.HORIZONTAL);
@@ -6535,7 +6535,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         });
 
         Button pdfBtn=button("📄 PDF");
-        pdfBtn.setTextColor(Color.rgb(180,40,40)); pdfBtn.setBackground(outline(CARD,8));
+        pdfBtn.setTextColor(Color.BLACK); pdfBtn.setBackground(outline(CARD,8));
         pdfBtn.setTextSize(11f);
         pdfBtn.setOnClickListener(v->{
             dlg.dismiss();
@@ -6543,7 +6543,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         });
 
         Button imgBtn=button("🖼️ صورة");
-        imgBtn.setTextColor(Color.rgb(30,100,200)); imgBtn.setBackground(outline(CARD,8));
+        imgBtn.setTextColor(Color.BLACK); imgBtn.setBackground(outline(CARD,8));
         imgBtn.setTextSize(11f);
         imgBtn.setOnClickListener(v->{
             dlg.dismiss();
@@ -6551,7 +6551,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         });
 
         Button smsBtn=button("✉️ SMS");
-        smsBtn.setTextColor(Color.rgb(180,120,20)); smsBtn.setBackground(outline(CARD,8));
+        smsBtn.setTextColor(Color.rgb(105,105,105)); smsBtn.setBackground(outline(CARD,8));
         smsBtn.setTextSize(11f);
         smsBtn.setOnClickListener(v->{
             dlg.dismiss();
@@ -6707,7 +6707,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         Canvas canvas=page.getCanvas();
 
         Paint fillPaint=new Paint(Paint.ANTI_ALIAS_FLAG);
-        Paint strokePaint=new Paint(Paint.ANTI_ALIAS_FLAG);strokePaint.setStyle(Paint.Style.STROKE);strokePaint.setStrokeWidth(1);strokePaint.setColor(Color.rgb(240,225,190));
+        Paint strokePaint=new Paint(Paint.ANTI_ALIAS_FLAG);strokePaint.setStyle(Paint.Style.STROKE);strokePaint.setStrokeWidth(1);strokePaint.setColor(Color.rgb(220,220,220));
         TextPaint titleP=new TextPaint(Paint.ANTI_ALIAS_FLAG);titleP.setColor(GOLD);titleP.setTextSize(18);titleP.setTypeface(Typeface.create("sans",Typeface.BOLD));
         TextPaint subP=new TextPaint(Paint.ANTI_ALIAS_FLAG);subP.setColor(DARK);subP.setTextSize(10.5f);subP.setTypeface(Typeface.create("sans",Typeface.NORMAL));
         TextPaint headerP=new TextPaint(Paint.ANTI_ALIAS_FLAG);headerP.setColor(Color.WHITE);headerP.setTextSize(11);headerP.setTypeface(Typeface.create("sans",Typeface.BOLD));
@@ -6716,7 +6716,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
 
         int y=margin;
 
-        fillPaint.setColor(Color.rgb(255,250,240));
+        fillPaint.setColor(Color.WHITE);
         canvas.drawRoundRect(margin,y,pageW-margin,y+52,8,8,fillPaint);
         canvas.drawRoundRect(margin,y,pageW-margin,y+52,8,8,strokePaint);
 
@@ -6728,7 +6728,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
 
         String suppName=supplier==null||supplier.trim().isEmpty()?"مورد عام":supplier.trim();
         String phone=db.supplierPhoneByName(suppName);
-        fillPaint.setColor(Color.rgb(255,252,245));
+        fillPaint.setColor(Color.WHITE);
         canvas.drawRoundRect(margin,y,pageW-margin,y+34,6,6,fillPaint);
         canvas.drawRoundRect(margin,y,pageW-margin,y+34,6,6,strokePaint);
 
@@ -6752,9 +6752,9 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         if(lines!=null){
             for(int i=0;i<lines.size();i++){
                 PurchaseLine l=lines.get(i);
-                fillPaint.setColor(i%2==0?Color.rgb(255,254,250):Color.WHITE);
+                fillPaint.setColor(i%2==0?Color.WHITE:Color.WHITE);
                 canvas.drawRect(margin,y,pageW-margin,y+rowH,fillPaint);
-                strokePaint.setColor(Color.rgb(245,240,230));
+                strokePaint.setColor(Color.WHITE);
                 canvas.drawLine(margin,y+rowH,pageW-margin,y+rowH,strokePaint);
 
                 cellP.setTextAlign(Paint.Align.RIGHT);
@@ -6774,8 +6774,8 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         }
 
         y+=8;
-        fillPaint.setColor(Color.rgb(255,250,240));
-        strokePaint.setColor(Color.rgb(240,220,180));
+        fillPaint.setColor(Color.WHITE);
+        strokePaint.setColor(Color.rgb(220,220,220));
         canvas.drawRoundRect(margin,y,pageW-margin,y+36,6,6,fillPaint);
         canvas.drawRoundRect(margin,y,pageW-margin,y+36,6,6,strokePaint);
 
@@ -6900,7 +6900,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         TextPaint cellPaint=new TextPaint(Paint.ANTI_ALIAS_FLAG);cellPaint.setColor(TEXT);cellPaint.setTextSize(9.5f);cellPaint.setTypeface(Typeface.create("sans",Typeface.NORMAL));
         TextPaint boldCellPaint=new TextPaint(Paint.ANTI_ALIAS_FLAG);boldCellPaint.setColor(TEXT);boldCellPaint.setTextSize(9.5f);boldCellPaint.setTypeface(Typeface.create("sans",Typeface.BOLD));
         Paint fillPaint=new Paint(Paint.ANTI_ALIAS_FLAG);
-        Paint strokePaint=new Paint(Paint.ANTI_ALIAS_FLAG);strokePaint.setStyle(Paint.Style.STROKE);strokePaint.setStrokeWidth(1);strokePaint.setColor(Color.rgb(220,225,220));
+        Paint strokePaint=new Paint(Paint.ANTI_ALIAS_FLAG);strokePaint.setStyle(Paint.Style.STROKE);strokePaint.setStrokeWidth(1);strokePaint.setColor(Color.rgb(220,220,220));
 
         double currentBalance=db.balance(id);
         double totalDebit=db.customerDebitTotal(id);
@@ -6932,9 +6932,9 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         int y=margin;
 
         // Top Banner
-        fillPaint.setColor(Color.rgb(238,247,240));
+        fillPaint.setColor(Color.WHITE);
         canvas.drawRoundRect(margin,y,pageW-margin,y+50,8,8,fillPaint);
-        strokePaint.setColor(Color.rgb(195,230,205));
+        strokePaint.setColor(Color.rgb(220,220,220));
         canvas.drawRoundRect(margin,y,pageW-margin,y+50,8,8,strokePaint);
 
         titlePaint.setTextAlign(Paint.Align.RIGHT);
@@ -6946,7 +6946,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         // 3 KPI Cards
         int kpiW=(contentW-16)/3;
         // 1. Debits (عليه)
-        fillPaint.setColor(Color.rgb(255,243,243));
+        fillPaint.setColor(Color.WHITE);
         canvas.drawRoundRect(margin,y,margin+kpiW,y+42,6,6,fillPaint);
         cellPaint.setTextAlign(Paint.Align.CENTER);cellPaint.setColor(RED);
         canvas.drawText("إجمالي ما عليه (مسحوبات)",margin+kpiW/2,y+16,cellPaint);
@@ -6954,7 +6954,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         canvas.drawText(fmt(totalDebit)+" ريال",margin+kpiW/2,y+33,boldCellPaint);
 
         // 2. Credits (له)
-        fillPaint.setColor(Color.rgb(240,248,255));
+        fillPaint.setColor(Color.WHITE);
         canvas.drawRoundRect(margin+kpiW+8,y,margin+kpiW*2+8,y+42,6,6,fillPaint);
         cellPaint.setColor(BLUE);
         canvas.drawText("إجمالي ما له (مدفوعات)",margin+kpiW+8+kpiW/2,y+16,cellPaint);
@@ -6962,7 +6962,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         canvas.drawText(fmt(totalCredit)+" ريال",margin+kpiW+8+kpiW/2,y+33,boldCellPaint);
 
         // 3. Final Balance
-        fillPaint.setColor(currentBalance>0.005?Color.rgb(255,240,240):Color.rgb(240,250,242));
+        fillPaint.setColor(currentBalance>0.005?Color.WHITE:Color.WHITE);
         canvas.drawRoundRect(margin+kpiW*2+16,y,pageW-margin,y+42,6,6,fillPaint);
         cellPaint.setColor(balanceColor(currentBalance));
         canvas.drawText(currentBalance>0.005?"الرصيد المتبقي عليه":(currentBalance<-0.005?"الرصيد الفائض له":"الحساب خالص"),margin+kpiW*2+16+kpiW/2,y+16,cellPaint);
@@ -7013,9 +7013,9 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
                 y+=26;
             }
 
-            fillPaint.setColor(idx%2==0?Color.rgb(252,253,252):Color.WHITE);
+            fillPaint.setColor(idx%2==0?Color.WHITE:Color.WHITE);
             canvas.drawRect(margin,y,pageW-margin,y+rowH,fillPaint);
-            strokePaint.setColor(Color.rgb(235,240,235));
+            strokePaint.setColor(Color.WHITE);
             canvas.drawLine(margin,y+rowH,pageW-margin,y+rowH,strokePaint);
 
             int rx=pageW-margin;
@@ -7045,7 +7045,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         // Summary footer on last page
         y+=12;
         if(y+40<pageH-margin){
-            fillPaint.setColor(Color.rgb(243,248,244));
+            fillPaint.setColor(Color.WHITE);
             canvas.drawRoundRect(margin,y,pageW-margin,y+32,6,6,fillPaint);
             boldCellPaint.setColor(GREEN);boldCellPaint.setTextSize(11);boldCellPaint.setTextAlign(Paint.Align.CENTER);
             canvas.drawText("شكراً لتعاملكم مع بقالة العزي للمواد الغذائية  •  الرصيد النهائي: "+balanceText(currentBalance),pageW/2,y+20,boldCellPaint);
@@ -7104,7 +7104,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         Canvas canvas=page.getCanvas();
 
         Paint fillPaint=new Paint(Paint.ANTI_ALIAS_FLAG);
-        Paint strokePaint=new Paint(Paint.ANTI_ALIAS_FLAG);strokePaint.setStyle(Paint.Style.STROKE);strokePaint.setStrokeWidth(1);strokePaint.setColor(Color.rgb(210,225,215));
+        Paint strokePaint=new Paint(Paint.ANTI_ALIAS_FLAG);strokePaint.setStyle(Paint.Style.STROKE);strokePaint.setStrokeWidth(1);strokePaint.setColor(Color.rgb(220,220,220));
         TextPaint titleP=new TextPaint(Paint.ANTI_ALIAS_FLAG);titleP.setColor(GREEN);titleP.setTextSize(18);titleP.setTypeface(Typeface.create("sans",Typeface.BOLD));
         TextPaint subP=new TextPaint(Paint.ANTI_ALIAS_FLAG);subP.setColor(DARK);subP.setTextSize(10.5f);subP.setTypeface(Typeface.create("sans",Typeface.NORMAL));
         TextPaint headerP=new TextPaint(Paint.ANTI_ALIAS_FLAG);headerP.setColor(Color.WHITE);headerP.setTextSize(11);headerP.setTypeface(Typeface.create("sans",Typeface.BOLD));
@@ -7114,7 +7114,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         int y=margin;
 
         // Header Card
-        fillPaint.setColor(Color.rgb(238,247,240));
+        fillPaint.setColor(Color.WHITE);
         canvas.drawRoundRect(margin,y,pageW-margin,y+52,8,8,fillPaint);
         canvas.drawRoundRect(margin,y,pageW-margin,y+52,8,8,strokePaint);
 
@@ -7127,7 +7127,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         // Customer Info
         String custName=customer==null||customer.trim().isEmpty()?"عميل نقدي":customer.trim();
         String phone=db.phoneByName(custName);
-        fillPaint.setColor(Color.rgb(250,252,250));
+        fillPaint.setColor(Color.WHITE);
         canvas.drawRoundRect(margin,y,pageW-margin,y+34,6,6,fillPaint);        canvas.drawRoundRect(margin,y,pageW-margin,y+34,6,6,strokePaint);
 
         boldCellP.setTextAlign(Paint.Align.RIGHT);
@@ -7137,8 +7137,8 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         // Current Operation / Amount Bar
         double remaining=total-paid;
         boolean isCash=paid>=total && total>0;
-        fillPaint.setColor(isCash?Color.rgb(240,250,242):(remaining>0?Color.rgb(255,243,243):Color.rgb(240,248,255)));
-        strokePaint.setColor(isCash?Color.rgb(190,235,205):(remaining>0?Color.rgb(250,195,195):Color.rgb(195,225,250)));
+        fillPaint.setColor(isCash?Color.WHITE:(remaining>0?Color.WHITE:Color.WHITE));
+        strokePaint.setColor(isCash?Color.rgb(220,220,220):(remaining>0?Color.rgb(220,220,220):Color.rgb(220,220,220)));
         canvas.drawRoundRect(margin,y,pageW-margin,y+36,6,6,fillPaint);
         canvas.drawRoundRect(margin,y,pageW-margin,y+36,6,6,strokePaint);
 
@@ -7166,9 +7166,9 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         if(lines!=null){
             for(int i=0;i<lines.size();i++){
                 Line l=lines.get(i);
-                fillPaint.setColor(i%2==0?Color.rgb(252,254,252):Color.WHITE);
+                fillPaint.setColor(i%2==0?Color.WHITE:Color.WHITE);
                 canvas.drawRect(margin,y,pageW-margin,y+rowH,fillPaint);
-                strokePaint.setColor(Color.rgb(240,244,240));
+                strokePaint.setColor(Color.WHITE);
                 canvas.drawLine(margin,y+rowH,pageW-margin,y+rowH,strokePaint);
 
                 cellP.setTextAlign(Paint.Align.RIGHT);
@@ -7189,8 +7189,8 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
 
         y+=8;
         // Total Box
-        fillPaint.setColor(Color.rgb(240,249,242));
-        strokePaint.setColor(Color.rgb(190,230,205));
+        fillPaint.setColor(Color.WHITE);
+        strokePaint.setColor(Color.rgb(220,220,220));
         canvas.drawRoundRect(margin,y,pageW-margin,y+36,6,6,fillPaint);
         canvas.drawRoundRect(margin,y,pageW-margin,y+36,6,6,strokePaint);
 
@@ -7204,8 +7204,8 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
 
         // Final Balance Box
         if(customer!=null&&!customer.trim().isEmpty()&&Math.abs(balanceAfter)>=0.005){
-            fillPaint.setColor(balanceAfter>0.005?Color.rgb(255,243,243):Color.rgb(240,248,255));
-            strokePaint.setColor(balanceAfter>0.005?Color.rgb(245,200,200):Color.rgb(200,225,250));
+            fillPaint.setColor(balanceAfter>0.005?Color.WHITE:Color.WHITE);
+            strokePaint.setColor(balanceAfter>0.005?Color.rgb(220,220,220):Color.rgb(220,220,220));
             canvas.drawRoundRect(margin,y,pageW-margin,y+32,6,6,fillPaint);
             canvas.drawRoundRect(margin,y,pageW-margin,y+32,6,6,strokePaint);
             boldCellP.setTextSize(11.5f);
@@ -7477,9 +7477,9 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
             cb.setTextSize(11.5f);
             cb.setTextColor(GREEN);
             GradientDrawable cbg=new GradientDrawable();
-            cbg.setColor(Color.rgb(240,248,242));
+            cbg.setColor(Color.WHITE);
             cbg.setCornerRadius(dp(8));
-            cbg.setStroke(dp(1),Color.rgb(200,230,210));
+            cbg.setStroke(dp(1),Color.rgb(220,220,220));
             cb.setBackground(cbg);
             LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(0,dp(38),1);
             cp.setMargins(dp(2),0,dp(2),0);
@@ -7494,15 +7494,15 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         changeCard.setGravity(Gravity.CENTER);
         changeCard.setPadding(dp(12),dp(8),dp(12),dp(8));
         GradientDrawable chBg=new GradientDrawable();
-        chBg.setColor(Color.rgb(240,248,255));
+        chBg.setColor(Color.WHITE);
         chBg.setCornerRadius(dp(12));
-        chBg.setStroke(dp(1.5f),Color.rgb(180,215,245));
+        chBg.setStroke(dp(1.5f),Color.rgb(220,220,220));
         changeCard.setBackground(chBg);
 
         TextView chTitle=tv("الباقي للزبون",12);
-        chTitle.setTextColor(Color.rgb(20,80,160));
+        chTitle.setTextColor(Color.BLACK);
         TextView chVal=tv("0.00 ريال",19);
-        chVal.setTextColor(Color.rgb(15,70,180));
+        chVal.setTextColor(Color.BLACK);
         chVal.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         chVal.setGravity(Gravity.CENTER);
 
@@ -7518,20 +7518,20 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
             double change=p-r;
             if(p<=0){
                 chVal.setText("0.00 ريال");
-                chVal.setTextColor(Color.rgb(15,70,180));
+                chVal.setTextColor(Color.BLACK);
                 chTitle.setText("الباقي للزبون");
             }else if(change>=0){
                 chVal.setText(fmt(change)+" ريال");
                 chVal.setTextColor(GREEN);
                 chTitle.setText("🟢 الباقي للزبون (المتبقي لصالحه)");
-                chBg.setColor(Color.rgb(240,249,242));
-                chBg.setStroke(dp(1.5f),Color.rgb(180,230,195));
+                chBg.setColor(Color.WHITE);
+                chBg.setStroke(dp(1.5f),Color.rgb(220,220,220));
             }else{
                 chVal.setText(fmt(Math.abs(change))+" ريال");
                 chVal.setTextColor(RED);
                 chTitle.setText("🔴 متبقي عليه");
-                chBg.setColor(Color.rgb(255,245,245));
-                chBg.setStroke(dp(1.5f),Color.rgb(250,200,200));
+                chBg.setColor(Color.WHITE);
+                chBg.setStroke(dp(1.5f),Color.rgb(220,220,220));
             }
         };
 
@@ -7612,9 +7612,9 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
             row.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
             row.setPadding(dp(10),dp(6),dp(10),dp(6));
             GradientDrawable rbg=new GradientDrawable();
-            rbg.setColor(Color.rgb(255,248,248));
+            rbg.setColor(Color.WHITE);
             rbg.setCornerRadius(dp(10));
-            rbg.setStroke(dp(1),Color.rgb(250,215,215));
+            rbg.setStroke(dp(1),Color.rgb(220,220,220));
             row.setBackground(rbg);
 
             TextView nTv=tv(count+". "+name,13);
@@ -7651,7 +7651,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
 
         if(count>0){
             Button shareBtn=button("📲 مشاركة في واتساب");
-            shareBtn.setBackground(rounded(Color.rgb(22,145,75),dp(10)));
+            shareBtn.setBackground(rounded(Color.BLACK,dp(10)));
             shareBtn.setTextColor(Color.WHITE);
             shareBtn.setTextSize(12.5f);
             shareBtn.setOnClickListener(v->{
@@ -7818,7 +7818,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
             Line l=safeLines.get(idx);
             int rh=rowHeights.get(idx);
             if((idx&1)==0){
-                p.setColor(Color.rgb(249,251,249));
+                p.setColor(Color.WHITE);
                 canvas.drawRect(margin,y,width-margin,y+rh,p);
             }
             StaticLayout sl=nameLayouts.get(idx);
@@ -7885,8 +7885,8 @@ Bitmap receiptBitmap(String text,int targetWidth){
         final int width=384;
         final int margin=14;
         final int black=Color.BLACK;
-        final int gray=Color.rgb(80,80,80);
-        final int green=Color.rgb(20,105,55);
+        final int gray=Color.BLACK;
+        final int green=Color.BLACK;
         final int lineH=24;
         String[] ls=text.split("\n",-1);
         int rows=0;
@@ -8150,7 +8150,7 @@ void printTextBluetooth(String text,int requestedWidth){
         Button save=action("✓ حفظ وإغلاق",GREEN);
         Button contact=button("👥 جهات الاتصال");
         contact.setTextColor(GREEN);
-        contact.setBackground(outline(Color.rgb(241,247,242),10));
+        contact.setBackground(outline(Color.WHITE,10));
         contact.setOnClickListener(v->importContact());
 
         actions.addView(save,new LinearLayout.LayoutParams(0,dp(42),1.3f));
@@ -8193,7 +8193,7 @@ void printTextBluetooth(String text,int requestedWidth){
             }
             if(bottom!=null&&bottom.getChildCount()>0){
                 View nav=bottom.getChildAt(0);
-                nav.setBackground(darkCardMode ? rounded(Color.rgb(31,41,55),dp(10)) : outlined(CARD,dp(1),dp(10)));
+                nav.setBackground(darkCardMode ? rounded(Color.BLACK,dp(10)) : outlined(CARD,dp(1),dp(10)));
             }
         }catch(Throwable ignored){}
     }
@@ -8208,7 +8208,7 @@ void printTextBluetooth(String text,int requestedWidth){
         return t;
     }
     GradientDrawable glassFill(int color){
-        return darkCardMode ? rounded(Color.rgb(31,41,55),dp(12)) : outlined(color,dp(1),dp(12));
+        return darkCardMode ? rounded(Color.BLACK,dp(12)) : outlined(color,dp(1),dp(12));
     }
 
 void account(long id,String name){
@@ -8241,7 +8241,7 @@ void account(long id,String name){
             String clean=customerPhone.replaceAll("[^0-9+]","");
             call.setOnClickListener(v->{try{startActivity(new Intent(Intent.ACTION_DIAL,Uri.parse("tel:"+clean)));}catch(Exception ignored){}});
             head.addView(call,new LinearLayout.LayoutParams(dp(30),dp(34)));
-            Button wa=button("💬"); wa.setTextSize(13); wa.setTextColor(Color.rgb(25,180,100)); wa.setPadding(0,0,0,0); wa.setBackgroundColor(Color.TRANSPARENT);
+            Button wa=button("💬"); wa.setTextSize(13); wa.setTextColor(Color.rgb(105,105,105)); wa.setPadding(0,0,0,0); wa.setBackgroundColor(Color.TRANSPARENT);
             wa.setOnClickListener(v->shareWhatsAppToCustomer(customerPhone,"السلام عليكم أخي "+name+"\nرصيد حسابكم الحالي: "+balanceText(currentBal),null));
             head.addView(wa,new LinearLayout.LayoutParams(dp(30),dp(34)));
         }
