@@ -206,7 +206,7 @@ public class MainActivity extends Activity {
     float fitText(float z){return Math.max(9f, z);}
     void normalizeAppText(View v){
         if(v instanceof TextView && !(v instanceof Button) && !(v instanceof EditText)){
-            TextView t=(TextView)v;t.setIncludeFontPadding(true);t.setSingleLine(false);t.setMaxLines(Integer.MAX_VALUE);t.setEllipsize(null);t.setHorizontallyScrolling(false);t.setScrollHorizontally(false);
+            TextView t=(TextView)v;t.setIncludeFontPadding(true);t.setSingleLine(false);t.setMaxLines(Integer.MAX_VALUE);t.setEllipsize(null);t.setHorizontallyScrolling(false);
             if(Build.VERSION.SDK_INT>=23){try{t.setBreakStrategy(android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY);}catch(Throwable ignored){}}
             if(Build.VERSION.SDK_INT>=28){try{t.setFallbackLineSpacing(true);}catch(Throwable ignored){}try{t.setElegantTextHeight(true);}catch(Throwable ignored){}}
             ViewGroup.LayoutParams lp=t.getLayoutParams();if(lp!=null&&lp.height>0){lp.height=ViewGroup.LayoutParams.WRAP_CONTENT;t.setLayoutParams(lp);}
