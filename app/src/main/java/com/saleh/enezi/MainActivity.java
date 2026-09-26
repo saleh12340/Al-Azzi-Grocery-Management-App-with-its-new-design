@@ -7816,7 +7816,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         p.setTextAlign(Paint.Align.CENTER);
         p.setColor(DARK);
         canvas.drawText("بقالة العزي للمواد الغذائية",width/2,y+20,p);
-        y+=22;
+        y+=27;
 
         p.setTypeface(Typeface.create("sans",Typeface.BOLD));
         p.setTextSize(spToPx(13));
@@ -7904,14 +7904,14 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         y+=40;
 
         p.setTypeface(Typeface.create("sans",Typeface.BOLD));
-        p.setTextSize(spToPx(10f));
+        p.setTextSize(spToPx(11.5f));
         p.setColor(balanceAfter>0.005?RED:(balanceAfter<-0.005?BLUE:GREEN));
         String balanceLine;
         if(balanceAfter>0.005) balanceLine="رصيدكم عليكم: "+fmt(balanceAfter)+" ريال";
         else if(balanceAfter<-0.005) balanceLine="الرصيد لكم: "+fmt(Math.abs(balanceAfter))+" ريال";
         else balanceLine="الرصيد التراكمي: 0 ريال";
         canvas.drawText(balanceLine,width-margin,y+16,p);
-        y+=22;
+        y+=27;
 
         p.setTypeface(Typeface.create("sans",Typeface.NORMAL));
         p.setTextSize(spToPx(9.5f));
