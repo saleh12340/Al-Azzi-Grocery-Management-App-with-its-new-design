@@ -623,7 +623,7 @@ void showMoreMenu(){
             if(grantResults.length>0&&grantResults[0]==PackageManager.PERMISSION_GRANTED&&activeVoiceField!=null){
                 boolean detail=activeVoiceField.getTag()!=null&&"detailVoice".equals(activeVoiceField.getTag());
                 int req=activeVoiceField.getTag()!=null&&"fieldVoice".equals(activeVoiceField.getTag())?REQ_VOICE_FIELD:(detail?REQ_VOICE_DETAIL:REQ_VOICE_SEARCH);
-                startVoiceInput(activeVoiceField,detail?"تحدث بالبيان أو تفاصيل العملية":"تحدث باسم العميل أو رقم الهاتف",req);
+                startVoiceInput(activeVoiceField,activeVoiceField.getTag()!=null&&"fieldVoice".equals(activeVoiceField.getTag())?"تحدث لإدخال النص":(detail?"تحدث بالبيان أو تفاصيل العملية":"تحدث باسم العميل أو رقم الهاتف"),req);
             }else Toast.makeText(this,"يلزم السماح بالميكروفون لاستخدام الإدخال الصوتي",Toast.LENGTH_SHORT).show();
         }
     }
