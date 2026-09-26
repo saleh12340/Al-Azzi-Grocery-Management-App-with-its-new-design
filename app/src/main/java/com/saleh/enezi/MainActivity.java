@@ -2190,7 +2190,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
         String addr=getSharedPreferences("printer_settings",MODE_PRIVATE).getString("printer_address","");
         BluetoothDevice saved=null;
         if(!addr.isEmpty()){try{saved=a.getRemoteDevice(addr);}catch(Exception ignored){}}
-        if(saved!=null){new Thread(()->sendBitmapToBluetooth(saved,bitmap)).start();return;}
+        if(saved!=null){final BluetoothDevice printer=saved; new Thread(()->sendBitmapToBluetooth(printer,bitmap)).start();return;}
         Set<BluetoothDevice> paired=a.getBondedDevices();
         if(paired==null||paired.isEmpty()){
             Toast.makeText(this,"لا توجد طابعة مقترنة. اقترن بالطابعة من إعدادات البلوتوث أولاً.",Toast.LENGTH_LONG).show();
