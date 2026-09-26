@@ -8232,49 +8232,103 @@ void account(long id,String name){
                 tids.add(tid);dates.add(date);detailsList.add(d);amounts.add(a);types.add(type);balancesAfter.add(running);count++;
             }
             c.close();
+            // بطاقة عملية مرنة جذرياً: لا يوجد ارتفاع ثابت للنص ولا قص أو ellipsis.
+            // اليمين = نوع العملية + المبلغ + التاريخ المختصر.
+            // الوسط = التفاصيل فقط، ويأخذ المساحة المتبقية ويصغر خطه عند الحاجة.
+            // اليسار = الرصيد التراكمي بعد العملية.
             for(int k=tids.size()-1;k>=0;k--){
-                long tid=tids.get(k); String date=dates.get(k), d=detailsList.get(k); double a=amounts.get(k), balanceAfter=balancesAfter.get(k); int type=types.get(k);
-                String inv=db.invoiceNoFromTransaction(d); boolean isInv=!inv.isEmpty();
+                long tid=tids.get(k);
+                String date=dates.get(k), d=detailsList.get(k);
+                double a=amounts.get(k), balanceAfter=balancesAfter.get(k);
+                int type=types.get(k);
+                String inv=db.invoiceNoFromTransaction(d);
+                boolean isInv=!inv.isEmpty();
+
                 LinearLayout row=new LinearLayout(this);
-                row.setOrientation(LinearLayout.HORIZONTAL); row.setGravity(Gravity.CENTER_VERTICAL); row.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-                row.setPadding(dp(6),dp(5),dp(6),dp(5)); row.setBackground(glassFill(Color.argb(190,255,255,255)));
+                row.setOrientation(LinearLayout.HORIZONTAL);
+                row.setGravity(Gravity.CENTER_VERTICAL);
+                row.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+                row.setPadding(dp(5),dp(6),dp(5),dp(6));
+                row.setBackground(glassFill(Color.argb(190,255,255,255)));
+                row.setClipChildren(false);
+                row.setClipToPadding(false);
 
-                // اليمين: العملية والمبلغ.
+                // اليمين: نوع العملية والمبلغ، والتاريخ المختصر أسفله.
                 LinearLayout operationBox=new LinearLayout(this);
-                operationBox.setOrientation(LinearLayout.VERTICAL); operationBox.setGravity(Gravity.CENTER);
-                TextView amt=denseText((type==1?"عليه: ":"له: ")+fmt(a)+" ر.ي",12.5f,10.5f,type==1?RED:BLUE);
-                amt.setGravity(Gravity.CENTER); amt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+                operationBox.setOrientation(LinearLayout.VERTICAL);
+                operationBox.setGravity(Gravity.CENTER);
+                operationBox.setPadding(dp(3),dp(2),dp(3),dp(2));
+                operationBox.setClipChildren(false);
+
+                TextView opType=denseText(type==1?"قيد سحب":"دفعة سداد",11f,9f,type==1?RED:BLUE);
+                opType.setGravity(Gravity.CENTER);
+                opType.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+                opType.setMaxLines(1);
+                TextView amt=denseText((type==1?"عليه: ":"له: ")+fmt(a)+" ر.ي",12f,9f,type==1?RED:BLUE);
+                amt.setGravity(Gravity.CENTER);
+                amt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+                amt.setMaxLines(1);
+                amt.setPadding(dp(3),dp(2),dp(3),dp(2));
                 amt.setBackground(glassFill(type==1?Color.argb(210,255,225,228):Color.argb(200,225,235,255)));
-                amt.setPadding(dp(6),dp(3),dp(6),dp(3));
-                TextView opType=denseText(type==1?"قيد سحب":"دفعة سداد",11.5f,10f,type==1?RED:BLUE);
-                opType.setGravity(Gravity.CENTER); opType.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-                operationBox.addView(amt,new LinearLayout.LayoutParams(-1,dp(30)));
-                operationBox.addView(opType,new LinearLayout.LayoutParams(-1,dp(22)));
-                row.addView(operationBox,new LinearLayout.LayoutParams(dp(118),dp(54)));
 
-                // الوسط: التفاصيل والتاريخ، مع زر التحديد داخل المنطقة الوسطى.
-                LinearLayout info=new LinearLayout(this); info.setOrientation(LinearLayout.VERTICAL); info.setGravity(Gravity.CENTER);
+                String shortDate=date==null?"":date.replace('T',' ');
+                if(shortDate.length()>16) shortDate=shortDate.substring(0,16);
+                TextView dateTv=denseText(shortDate,9.5f,8.5f,MUTED);
+                dateTv.setGravity(Gravity.CENTER);
+                dateTv.setMaxLines(1);
+                dateTv.setPadding(0,dp(1),0,0);
+
+                operationBox.addView(opType,new LinearLayout.LayoutParams(-1,-2));
+                operationBox.addView(amt,new LinearLayout.LayoutParams(-1,-2));
+                operationBox.addView(dateTv,new LinearLayout.LayoutParams(-1,-2));
+                row.addView(operationBox,new LinearLayout.LayoutParams(dp(104),-2));
+
+                // الوسط: التفاصيل فقط. لا نضع التاريخ هنا حتى لا يضغط النص.
+                LinearLayout info=new LinearLayout(this);
+                info.setOrientation(LinearLayout.HORIZONTAL);
+                info.setGravity(Gravity.CENTER_VERTICAL);
                 info.setPadding(dp(6),0,dp(6),0);
-                LinearLayout detailLine=new LinearLayout(this); detailLine.setOrientation(LinearLayout.HORIZONTAL); detailLine.setGravity(Gravity.CENTER);
-                CheckBox ck=new CheckBox(this); ck.setPadding(0,0,0,0); checks.add(ck);
-                ck.setOnCheckedChangeListener((v,on)->{if(on){if(!selectedIds.contains(tid))selectedIds.add(tid);}else selectedIds.remove(tid);});
-                TextView main=denseText(isInv?"فاتورة #"+inv:(d==null||d.trim().isEmpty()?(type==1?"قيد سحب":"دفعة سداد"):d.trim()),13f,11.5f,DARK);
-                main.setTypeface(Typeface.DEFAULT,Typeface.BOLD); main.setMaxLines(2); main.setGravity(Gravity.CENTER);
-                detailLine.addView(ck,new LinearLayout.LayoutParams(dp(28),dp(30)));
-                detailLine.addView(main,new LinearLayout.LayoutParams(0,dp(32),1));
-                info.addView(detailLine,new LinearLayout.LayoutParams(-1,dp(34)));
-                TextView sub=denseText(date,11f,9.5f,MUTED); sub.setGravity(Gravity.CENTER);
-                info.addView(sub,new LinearLayout.LayoutParams(-1,dp(20)));
-                row.addView(info,new LinearLayout.LayoutParams(0,dp(54),1));
+                info.setClipChildren(false);
 
-                // اليسار: الرقم التراكمي فقط.
-                TextView bal=denseText(fmt(Math.abs(balanceAfter))+" ريال",13f,11f,balanceAfter>0.005?RED:(balanceAfter<-0.005?BLUE:GREEN));
-                bal.setGravity(Gravity.CENTER); bal.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-                bal.setBackground(glassFill(Color.argb(210,248,250,248))); bal.setPadding(dp(6),dp(3),dp(6),dp(3));
-                row.addView(bal,new LinearLayout.LayoutParams(dp(112),dp(54)));
+                CheckBox ck=new CheckBox(this);
+                ck.setPadding(0,0,0,0);
+                checks.add(ck);
+                ck.setOnCheckedChangeListener((v,on)->{
+                    if(on){if(!selectedIds.contains(tid))selectedIds.add(tid);}
+                    else selectedIds.remove(tid);
+                });
+                info.addView(ck,new LinearLayout.LayoutParams(dp(28),-2));
+
+                String detailText=isInv?"فاتورة #"+inv:
+                    (d==null||d.trim().isEmpty()?(type==1?"قيد سحب":"دفعة سداد"):d.trim());
+                TextView main=denseText(detailText,13f,9f,DARK);
+                main.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+                main.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+                main.setSingleLine(false);
+                main.setMaxLines(Integer.MAX_VALUE);
+                main.setEllipsize(null);
+                main.setHorizontallyScrolling(false);
+                main.setIncludeFontPadding(true);
+                main.setPadding(0,dp(2),0,dp(2));
+                autoFitText(main,13f,9f,0.5f);
+                info.addView(main,new LinearLayout.LayoutParams(0,-2,1f));
+                row.addView(info,new LinearLayout.LayoutParams(0,-2,1f));
+
+                // اليسار: الرصيد التراكمي فقط.
+                TextView bal=denseText(fmt(Math.abs(balanceAfter))+" ريال",12f,9.5f,
+                    balanceAfter>0.005?RED:(balanceAfter<-0.005?BLUE:GREEN));
+                bal.setGravity(Gravity.CENTER);
+                bal.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+                bal.setMaxLines(2);
+                bal.setPadding(dp(4),dp(3),dp(4),dp(3));
+                bal.setBackground(glassFill(Color.argb(210,248,250,248)));
+                row.addView(bal,new LinearLayout.LayoutParams(dp(96),-2));
+
                 row.setOnClickListener(v->showOperationDetails(name,tid,d,a,type));
                 row.setOnLongClickListener(v->{operationActions(id,name,tid,d,a,type);return true;});
-                LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,-2);rp.setMargins(0,0,0,dp(4));list.addView(row,rp);
+                LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,-2);
+                rp.setMargins(0,0,0,dp(4));
+                list.addView(row,rp);
             }
             if(count==0){
                 LinearLayout emptyBox=card();emptyBox.setPadding(dp(16),dp(14),dp(16),dp(14));emptyBox.setGravity(Gravity.CENTER);
@@ -8319,7 +8373,7 @@ void customers(){
                 LinearLayout top=new LinearLayout(this);top.setOrientation(LinearLayout.HORIZONTAL);top.setGravity(Gravity.CENTER_VERTICAL);top.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
                 TextView avatar=tv(name==null||name.isEmpty()?"ب":name.substring(0,1),16);avatar.setGravity(Gravity.CENTER);avatar.setTextColor(Color.WHITE);avatar.setTypeface(Typeface.DEFAULT,Typeface.BOLD);avatar.setBackground(rounded(GREEN,dp(18)));
                 top.addView(avatar,new LinearLayout.LayoutParams(dp(38),dp(38)));
-                TextView nm=tv(name,16);nm.setTextColor(TEXT);nm.setTypeface(Typeface.DEFAULT,Typeface.BOLD);nm.setPadding(dp(9),0,dp(5),0);nm.setMaxLines(Integer.MAX_VALUE);nm.setEllipsize(null);top.addView(nm,new LinearLayout.LayoutParams(0,-2,1));
+                TextView nm=tv(name,16);nm.setTextColor(TEXT);nm.setTypeface(Typeface.DEFAULT,Typeface.BOLD);nm.setPadding(dp(9),0,dp(5),0);nm.setSingleLine(false);nm.setMaxLines(Integer.MAX_VALUE);nm.setEllipsize(null);nm.setHorizontallyScrolling(false);autoFitText(nm,16f,11f,0.5f);top.addView(nm,new LinearLayout.LayoutParams(0,-2,1));
                 TextView bv=tv(fmt(Math.abs(bal))+" ريال",15);bv.setTextColor(balanceColor(bal));bv.setTypeface(Typeface.DEFAULT,Typeface.BOLD);bv.setGravity(Gravity.CENTER);bv.setBackground(outlined(CARD,dp(1),12));top.addView(bv,new LinearLayout.LayoutParams(dp(125),dp(36)));
                 row.addView(top,new LinearLayout.LayoutParams(-1,-2));LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,-2);rp.setMargins(0,0,0,dp(6));list.addView(row,rp);
             } cur.close();
