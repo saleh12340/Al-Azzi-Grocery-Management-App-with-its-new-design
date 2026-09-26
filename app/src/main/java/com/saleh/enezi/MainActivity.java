@@ -2895,8 +2895,9 @@ void operationActions(long customerId,String customerName,long tid,String detail
         return s.toString();
     }
     Bitmap notesReceiptBitmap(){
-        final int width=384, margin=10, contentWidth=width-(margin*2);
-        final float bodyPx=13f*(203f/160f), smallPx=bodyPx*0.86f;
+        final int width=384, margin=10, contentWidth=width-(margin*2); // 364
+        final int colWidth=(contentWidth-10)/2; // 177 each, 10 gap
+        final float bodyPx=12f*(203f/160f), smallPx=bodyPx*0.85f;
         TextPaint body=new TextPaint(Paint.ANTI_ALIAS_FLAG|Paint.SUBPIXEL_TEXT_FLAG);
         body.setColor(TEXT); body.setTypeface(Typeface.create("sans",Typeface.NORMAL));
         body.setTextSize(bodyPx);
@@ -2904,55 +2905,109 @@ void operationActions(long customerId,String customerName,long tid,String detail
         ArrayList<NoteItem> left=new ArrayList<>(), right=new ArrayList<>();
         db.loadNoteItems(currentNotePageId,left,right);
 
-        ArrayList<String> lines=new ArrayList<>();
-        lines.add("بقالة العزي للمواد الغذائية");
-        lines.add("الملاحظات الذكية (شقين)");
-        lines.add("التاريخ: "+db.now());
+        TextPaint headerP=new TextPaint(body);
+        headerP.setTypeface(Typeface.create("sans",Typeface.BOLD));
+        headerP.setTextSize(bodyPx);
+        
+        TextPaint subP=new TextPaint(body);
+        subP.setTypeface(Typeface.create("sans",Typeface.BOLD));
+        subP.setTextSize(smallPx);
 
-        if(!left.isEmpty()){
-            lines.add("--- الشق الأيسر ---");
-            for(NoteItem x:left){
-                lines.add(x.name+" × "+fmt(x.qty));
-            }
-        }
-        if(!right.isEmpty()){
-            lines.add("--- الشق الأيمن ---");
-            for(NoteItem x:right){
-                lines.add(x.name+" × "+fmt(x.qty));
-            }
-        }
-
-        ArrayList<StaticLayout> layouts=new ArrayList<>();
-        int height=12;
-        for(int i=0; i<lines.size(); i++){
-            String value=lines.get(i);
-            TextPaint p=new TextPaint(body);
-            if(i<3 || value.startsWith("---")){
-                p.setTypeface(Typeface.create("sans",Typeface.BOLD));
-                if(i==0) p.setTextSize(bodyPx); else p.setTextSize(smallPx);
-            }
-            StaticLayout sl=StaticLayout.Builder.obtain(value,0,value.length(),p,contentWidth)
-                .setAlignment(i<3 || value.startsWith("---")?Layout.Alignment.ALIGN_CENTER:Layout.Alignment.ALIGN_OPPOSITE)
+        ArrayList<StaticLayout> topLayouts=new ArrayList<>();
+        String[] topTexts={"بقالة العزي للمواد الغذائية", "الملاحظات الذكية", "التاريخ: "+db.now()};
+        for(String t:topTexts){
+            StaticLayout sl=StaticLayout.Builder.obtain(t,0,t.length(),headerP,contentWidth)
+                .setAlignment(Layout.Alignment.ALIGN_CENTER)
                 .setIncludePad(true).setLineSpacing(0,1)
                 .setTextDirection(android.text.TextDirectionHeuristics.RTL).build();
-            layouts.add(sl); height+=sl.getHeight()+6;
+            topLayouts.add(sl);
         }
-        height+=15;
 
-        Bitmap bmp=Bitmap.createBitmap(width,Math.max(150,height),Bitmap.Config.ARGB_8888);
-        Canvas canvas=new Canvas(bmp); canvas.drawColor(Color.WHITE);
-        int y=6;
-        for(int i=0; i<layouts.size(); i++){
-            StaticLayout sl=layouts.get(i);
-            canvas.save(); canvas.translate(margin,y); sl.draw(canvas); canvas.restore();
-            y+=sl.getHeight()+6;
-            if(i==2 || (i>2 && lines.get(i).startsWith("---"))){
-                Paint divider=new Paint(Paint.ANTI_ALIAS_FLAG); divider.setColor(DARK);
-                canvas.drawRect(margin, y, width-margin, y+2, divider);
-                y+=6;
-            }
+        StaticLayout leftHeader=StaticLayout.Builder.obtain("الشق الأيسر",0,11,subP,colWidth)
+            .setAlignment(Layout.Alignment.ALIGN_CENTER)
+            .setIncludePad(true).setLineSpacing(0,1)
+            .setTextDirection(android.text.TextDirectionHeuristics.RTL).build();
+        StaticLayout rightHeader=StaticLayout.Builder.obtain("الشق الأيمن",0,11,subP,colWidth)
+            .setAlignment(Layout.Alignment.ALIGN_CENTER)
+            .setIncludePad(true).setLineSpacing(0,1)
+            .setTextDirection(android.text.TextDirectionHeuristics.RTL).build();
+
+        int maxRows=Math.max(left.size(), right.size());
+        ArrayList<StaticLayout> leftItemLayouts=new ArrayList<>();
+        ArrayList<StaticLayout> rightItemLayouts=new ArrayList<>();
+
+        for(int i=0; i<maxRows; i++){
+            String lText = i<left.size() ? (left.get(i).name+" × "+fmt(left.get(i).qty)) : "";
+            String rText = i<right.size() ? (right.get(i).name+" × "+fmt(right.get(i).qty)) : "";
+
+            StaticLayout ll = StaticLayout.Builder.obtain(lText,0,lText.length(),body,colWidth)
+                .setAlignment(Layout.Alignment.ALIGN_OPPOSITE)
+                .setIncludePad(true).setLineSpacing(0,1)
+                .setTextDirection(android.text.TextDirectionHeuristics.RTL).build();
+            leftItemLayouts.add(ll);
+
+            StaticLayout rl = StaticLayout.Builder.obtain(rText,0,rText.length(),body,colWidth)
+                .setAlignment(Layout.Alignment.ALIGN_OPPOSITE)
+                .setIncludePad(true).setLineSpacing(0,1)
+                .setTextDirection(android.text.TextDirectionHeuristics.RTL).build();
+            rightItemLayouts.add(rl);
         }
-        return Bitmap.createBitmap(bmp,0,0,width,Math.min(y+10,bmp.getHeight()));
+
+        int height=15;
+        for(StaticLayout sl : topLayouts) height += sl.getHeight() + 4;
+        height += 8;
+        int headerRowH = Math.max(leftHeader.getHeight(), rightHeader.getHeight());
+        height += headerRowH + 8;
+
+        for(int i=0; i<maxRows; i++){
+            int rowH = Math.max(leftItemLayouts.get(i).getHeight(), rightItemLayouts.get(i).getHeight());
+            height += Math.max(rowH, 24) + 6;
+        }
+        height += 20;
+
+        Bitmap bmp=Bitmap.createBitmap(width, Math.max(180, height), Bitmap.Config.ARGB_8888);
+        Canvas canvas=new Canvas(bmp); canvas.drawColor(Color.WHITE);
+        int y=8;
+
+        for(StaticLayout sl : topLayouts){
+            canvas.save(); canvas.translate(margin, y); sl.draw(canvas); canvas.restore();
+            y += sl.getHeight() + 4;
+        }
+        y += 4;
+        Paint divider=new Paint(Paint.ANTI_ALIAS_FLAG); divider.setColor(DARK);
+        canvas.drawRect(margin, y, width-margin, y+2, divider);
+        y += 8;
+
+        int leftColX = margin;
+        int rightColX = width - margin - colWidth;
+
+        canvas.save(); canvas.translate(leftColX, y); leftHeader.draw(canvas); canvas.restore();
+        canvas.save(); canvas.translate(rightColX, y); rightHeader.draw(canvas); canvas.restore();
+        y += headerRowH + 6;
+
+        canvas.drawRect(margin, y, width-margin, y+1, divider);
+        y += 6;
+
+        for(int i=0; i<maxRows; i++){
+            StaticLayout ll = leftItemLayouts.get(i);
+            StaticLayout rl = rightItemLayouts.get(i);
+            int rowH = Math.max(Math.max(ll.getHeight(), rl.getHeight()), 24);
+
+            if((i&1)==0){
+                Paint bgP=new Paint(Paint.ANTI_ALIAS_FLAG); bgP.setColor(SURFACE_ALT);
+                canvas.drawRect(margin, y, width-margin, y+rowH+4, bgP);
+            }
+
+            canvas.save(); canvas.translate(leftColX, y+2); ll.draw(canvas); canvas.restore();
+            canvas.save(); canvas.translate(rightColX, y+2); rl.draw(canvas); canvas.restore();
+
+            y += rowH + 6;
+        }
+
+        canvas.drawRect(margin, y, width-margin, y+2, divider);
+        y += 10;
+
+        return Bitmap.createBitmap(bmp, 0, 0, width, Math.min(y, bmp.getHeight()));
     }
     void shareCurrentNotes(){
         if(currentNotePageId>0){
