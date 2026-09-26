@@ -846,10 +846,10 @@ void showMoreMenu(){
         for(int i=0;i<labels.length;i++){
             LinearLayout cardBox=new LinearLayout(this);
             cardBox.setOrientation(LinearLayout.VERTICAL); cardBox.setGravity(Gravity.CENTER_VERTICAL);
-            cardBox.setPadding(dp(10),dp(8),dp(10),dp(8)); cardBox.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+            cardBox.setPadding(dp(10),dp(9),dp(10),dp(9)); cardBox.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
             GradientDrawable bg=new GradientDrawable(); bg.setColor(CARD); bg.setCornerRadius(dp(14)); bg.setStroke(dp(1),BORDER);
             cardBox.setBackground(bg); cardBox.setElevation(dp(2)); cardBox.setOnClickListener(actions[i]);
-            TextView t=tv(labels[i],15.5f); t.setTextColor(TEXT); t.setTypeface(Typeface.DEFAULT,Typeface.BOLD); t.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+            TextView t=tv(labels[i],16f); t.setTextColor(TEXT); t.setTypeface(Typeface.DEFAULT,Typeface.BOLD); t.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
             cardBox.addView(t,new LinearLayout.LayoutParams(-1,dp(44)));
             GridLayout.LayoutParams gp;
             if(i==labels.length-1 && labels.length%2!=0){
@@ -857,7 +857,7 @@ void showMoreMenu(){
                 gp.width=0; gp.height=dp(72); gp.setMargins(dp(3),dp(3),dp(3),dp(3));
             }else{
                 gp=new GridLayout.LayoutParams(GridLayout.spec(i/2,1),GridLayout.spec(i%2,1,1f));
-                gp.width=0; gp.height=dp(76); gp.setMargins(dp(3),dp(3),dp(3),dp(3));
+                gp.width=0; gp.height=dp(82); gp.setMargins(dp(3),dp(3),dp(3),dp(3));
             }
             grid.addView(cardBox,gp);
         }
@@ -7766,164 +7766,96 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
 
 
     Bitmap invoiceReceiptBitmap(String no,String customer,ArrayList<Line> lines,double total,double paid,double balanceAfter,String date){
-        final int width=384; // 58mm thermal paper at 203dpi.
-        final int margin=12;
-        final int contentWidth=width-(margin*2);
-        final int nameWidth=198;
-        final int qtyWidth=55;
-        final int totalWidth=contentWidth-nameWidth-qtyWidth;
-        final float bodySp=9.5f;
-        final float headerSp=14f;
-        final float labelSp=10f;
-        final int pad=5;
+        final int width=384; // 58mm at the common 203dpi thermal resolution.
+        final int margin=10, contentWidth=width-(margin*2);
+        final int nameWidth=190, qtyWidth=54, amountWidth=contentWidth-nameWidth-qtyWidth;
+        final float bodySp=9.2f, smallSp=8.8f, headerSp=13.2f;
         final String safeNo=no==null?"":no.trim();
         final String safeCustomer=(customer==null||customer.trim().isEmpty()||"نقدي".equals(customer.trim()))?"عميل نقدي":customer.trim();
         final String safeDate=(date==null||date.trim().isEmpty())?db.now():date.trim();
+        final ArrayList<Line> safeLines=lines==null?new ArrayList<Line>():lines;
 
-        ArrayList<Line> safeLines=lines==null?new ArrayList<Line>():lines;
-        ArrayList<StaticLayout> nameLayouts=new ArrayList<>();
+        TextPaint tp=new TextPaint(Paint.ANTI_ALIAS_FLAG|Paint.SUBPIXEL_TEXT_FLAG);
+        ArrayList<StaticLayout> names=new ArrayList<>();
         ArrayList<Integer> rowHeights=new ArrayList<>();
-        TextPaint tp=new TextPaint(Paint.ANTI_ALIAS_FLAG);
-        tp.setTypeface(Typeface.create("sans",Typeface.NORMAL));
-        tp.setTextSize(spToPx(bodySp));
         for(Line l:safeLines){
-            String name=l==null||l.name==null?"":l.name.trim();
-            StaticLayout sl=new StaticLayout(
-                name, tp, nameWidth,
-                Layout.Alignment.ALIGN_NORMAL, 1.0f, 0f, false);
-            nameLayouts.add(sl);
+            String item=(l==null||l.name==null)?"":l.name.trim();
+            tp.setTypeface(Typeface.create("sans",Typeface.NORMAL));
+            tp.setTextSize(spToPx(bodySp));
+            StaticLayout sl=StaticLayout.Builder.obtain(item,0,item.length(),tp,nameWidth)
+                    .setAlignment(Layout.Alignment.ALIGN_OPPOSITE)
+                    .setLineSpacing(0f,1f).setIncludePad(false)
+                    .setTextDirection(android.text.TextDirectionHeuristics.RTL).build();
+            names.add(sl);
             rowHeights.add(Math.max(dp(22),sl.getHeight()+dp(2)));
         }
 
-        int height=12+36+8+28+8+24+6;
+        int height=8+30+22+34+28+8+27+4;
         for(Integer h:rowHeights) height+=h;
-        height+=8+34+6;
-        if(Math.abs(balanceAfter)>=0.005) height+=28+5;
-        height+=20;
-        height=Math.max(height,260);
+        height+=8+34+42+30+22;
+        Bitmap b=Bitmap.createBitmap(width,Math.max(1,height),Bitmap.Config.ARGB_8888);
+        Canvas canvas=new Canvas(b); canvas.drawColor(Color.WHITE);
+        Paint p=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.SUBPIXEL_TEXT_FLAG);
+        int y=7;
 
-        Bitmap b=Bitmap.createBitmap(width,height,Bitmap.Config.ARGB_8888);
-        Canvas canvas=new Canvas(b);
-        canvas.drawColor(Color.WHITE);
+        p.setTypeface(Typeface.create("sans",Typeface.BOLD)); p.setTextSize(spToPx(headerSp));
+        p.setTextAlign(Paint.Align.CENTER); p.setColor(DARK);
+        canvas.drawText("بقالة العزي للمواد الغذائية",width/2,y+17,p); y+=24;
 
-        Paint p=new Paint(Paint.ANTI_ALIAS_FLAG);
-        p.setTypeface(Typeface.create("sans",Typeface.NORMAL));
-        p.setColor(Color.BLACK);
+        p.setTextSize(spToPx(11.5f)); p.setColor(ORANGE);
+        canvas.drawText("فاتورة مبيعات",width/2,y+13,p); y+=20;
 
-        int y=10;
-        p.setTypeface(Typeface.create("sans",Typeface.BOLD));
-        p.setTextSize(spToPx(headerSp));
-        p.setTextAlign(Paint.Align.CENTER);
-        p.setColor(DARK);
-        canvas.drawText("بقالة العزي للمواد الغذائية",width/2,y+20,p);
-        y+=27;
+        p.setTypeface(Typeface.create("sans",Typeface.NORMAL)); p.setTextSize(spToPx(smallSp));
+        p.setColor(MUTED); p.setTextAlign(Paint.Align.RIGHT);
+        canvas.drawText("رقم الفاتورة: "+safeNo,width-margin,y+12,p); y+=15;
 
-        p.setTypeface(Typeface.create("sans",Typeface.BOLD));
-        p.setTextSize(spToPx(13));
-        p.setColor(GREEN);
-        canvas.drawText("فاتورة مبيعات",width/2,y+16,p);
-        y+=21;
-
-        p.setTypeface(Typeface.create("sans",Typeface.NORMAL));
-        p.setTextSize(spToPx(10.5f));
-        p.setColor(MUTED);
         String dateOnly=safeDate,timeOnly="";
         int space=safeDate.indexOf(' ');
-        if(space>0&&space<safeDate.length()-1){
-            dateOnly=safeDate.substring(0,space).trim();
-            timeOnly=safeDate.substring(space+1).trim();
-        }
-        canvas.drawText("رقم الفاتورة: "+safeNo+"    التاريخ: "+dateOnly,margin,y+13,p);
-        if(!timeOnly.isEmpty()) canvas.drawText("الوقت: "+timeOnly,margin,y+28,p);
-        y+=30;
+        if(space>0&&space<safeDate.length()-1){dateOnly=safeDate.substring(0,space).trim();timeOnly=safeDate.substring(space+1).trim();}
+        canvas.drawText("التاريخ: "+dateOnly,width-margin,y+12,p);
+        if(!timeOnly.isEmpty()){canvas.drawText("الوقت: "+timeOnly,width-margin,y+24,p);y+=27;}else y+=15;
 
-        p.setTypeface(Typeface.create("sans",Typeface.BOLD));
-        p.setTextSize(spToPx(labelSp));
-        p.setTextAlign(Paint.Align.RIGHT);
-        p.setColor(TEXT);
-        canvas.drawText("العميل: "+safeCustomer,width-margin,y+14,p);
-        y+=22;
+        p.setTypeface(Typeface.create("sans",Typeface.BOLD)); p.setTextSize(spToPx(9.8f)); p.setColor(TEXT);
+        canvas.drawText("العميل: "+safeCustomer,width-margin,y+13,p); y+=21;
 
-        // Table header.
-        p.setColor(GREEN);
-        canvas.drawRect(margin,y,width-margin,y+26,p);
-        p.setColor(Color.WHITE);
-        p.setTextSize(spToPx(10.5f));
-        p.setTypeface(Typeface.create("sans",Typeface.BOLD));
-        p.setTextAlign(Paint.Align.RIGHT);
-        canvas.drawText("اسم الصنف",width-margin-4,y+17,p);
-        p.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText("الكمية",margin+totalWidth+qtyWidth/2,y+17,p);
-        p.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText("الإجمالي",margin+totalWidth/2,y+17,p);
-        y+=30;
+        p.setColor(DARK); canvas.drawRect(margin,y,width-margin,y+24,p);
+        p.setColor(Color.WHITE); p.setTypeface(Typeface.create("sans",Typeface.BOLD)); p.setTextSize(spToPx(9.2f));
+        p.setTextAlign(Paint.Align.RIGHT); canvas.drawText("اسم الصنف",width-margin-4,y+16,p);
+        p.setTextAlign(Paint.Align.CENTER); canvas.drawText("الكمية",margin+nameWidth+qtyWidth/2,y+16,p);
+        canvas.drawText("الإجمالي",margin+nameWidth+qtyWidth+amountWidth/2,y+16,p); y+=27;
 
-        // Rows: item names wrap; quantity and total stay in their columns.
-        p.setTypeface(Typeface.create("sans",Typeface.NORMAL));
-        p.setTextSize(spToPx(bodySp));
         for(int idx=0;idx<safeLines.size();idx++){
-            Line l=safeLines.get(idx);
-            int rh=rowHeights.get(idx);
-            if((idx&1)==0){
-                p.setColor(Color.WHITE);
-                canvas.drawRect(margin,y,width-margin,y+rh,p);
-            }
-            StaticLayout sl=nameLayouts.get(idx);
-            canvas.save();
-            canvas.translate(margin+totalWidth+qtyWidth,y+1);
-            sl.draw(canvas);
-            canvas.restore();
+            Line l=safeLines.get(idx); int rh=rowHeights.get(idx);
+            if((idx&1)==0){p.setColor(SURFACE_ALT);canvas.drawRect(margin,y,width-margin,y+rh,p);}
+            StaticLayout sl=names.get(idx);
+            canvas.save(); canvas.translate(margin,y+1); sl.draw(canvas); canvas.restore();
 
-            p.setColor(TEXT);
-            p.setTextAlign(Paint.Align.CENTER);
-            canvas.drawText(fmt(l.qty),margin+totalWidth+qtyWidth/2,y+Math.max(15,rh/2+5),p);
-            p.setColor(GREEN);
-            p.setTypeface(Typeface.create("sans",Typeface.BOLD));
-            canvas.drawText(fmt(l.total),margin+totalWidth/2,y+Math.max(15,rh/2+5),p);
-            p.setTypeface(Typeface.create("sans",Typeface.NORMAL));
+            p.setTypeface(Typeface.create("sans",Typeface.NORMAL)); p.setTextSize(spToPx(bodySp)); p.setColor(TEXT); p.setTextAlign(Paint.Align.CENTER);
+            canvas.drawText(fmt(l.qty),margin+nameWidth+qtyWidth/2,y+Math.max(14,rh/2+5),p);
+            p.setTypeface(Typeface.create("sans",Typeface.BOLD)); p.setColor(DARK);
+            canvas.drawText(fmt(l.total),margin+nameWidth+qtyWidth+amountWidth/2,y+Math.max(14,rh/2+5),p);
             y+=rh;
         }
 
-        y+=8;
-        p.setColor(DARK);
-        p.setTypeface(Typeface.create("sans",Typeface.BOLD));
-        p.setTextSize(spToPx(11f));
-        p.setTextAlign(Paint.Align.RIGHT);
-        canvas.drawText("الإجمالي:",width-margin-100,y+20,p);
-        p.setTextAlign(Paint.Align.LEFT);
-        canvas.drawText(fmt(total)+" ريال",margin,y+20,p);
-        y+=30;
+        y+=7; p.setColor(ORANGE); p.setTypeface(Typeface.create("sans",Typeface.BOLD)); p.setTextSize(spToPx(10.5f));
+        p.setTextAlign(Paint.Align.RIGHT); canvas.drawText("الإجمالي:",width-margin-92,y+16,p);
+        p.setTextAlign(Paint.Align.LEFT); canvas.drawText(fmt(total)+" ريال",margin,y+16,p); y+=27;
 
         double remaining=Math.max(0,total-paid);
-        p.setTextAlign(Paint.Align.RIGHT);
-        p.setTypeface(Typeface.create("sans",Typeface.NORMAL));
-        p.setTextSize(spToPx(10f));
-        p.setColor(TEXT);
-        canvas.drawText("المدفوع: "+fmt(paid)+" ريال",width-margin,y+15,p);
-        canvas.drawText("المتبقي: "+fmt(remaining)+" ريال",width-margin,y+32,p);
-        y+=40;
+        p.setTypeface(Typeface.create("sans",Typeface.NORMAL)); p.setTextSize(spToPx(9.2f)); p.setColor(TEXT); p.setTextAlign(Paint.Align.RIGHT);
+        canvas.drawText("المدفوع: "+fmt(paid)+" ريال",width-margin,y+13,p);
+        canvas.drawText("المتبقي: "+fmt(remaining)+" ريال",width-margin,y+27,p); y+=35;
 
-        p.setTypeface(Typeface.create("sans",Typeface.BOLD));
-        p.setTextSize(spToPx(11.5f));
-        p.setColor(balanceAfter>0.005?RED:(balanceAfter<-0.005?BLUE:GREEN));
-        String balanceLine;
-        if(balanceAfter>0.005) balanceLine="رصيدكم عليكم: "+fmt(balanceAfter)+" ريال";
-        else if(balanceAfter<-0.005) balanceLine="الرصيد لكم: "+fmt(Math.abs(balanceAfter))+" ريال";
-        else balanceLine="الرصيد التراكمي: 0 ريال";
-        canvas.drawText(balanceLine,width-margin,y+16,p);
-        y+=27;
+        p.setTypeface(Typeface.create("sans",Typeface.BOLD)); p.setTextSize(spToPx(10.2f));
+        p.setColor(balanceAfter>0.005?RED:(balanceAfter<-0.005?BLUE:DARK));
+        String balanceLine=balanceAfter>0.005?"الرصيد التراكمي: "+fmt(balanceAfter)+" ريال عليكم":
+                (balanceAfter<-0.005?"الرصيد التراكمي: "+fmt(Math.abs(balanceAfter))+" ريال لكم":"الرصيد التراكمي: 0 ريال");
+        canvas.drawText(balanceLine,width-margin,y+13,p); y+=25;
 
-        p.setTypeface(Typeface.create("sans",Typeface.NORMAL));
-        p.setTextSize(spToPx(9.5f));
-        p.setColor(MUTED);
-        p.setTextAlign(Paint.Align.CENTER);
-        canvas.drawText("شكراً لتعاملكم معنا",width/2,y+10,p);
-
-        // Crop exactly to content; no fixed-height white tail.
-        int finalHeight=Math.min(height,Math.max(1,y+18));
-        return Bitmap.createBitmap(b,0,0,width,finalHeight);
+        p.setTypeface(Typeface.create("sans",Typeface.NORMAL)); p.setTextSize(spToPx(8.8f)); p.setColor(MUTED); p.setTextAlign(Paint.Align.CENTER);
+        canvas.drawText("شكراً لتعاملكم معنا",width/2,y+10,p); y+=17;
+        return Bitmap.createBitmap(b,0,0,width,Math.min(y+5,b.getHeight()));
     }
-
 
     Bitmap receiptBitmap(String text){ return receiptBitmap(text,384); }
 
@@ -8097,7 +8029,12 @@ void printTextBluetooth(String text,int requestedWidth){
     void sendBitmapToBluetooth(BluetoothDevice device,Bitmap bitmap){
         BluetoothSocket socket=null;OutputStream out=null;
         try{
+            if(device==null||bitmap==null) throw new IllegalArgumentException("printer or receipt is null");
+            if(Build.VERSION.SDK_INT>=31&&checkSelfPermission("android.permission.BLUETOOTH_CONNECT")!=PackageManager.PERMISSION_GRANTED)
+                throw new SecurityException("BLUETOOTH_CONNECT permission is required");
             UUID spp=UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+            BluetoothAdapter adapter=BluetoothAdapter.getDefaultAdapter();
+            if(adapter!=null){try{adapter.cancelDiscovery();}catch(Throwable ignored){}}
             try{
                 socket=device.createRfcommSocketToServiceRecord(spp);
                 socket.connect();
@@ -8107,14 +8044,25 @@ void printTextBluetooth(String text,int requestedWidth){
                 socket.connect();
             }
             out=socket.getOutputStream();
-            out.write(new byte[]{0x1B,0x40});                 // تهيئة الطابعة
-            out.write(rasterBytes(bitmap));                  // 384px = 58mm على طابعات 203dpi
-            out.write(new byte[]{0x1B,0x64,0x04});            // تغذية الورق 4 أسطر
-            out.write(new byte[]{0x1D,0x56,0x00});            // قص
+            out.write(new byte[]{0x1B,0x40});
+            byte[] raster=rasterBytes(bitmap);
+            final int chunk=2048;
+            for(int offset=0;offset<raster.length;offset+=chunk){
+                int len=Math.min(chunk,raster.length-offset);
+                out.write(raster,offset,len);
+                out.flush();
+                try{Thread.sleep(8);}catch(InterruptedException ie){Thread.currentThread().interrupt();throw ie;}
+            }
+            out.write(new byte[]{0x1B,0x64,0x03});
             out.flush();
-            runOnUiThread(()->Toast.makeText(this,"تمت الطباعة بنجاح على طابعة 58mm",Toast.LENGTH_SHORT).show());
+            try{Thread.sleep(120);}catch(InterruptedException ie){Thread.currentThread().interrupt();}
+            try{out.write(new byte[]{0x1D,0x56,0x00});out.flush();}catch(Throwable ignored){}
+            runOnUiThread(()->Toast.makeText(this,"تم إرسال الإيصال إلى الطابعة بنجاح",Toast.LENGTH_SHORT).show());
+        }catch(SecurityException e){
+            runOnUiThread(()->Toast.makeText(this,"يلزم السماح باتصال Bluetooth للطباعة.",Toast.LENGTH_LONG).show());
         }catch(Exception e){
-            runOnUiThread(()->Toast.makeText(this,"تعذر إتمام الطباعة. تأكد من تشغيل الطابعة وتوفر الورق.",Toast.LENGTH_LONG).show());
+            android.util.Log.e("AlAzziBluetooth","Bluetooth printing failed",e);
+            runOnUiThread(()->Toast.makeText(this,"تعذر الاتصال بالطابعة أو إرسال الإيصال. تأكد من اقترانها وتشغيلها.",Toast.LENGTH_LONG).show());
         }finally{
             try{if(out!=null)out.close();}catch(Exception ignored){}
             try{if(socket!=null)socket.close();}catch(Exception ignored){}
@@ -8137,12 +8085,23 @@ void printTextBluetooth(String text,int requestedWidth){
     }
 
     void printToBluetooth(BluetoothDevice device,String no,String customer,ArrayList<Line> lines,double total){
-        long cid=customer==null||customer.trim().isEmpty()?-1:db.customerIdByName(customer.trim());
-        String text=receiptTextFromLines(no,customer,lines,total,cid);
-        Bitmap bitmap=receiptBitmap(text);
-        new Thread(()->{
-            sendBitmapToBluetooth(device,bitmap);
-        }).start();
+        // الطباعة تستخدم نفس مصمم إيصال 58mm المستخدم في المشاركة.
+        double paid=0;
+        String date=db.now();
+        double balanceAfter=0;
+        try{
+            long invoiceId=db.invoiceIdByNo(no);
+            if(invoiceId>0){
+                paid=db.invoicePaid(invoiceId);
+                date=db.invoiceDate(invoiceId);
+            }
+            if(customer!=null&&!customer.trim().isEmpty()&&!"نقدي".equals(customer.trim())){
+                long cid=db.customerIdByName(customer.trim());
+                if(cid>0) balanceAfter=db.balance(cid);
+            }
+        }catch(Throwable ignored){}
+        Bitmap bitmap=invoiceReceiptBitmap(no,customer,lines,total,paid,balanceAfter,date);
+        new Thread(()->sendBitmapToBluetooth(device,bitmap)).start();
     }
 
     byte[] rasterBytes(Bitmap bitmap){
