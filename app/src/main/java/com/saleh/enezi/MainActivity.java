@@ -1938,7 +1938,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
         double bal=db.balanceByName(customer);
         if(!cust.isEmpty()&&Math.abs(bal)>=0.005){
             if(bal>0.005) t.append("الإجمالي - عليك ").append(fmt(bal)).append(" يمني");
-            else t.append("الإجمالي - له ").append(fmt(Math.abs(bal)).append(" يمني");
+            else t.append("الإجمالي - له ").append(fmt(Math.abs(bal))).append(" يمني");
         }else{
             t.append("الإجمالي - خالص (0 يمني)");
         }
@@ -7952,7 +7952,6 @@ Bitmap receiptBitmap(String text,int targetWidth){
             if(clean.startsWith("بقالة العزي للمواد الغذائية")){
                 sl=new StaticLayout(clean,tp,contentWidth,Layout.Alignment.ALIGN_CENTER,1.0f,0f,false);
             }
-            sl.draw(canvas);
             canvas.save();
             canvas.translate(margin,y);
             sl.draw(canvas);
