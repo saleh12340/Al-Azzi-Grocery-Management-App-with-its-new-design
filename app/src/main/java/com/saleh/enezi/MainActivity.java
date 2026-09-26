@@ -2087,13 +2087,56 @@ void operationActions(long customerId,String customerName,long tid,String detail
         shareWhatsAppToCustomer(db.phoneByName(name),text.toString(),null);
     }
 
+    void showCompactPrintPreview(String title, Bitmap receiptBitmap, Runnable onPrint, Runnable onShare){
+        if(receiptBitmap==null){
+            Toast.makeText(this,"لا توجد بيانات للمعاينة",Toast.LENGTH_SHORT).show();
+            return;
+        }
+        ImageView image=new ImageView(this);
+        image.setImageBitmap(receiptBitmap);
+        image.setAdjustViewBounds(true);
+        image.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+        image.setBackgroundColor(Color.WHITE);
+        image.setPadding(dp(4),dp(4),dp(4),dp(4));
+
+        ScrollView scroll=new ScrollView(this);
+        scroll.setFillViewport(true);
+        scroll.setBackgroundColor(Color.WHITE);
+        scroll.addView(image,new ScrollView.LayoutParams(-1,-2));
+
+        AlertDialog.Builder builder=new AlertDialog.Builder(this)
+            .setTitle(title)
+            .setView(scroll)
+            .setNeutralButton("🖨️ طباعة",(d,w)->{
+                if(onPrint!=null) onPrint.run();
+            })
+            .setNegativeButton("إغلاق",null);
+
+        if(onShare!=null){
+            builder.setPositiveButton("📲 مشاركة واتساب",(d,w)->onShare.run());
+        }
+
+        AlertDialog dlg=builder.create();
+        dlg.show();
+        compactDialogWindow(dlg,390);
+    }
+
+    void showCompactPrintPreview(String title, String receiptText, Runnable onPrint, Runnable onShare){
+        if(receiptText==null||receiptText.trim().isEmpty()){
+            Toast.makeText(this,"لا توجد بيانات للمعاينة",Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Bitmap bmp=receiptBitmap(receiptText);
+        showCompactPrintPreview(title,bmp,onPrint,onShare);
+    }
+
     void printSelectedTransactions(long customerId,String name,ArrayList<Long> ids){
         try{
             Bitmap receipt=selectedTransactionsReceiptBitmap(customerId,name,ids);
-            printBitmapBluetooth(receipt);
+            showCompactPrintPreview("معاينة العمليات المحددة 58mm",receipt,()->printBitmapBluetooth(receipt),()->shareSelectedTransactions(customerId,name,ids));
         }catch(Throwable e){
             android.util.Log.e("AlAzziBluetooth","Selected transactions receipt generation failed",e);
-            Toast.makeText(this,"تعذر تجهيز كشف العمليات للطباعة 58mm",Toast.LENGTH_LONG).show();
+            Toast.makeText(this,"تعذر تجهيز كشف العمليات للمعاينة 58mm",Toast.LENGTH_LONG).show();
         }
     }
 
@@ -2204,9 +2247,9 @@ void operationActions(long customerId,String customerName,long tid,String detail
     void printAccountStatementBluetooth(long customerId,String name){
         try{
             Bitmap bmp=statementReceiptBitmap(customerId,name);
-            printBitmapBluetooth(bmp);
+            showCompactPrintPreview("معاينة كشف الحساب 58mm",bmp,()->printBitmapBluetooth(bmp),()->shareAccountPdfToWhatsApp(customerId,name));
         }catch(Exception e){
-            Toast.makeText(this,"تعذر تجهيز كشف الحساب الكامل للطباعة",Toast.LENGTH_SHORT).show();
+            Toast.makeText(this,"تعذر تجهيز كشف الحساب الكامل للمعاينة",Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -2240,15 +2283,14 @@ void operationActions(long customerId,String customerName,long tid,String detail
     void printOperation(String customer,String details,double amount,int type,String invNo){
         try{
             Bitmap bmp=operationBitmap(customer,details,amount,type,invNo);
-            printBitmapBluetooth(bmp);
+            showCompactPrintPreview("معاينة العملية 58mm",bmp,()->printBitmapBluetooth(bmp),()->shareOperationImage(customer,details,amount,type,invNo));
         }catch(Exception e){
-            Toast.makeText(this,"تعذر تجهيز العملية للطباعة",Toast.LENGTH_LONG).show();
+            Toast.makeText(this,"تعذر تجهيز العملية للمعاينة",Toast.LENGTH_LONG).show();
         }
     }
 
     void previewTextForPrint(String text,String customer){
-        TextView v=tv(text,12);v.setGravity(Gravity.CENTER);v.setTypeface(Typeface.MONOSPACE);
-        new AlertDialog.Builder(this).setTitle("معاينة العملية 58mm").setView(v).setPositiveButton("طباعة",(d,w)->printTextBluetooth(text)).setNegativeButton("إغلاق",null).show();
+        showCompactPrintPreview("معاينة العملية 58mm",text,()->printTextBluetooth(text),null);
     }
     String statement(long id,String name){
         StringBuilder s=new StringBuilder();
@@ -3197,9 +3239,14 @@ void operationActions(long customerId,String customerName,long tid,String detail
     }
     void printCurrentNotes(){
         if(currentNotePageId>0){
-            printTextBluetooth(notesReceiptText());
+            try{
+                Bitmap bmp=notesReceiptBitmap();
+                showCompactPrintPreview("معاينة الملاحظات 58mm",bmp,()->printTextBluetooth(notesReceiptText()),()->shareCurrentNotes());
+            }catch(Exception e){
+                showCompactPrintPreview("معاينة الملاحظات 58mm",notesReceiptText(),()->printTextBluetooth(notesReceiptText()),()->shareCurrentNotes());
+            }
         }else{
-            Toast.makeText(this,"لا توجد صفحة ملاحظات للطباعة",Toast.LENGTH_SHORT).show();
+            Toast.makeText(this,"لا توجد صفحة ملاحظات للمعاينة أو الطباعة",Toast.LENGTH_SHORT).show();
         }
     }
     void purchaseInvoices(){
@@ -4183,11 +4230,19 @@ void operationActions(long customerId,String customerName,long tid,String detail
         double current=supplierBalance(name);
         TextView bal=tv("الرصيد الحالي: "+fmt(Math.abs(current))+" ر.ي • "+supplierBalanceLabel(current),16);bal.setGravity(Gravity.CENTER);bal.setTypeface(Typeface.DEFAULT,Typeface.BOLD);bal.setTextColor(current>0.005?RED:(current< -0.005?BLUE:GREEN));bal.setBackground(outlined(Color.WHITE,1,dp(12)));content.addView(bal,new LinearLayout.LayoutParams(-1,dp(52)));addSpace(5);
         LinearLayout top=new LinearLayout(this);top.setOrientation(LinearLayout.HORIZONTAL);top.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        Button pay=action("＋ سداد للمورد",RED),share=button("مشاركة الحساب");
-        top.addView(pay,new LinearLayout.LayoutParams(0,dp(42),1));LinearLayout.LayoutParams shp=new LinearLayout.LayoutParams(0,dp(42),1);shp.setMargins(dp(5),0,0,0);top.addView(share,shp);content.addView(top);addSpace(6);
+        Button pay=action("＋ سداد للمورد",RED),share=button("مشاركة الحساب"),printStmt=button("🖨️ طباعة");
+        top.addView(pay,new LinearLayout.LayoutParams(0,dp(42),1.2f));
+        LinearLayout.LayoutParams shp=new LinearLayout.LayoutParams(0,dp(42),1.1f);
+        shp.setMargins(dp(4),0,0,0);
+        top.addView(share,shp);
+        LinearLayout.LayoutParams prp=new LinearLayout.LayoutParams(0,dp(42),1.1f);
+        prp.setMargins(dp(4),0,0,0);
+        top.addView(printStmt,prp);
+        content.addView(top);addSpace(6);
         LinearLayout list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);list.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);content.addView(list);
         String statement=supplierStatement(name,supplierId);
         share.setOnClickListener(v->shareSupplierStatement(name,phone,statement));
+        printStmt.setOnClickListener(v->showCompactPrintPreview("معاينة كشف المورد 58mm",statement,()->printTextBluetooth(statement),()->shareSupplierStatement(name,phone,statement)));
         pay.setOnClickListener(v->showSupplierPaymentDialog(supplierId,name,()->supplierAccount(supplierId,name,phone)));
         Cursor c=db.getReadableDatabase().rawQuery("SELECT kind,id,ref,details,amount,date FROM (SELECT 1 kind,pi.id id,pi.no ref,'فاتورة شراء' details,pi.total amount,pi.date date FROM purchase_invoices pi WHERE lower(trim(pi.supplier))=lower(trim(?)) UNION ALL SELECT 2 kind,st.id id,st.invoice_no ref,st.details details,-st.amount amount,st.date date FROM supplier_transactions st WHERE st.supplier_id=? ) ORDER BY datetime(date),id",new String[]{name,String.valueOf(supplierId)});
         double running=0;int count=0;
@@ -6944,7 +6999,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         printBtn.setTextSize(13f);
         printBtn.setOnClickListener(v->{
             dlg.dismiss();
-            printInvoiceBluetooth(no,customer,lineList,total);
+            preview(no,customer,lineList,total,false,0);
         });
 
         Button editBtn=button("✏️ تعديل");
@@ -7422,8 +7477,10 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
                 s.append("سعر الشراء للوحدة: ").append(fmt(l.cost)).append(" ريال  •  سعر البيع: ").append(fmt(l.sale)).append(" ريال\n");
             }
             s.append("------------------------------\nالإجمالي: ").append(fmt(total)).append(" ريال\nشكراً لتعاملكم معنا");
-            printTextBluetooth(s.toString());
-        }catch(Exception e){Toast.makeText(this,"تعذر تجهيز فاتورة الشراء للطباعة",Toast.LENGTH_LONG).show();}
+            final String txt=s.toString();
+            Bitmap b=receiptBitmap(txt);
+            showCompactPrintPreview("معاينة فاتورة الشراء 58mm",b,()->printTextBluetooth(txt),()->sharePurchaseInvoiceImage(id,no,supplier,total,date));
+        }catch(Exception e){Toast.makeText(this,"تعذر تجهيز فاتورة الشراء للمعاينة",Toast.LENGTH_LONG).show();}
     }
 
 
