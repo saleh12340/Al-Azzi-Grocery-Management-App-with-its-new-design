@@ -46,11 +46,13 @@ import java.util.*;
 public class MainActivity extends Activity {
     static final int REQ_CONTACTS=4101, PICK_CONTACT=4102, PICK_TRANSFER_RECEIVER=4110, PICK_TRANSFER_SENDER=4111, REQ_CAMERA_SCAN=4103, REQ_GALLERY_SCAN=4104, REQ_PERM_CAMERA=4105, REQ_AUDIO=5110, REQ_VOICE_SEARCH=5111, REQ_VOICE_DETAIL=5112;
     EditText customerNameInput, customerPhoneInput;
-    static final int ORANGE=Color.rgb(244,176,120), GRAPE=Color.rgb(111,78,112);
-    static final int ORANGE_SOFT=Color.argb(153,244,176,120), GRAPE_SOFT=Color.argb(153,111,78,112);
-    static final int GREEN=ORANGE, DARK=GRAPE, GOLD=ORANGE, BLUE=GRAPE, RED=GRAPE;
-    static final int BG=Color.WHITE, TEXT=Color.rgb(45,35,45), MUTED=Color.rgb(105,90,105), CARD=Color.WHITE;
-    static final int SURFACE_ALT=Color.rgb(255,248,242), BORDER=Color.rgb(226,210,222), ACCENT_LINE=ORANGE_SOFT;
+    static final int ORANGE=Color.rgb(242,142,54), BLUE_PRIMARY=Color.rgb(30,91,170);
+    static final int ORANGE_SOFT=Color.argb(153,242,142,54), BLUE_SOFT=Color.argb(153,30,91,170);
+    // لوحة التطبيق الموحدة: أبيض كأساس، أزرق كلون رئيسي، وبرتقالي كلون إبراز.
+    // الأسماء القديمة محفوظة لتجنب كسر منطق الشاشات الحالي، لكن قيمها أصبحت ضمن الهوية الجديدة.
+    static final int GREEN=ORANGE, DARK=BLUE_PRIMARY, GOLD=ORANGE, BLUE=BLUE_PRIMARY, RED=ORANGE;
+    static final int BG=Color.WHITE, TEXT=Color.rgb(32,45,60), MUTED=Color.rgb(92,105,120), CARD=Color.WHITE;
+    static final int SURFACE_ALT=Color.rgb(247,250,253), BORDER=Color.rgb(210,220,232), ACCENT_LINE=ORANGE_SOFT;
     volatile boolean startupFinished=false; DB db; LinearLayout root,content,bottom; boolean darkCardMode=false; PopupWindow learningPopup; TextView pageTitle; int textSize=16; String currentPage="الرئيسية"; ArrayDeque<String> pageStack=new ArrayDeque<>(); long currentNotePageId=-1; int noteFontSize=14; boolean noteScrollMode=true;
     Uri cameraScanTempUri; Bitmap scanRawBitmap; String scanFilterMode="magic"; float scanRotation=0; String scanCategoryFilter="الكل"; String scanSearchQuery="";
     EditText transferSenderName,transferSenderPhone,transferReceiverName,transferReceiverPhone,transferContactNameTarget,transferContactPhoneTarget;
@@ -849,6 +851,8 @@ void showMoreMenu(){
         content.addView(grid,new LinearLayout.LayoutParams(-1,-2));
         addSpace(8);
 
+        // تفعيل الزر العائم في الصفحة الرئيسية بعد اكتمال بناء المحتوى.
+        addHomeFab();
     }
     void addHomeFab(){
         if(root==null||root.getChildCount()<3) return;
@@ -857,16 +861,33 @@ void showMoreMenu(){
         FrameLayout frame=new FrameLayout(this);
         frame.setClipChildren(false); frame.setClipToPadding(false);
         frame.addView(sv,new FrameLayout.LayoutParams(-1,-1));
+
+        // زر الإجراء السريع ثابت في أسفل يمين الشاشة، فوق المحتوى مباشرة.
+        // الضغط عليه يفتح جميع العمليات السريعة الموجودة فعلياً في التطبيق.
         Button fab=new Button(this);
-        fab.setText("＋\nإضافة"); fab.setTextSize(13); fab.setTextColor(Color.WHITE);
-        fab.setAllCaps(false); fab.setGravity(Gravity.CENTER); fab.setIncludeFontPadding(false);
-        GradientDrawable fb=new GradientDrawable(); fb.setShape(GradientDrawable.OVAL); fb.setColor(GREEN);
-        fab.setBackground(fb); fab.setElevation(dp(8)); fab.setContentDescription("إضافة عملية جديدة");
+        fab.setText("＋\nسريع");
+        fab.setTextSize(12.5f);
+        fab.setTextColor(Color.WHITE);
+        fab.setAllCaps(false);
+        fab.setGravity(Gravity.CENTER);
+        fab.setIncludeFontPadding(false);
+        fab.setPadding(0,0,0,0);
+        GradientDrawable fb=new GradientDrawable();
+        fb.setShape(GradientDrawable.OVAL);
+        fb.setColor(ORANGE);
+        fb.setStroke(dp(2),Color.WHITE);
+        fab.setBackground(fb);
+        fab.setElevation(dp(10));
+        fab.setContentDescription("إجراءات سريعة: فاتورة، حركة حساب، سداد، عميل، صنف وغيرها");
         fab.setOnClickListener(v->showGeneralActions());
-        FrameLayout.LayoutParams fp=new FrameLayout.LayoutParams(dp(62),dp(62),Gravity.BOTTOM|Gravity.LEFT);
-        fp.setMargins(dp(16),0,dp(16),dp(16)); frame.addView(fab,fp);
+
+        FrameLayout.LayoutParams fp=new FrameLayout.LayoutParams(
+                dp(64),dp(64),Gravity.BOTTOM|Gravity.RIGHT);
+        fp.setMargins(dp(16),0,dp(16),dp(16));
+        frame.addView(fab,fp);
+
         root.addView(frame,1,new LinearLayout.LayoutParams(-1,0,1));
-        if(content!=null) content.setPadding(dp(6),dp(4),dp(6),dp(80));
+        if(content!=null) content.setPadding(dp(6),dp(4),dp(6),dp(88));
     }
 
     void showCustomerTransactionDialog(boolean payment){
