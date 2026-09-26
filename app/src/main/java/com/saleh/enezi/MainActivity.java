@@ -2319,6 +2319,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
     void transfers(){
         base("الحوالات");
         darkCardMode=true;
+        applyDenseGlassPage();
         addSpace(4);
 
         LinearLayout form=card();
