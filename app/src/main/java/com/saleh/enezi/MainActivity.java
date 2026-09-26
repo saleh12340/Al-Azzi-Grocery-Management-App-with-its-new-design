@@ -2809,30 +2809,34 @@ void operationActions(long customerId,String customerName,long tid,String detail
     LinearLayout noteColumn(String title,ArrayList<NoteItem> items,int side,long pid){
         LinearLayout col=new LinearLayout(this);
         col.setOrientation(LinearLayout.VERTICAL);
-        col.setPadding(dp(4),dp(4),dp(4),dp(6));
+        col.setPadding(dp(3),dp(3),dp(3),dp(4));
         col.setBackground(outlined(Color.WHITE,1,12));
-        TextView h=tv(title,12);
+        TextView h=tv(title,Math.max(10,noteFontSize-1));
         h.setTextColor(side==1?GREEN:BLUE);
         h.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         h.setGravity(Gravity.CENTER);
-        col.addView(h,new LinearLayout.LayoutParams(-1,dp(32)));
+        col.addView(h,new LinearLayout.LayoutParams(-1,dp(Math.max(24,noteFontSize+12))));
         if(items.isEmpty()){
-            TextView e=tv("لا توجد عناصر",10);
+            TextView e=tv("لا توجد عناصر",Math.max(9,noteFontSize-2));
             e.setTextColor(MUTED);
             e.setGravity(Gravity.CENTER);
-            col.addView(e,new LinearLayout.LayoutParams(-1,dp(52)));
+            col.addView(e,new LinearLayout.LayoutParams(-1,dp(40)));
             return col;
         }
+        int padV=Math.max(2, noteFontSize/3);
+        int itemH=Math.max(28, noteFontSize*2 + 6);
         for(NoteItem it:items){
             LinearLayout row=new LinearLayout(this);
             row.setOrientation(LinearLayout.HORIZONTAL);
             row.setGravity(Gravity.CENTER_VERTICAL);
             row.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
-            row.setPadding(dp(4),dp(6),dp(4),dp(6));
+            row.setPadding(dp(2),dp(padV),dp(2),dp(padV));
             row.setBackground(outlined(CARD,1,9));
+            row.setClickable(true);
+            row.setOnClickListener(v->editNoteItem(pid,it));
             Button del=button("🗑");
             del.setTextColor(RED);
-            del.setTextSize(12f);
+            del.setTextSize(Math.max(10,noteFontSize-2));
             del.setOnClickListener(v->{db.deleteNoteItem(pid,it.name,it.qty,it.side);notes();});
             TextView nm=tv(it.name,noteFontSize);
             nm.setTextColor(Color.BLACK);
@@ -2842,15 +2846,67 @@ void operationActions(long customerId,String customerName,long tid,String detail
             TextView q=tv(fmt(it.qty),noteFontSize);
             q.setGravity(Gravity.CENTER);
             q.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-            row.addView(del,new LinearLayout.LayoutParams(dp(36),dp(40)));
+            row.addView(del,new LinearLayout.LayoutParams(dp(Math.max(28,noteFontSize+14)), dp(itemH)));
             row.addView(nm,new LinearLayout.LayoutParams(0,-2,1));
-            row.addView(q,new LinearLayout.LayoutParams(dp(45),dp(40)));
+            row.addView(q,new LinearLayout.LayoutParams(dp(Math.max(35,noteFontSize*2+10)), dp(itemH)));
             LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,-2);
-            rp.setMargins(0,0,0,dp(4));
+            rp.setMargins(0,0,0,dp(Math.max(2, noteFontSize/4)));
             col.addView(row,rp);
-            spaceTo(col,2);
+            spaceTo(col,Math.max(1, noteFontSize/5));
         }
         return col;
+    }
+    void editNoteItem(long pid,NoteItem it){
+        final Dialog dlg=new Dialog(this);
+        LinearLayout box=new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        box.setPadding(dp(14),dp(12),dp(14),dp(12));
+        box.setBackground(rounded(CARD,dp(16)));
+
+        TextView hTitle=tv("✏ تعديل عنصر الملاحظة",16);
+        hTitle.setTextColor(GREEN); hTitle.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        box.addView(hTitle,new LinearLayout.LayoutParams(-1,-2));
+        addSpaceTo(box,8);
+
+        EditText nameEd=field("اسم الصنف");
+        nameEd.setText(it.name);
+        nameEd.setTextSize(15);
+        box.addView(nameEd,new LinearLayout.LayoutParams(-1,dp(46)));
+        addSpaceTo(box,6);
+
+        EditText qtyEd=numberField("العدد / الرقم");
+        qtyEd.setText(fmt(it.qty));
+        qtyEd.setTextSize(15);
+        box.addView(qtyEd,new LinearLayout.LayoutParams(-1,dp(46)));
+        addSpaceTo(box,10);
+
+        LinearLayout actions=new LinearLayout(this);
+        actions.setOrientation(LinearLayout.HORIZONTAL);
+        actions.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        Button saveBtn=action("✓ حفظ التعديل",GREEN);
+        Button cancelBtn=button("إلغاء");
+        cancelBtn.setOnClickListener(v->dlg.dismiss());
+        actions.addView(saveBtn,new LinearLayout.LayoutParams(0,dp(42),1.3f));
+        LinearLayout.LayoutParams clp=new LinearLayout.LayoutParams(0,dp(42),0.7f); clp.setMargins(dp(6),0,0,0);
+        actions.addView(cancelBtn,clp);
+        box.addView(actions,new LinearLayout.LayoutParams(-1,-2));
+
+        saveBtn.setOnClickListener(v->{
+            String newName=nameEd.getText().toString().trim();
+            double newQty=0;
+            try{ newQty=Double.parseDouble(qtyEd.getText().toString().trim().replace(",", ".")); }catch(Exception ignored){}
+            if(newName.isEmpty()||newQty<=0){
+                Toast.makeText(this,"أدخل اسماً ورسماً صحيحاً",Toast.LENGTH_SHORT).show();
+                return;
+            }
+            db.updateNoteItem(pid, it.name, it.qty, it.side, newName, newQty);
+            dlg.dismiss();
+            notes();
+            Toast.makeText(this,"تم تعديل العنصر بنجاح",Toast.LENGTH_SHORT).show();
+        });
+
+        showCompactDialog(dlg,box,360);
     }
     void addNoteItem(long pid,EditText name,EditText qty,int side){String n=name.getText().toString().trim();double q=0; try { q=Double.parseDouble(qty.getText().toString().trim().replace(",", ".")); } catch(Exception ignored) {}if(n.isEmpty()){Toast.makeText(this,"اكتب اسم الصنف أولاً",Toast.LENGTH_SHORT).show();return;}if(q<=0){Toast.makeText(this,"العدد يجب أن يكون أكبر من صفر",Toast.LENGTH_SHORT).show();return;}db.addNoteItem(pid,n,q,side);name.setText("");qty.setText("1");notes();}
     void clearNotesPage(){if(currentNotePageId<1)return;new AlertDialog.Builder(this).setTitle("تفريغ الصفحة").setMessage("سيتم حذف عناصر الصفحة الحالية فقط. هل تريد المتابعة؟").setNegativeButton("إلغاء",null).setPositiveButton("تفريغ",(d,w)->{db.clearNoteItems(currentNotePageId);notes();}).show();}
@@ -2864,18 +2920,17 @@ void operationActions(long customerId,String customerName,long tid,String detail
         s.append("━━━━━━━━━━━━━━━━━━\n");
         s.append("📅 *التاريخ:* ").append(db.now()).append("\n");
         s.append("━━━━━━━━━━━━━━━━━━\n");
-        ArrayList<NoteItem> l=new ArrayList<>(),r=new ArrayList<>();
-        db.loadNoteItems(currentNotePageId,l,r);
-        if(!l.isEmpty()){
-            s.append("🔹 *الشق الأيسر:*\n");
-            for(NoteItem x:l)s.append("▪️ ").append(x.name).append(" × ").append(fmt(x.qty)).append("\n");
-            s.append("──────────────────\n");
+        s.append("🔹 *الشق الأيسر*  │  🔸 *الشق الأيمن*\n");
+        s.append("───────────────────────\n");
+        ArrayList<NoteItem> left=new ArrayList<>(), right=new ArrayList<>();
+        db.loadNoteItems(currentNotePageId,left,right);
+        int maxRows=Math.max(left.size(), right.size());
+        for(int i=0; i<maxRows; i++){
+            String lText = i<left.size() ? (left.get(i).name+" × "+fmt(left.get(i).qty)) : "";
+            String rText = i<right.size() ? (right.get(i).name+" × "+fmt(right.get(i).qty)) : "";
+            s.append(padRight(lText, 16)).append(" │ ").append(rText).append("\n");
         }
-        if(!r.isEmpty()){
-            s.append("🔸 *الشق الأيمن:*\n");
-            for(NoteItem x:r)s.append("▪️ ").append(x.name).append(" × ").append(fmt(x.qty)).append("\n");
-            s.append("──────────────────\n");
-        }
+        s.append("━━━━━━━━━━━━━━━━━━\n");
         s.append("✨ *بقالة العزي للمواد الغذائية* ✨");
         return s.toString();
     }
@@ -5884,6 +5939,12 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         void loadNoteItems(long pageId,ArrayList<NoteItem> left,ArrayList<NoteItem> right){Cursor c=getReadableDatabase().rawQuery("SELECT side,name,qty FROM note_items WHERE page_id=? ORDER BY side,position,id",new String[]{String.valueOf(pageId)});while(c.moveToNext()){NoteItem x=new NoteItem(c.getString(1),c.getDouble(2),c.getInt(0));if(x.side==1)left.add(x);else right.add(x);}c.close();}
         void clearNoteItems(long pageId){getWritableDatabase().delete("note_items","page_id=?",new String[]{String.valueOf(pageId)});touchNotePage(pageId);}
         void deleteNoteItem(long pageId,String name,double qty,int side){SQLiteDatabase d=getWritableDatabase();d.delete("note_items","id=(SELECT id FROM note_items WHERE page_id=? AND side=? AND name=? AND qty=? ORDER BY position,id LIMIT 1)",new String[]{String.valueOf(pageId),String.valueOf(side),name,String.valueOf(qty)});touchNotePage(pageId);}
+        void updateNoteItem(long pageId,String oldName,double oldQty,int side,String newName,double newQty){
+            SQLiteDatabase d=getWritableDatabase();
+            d.execSQL("UPDATE note_items SET name=?, qty=? WHERE page_id=? AND side=? AND name=? AND ABS(qty-?)<0.005",
+                new String[]{newName,String.valueOf(newQty),String.valueOf(pageId),String.valueOf(side),oldName,String.valueOf(oldQty)});
+            touchNotePage(pageId);
+        }
         Cursor notePages(){return getReadableDatabase().rawQuery("SELECT p.id,p.title,p.date,COUNT(i.id) FROM note_pages p LEFT JOIN note_items i ON i.page_id=p.id GROUP BY p.id ORDER BY datetime(p.date) DESC,p.id DESC",null);}
         String now(){return new SimpleDateFormat("yyyy-MM-dd HH:mm",Locale.US).format(new Date());}
         long supplierIdByName(String n){Cursor c=getReadableDatabase().rawQuery("SELECT id FROM suppliers WHERE lower(trim(name))=lower(trim(?)) LIMIT 1",new String[]{n==null?"":n.trim()});long x=c.moveToFirst()?c.getLong(0):-1;c.close();return x;}
