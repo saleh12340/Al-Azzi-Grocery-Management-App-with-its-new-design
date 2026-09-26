@@ -3044,6 +3044,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
         canvas.drawRect(margin, y, width-margin, y+2, divider);
         y += 8;
 
+        int tableStartY = y;
         int leftColX = margin;
         int rightColX = width - margin - colWidth;
 
@@ -3069,6 +3070,12 @@ void operationActions(long customerId,String customerName,long tid,String detail
 
             y += rowH + 6;
         }
+        int tableEndY = y;
+
+        Paint vertLine = new Paint(Paint.ANTI_ALIAS_FLAG);
+        vertLine.setColor(BORDER);
+        vertLine.setStrokeWidth(1.5f);
+        canvas.drawLine(width / 2, tableStartY, width / 2, tableEndY, vertLine);
 
         canvas.drawRect(margin, y, width-margin, y+2, divider);
         y += 10;
@@ -3077,7 +3084,14 @@ void operationActions(long customerId,String customerName,long tid,String detail
     }
     void shareCurrentNotes(){
         if(currentNotePageId>0){
-            shareText(notesWhatsAppText());
+            try{
+                Bitmap bmp=notesReceiptBitmap();
+                Uri uri=saveReceiptBitmap(bmp,"ملاحظات_"+currentNotePageId+"_"+System.currentTimeMillis());
+                String text=notesWhatsAppText();
+                shareWhatsAppToCustomer("", text, uri);
+            }catch(Exception e){
+                shareText(notesWhatsAppText());
+            }
         }else Toast.makeText(this,"لا توجد صفحة ملاحظات للمشاركة",Toast.LENGTH_SHORT).show();
     }
     void printCurrentNotes(){
