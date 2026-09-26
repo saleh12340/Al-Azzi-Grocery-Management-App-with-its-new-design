@@ -2880,19 +2880,30 @@ void operationActions(long customerId,String customerName,long tid,String detail
         return s.toString();
     }
     String notesReceiptText(){
-        StringBuilder s=new StringBuilder("بقالة العزي للمواد الغذائية\nالملاحظات الذكية\nالتاريخ: ").append(db.now()).append("\n");
-        ArrayList<NoteItem> l=new ArrayList<>(),r=new ArrayList<>();
-        db.loadNoteItems(currentNotePageId,l,r);
-        if(!l.isEmpty()){
-            s.append("------------------------------\nالشق الأيسر:\n");
-            for(NoteItem x:l)s.append(x.name).append(" × ").append(fmt(x.qty)).append("\n");
+        StringBuilder s=new StringBuilder();
+        s.append("بقالة العزي للمواد الغذائية\n");
+        s.append("الملاحظات الذكية (شقين)\n");
+        s.append("التاريخ: ").append(db.now()).append("\n");
+        s.append("--------------------------------\n");
+        s.append("الشق الأيسر      | الشق الأيمن\n");
+        s.append("--------------------------------\n");
+        ArrayList<NoteItem> left=new ArrayList<>(), right=new ArrayList<>();
+        db.loadNoteItems(currentNotePageId,left,right);
+        int maxRows=Math.max(left.size(), right.size());
+        for(int i=0; i<maxRows; i++){
+            String lText = i<left.size() ? (left.get(i).name+" × "+fmt(left.get(i).qty)) : "";
+            String rText = i<right.size() ? (right.get(i).name+" × "+fmt(right.get(i).qty)) : "";
+            s.append(padRight(lText, 16)).append(" | ").append(rText).append("\n");
         }
-        if(!r.isEmpty()){
-            s.append("------------------------------\nالشق الأيمن:\n");
-            for(NoteItem x:r)s.append(x.name).append(" × ").append(fmt(x.qty)).append("\n");
-        }
-        s.append("------------------------------\n");
+        s.append("--------------------------------\n");
         return s.toString();
+    }
+    String padRight(String s, int n){
+        if(s==null) s="";
+        if(s.length()>=n) return s.substring(0, n);
+        StringBuilder sb=new StringBuilder(s);
+        while(sb.length()<n) sb.append(" ");
+        return sb.toString();
     }
     Bitmap notesReceiptBitmap(){
         final int width=384, margin=10, contentWidth=width-(margin*2); // 364
@@ -3016,12 +3027,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
     }
     void printCurrentNotes(){
         if(currentNotePageId>0){
-            try{
-                Bitmap bmp=notesReceiptBitmap();
-                printBitmapBluetooth(bmp);
-            }catch(Exception e){
-                printTextBluetooth(notesReceiptText());
-            }
+            printTextBluetooth(notesReceiptText());
         }else{
             Toast.makeText(this,"لا توجد صفحة ملاحظات للطباعة",Toast.LENGTH_SHORT).show();
         }
