@@ -53,7 +53,7 @@ public class MainActivity extends Activity {
     static final int GREEN=ORANGE, DARK=BLUE_PRIMARY, GOLD=ORANGE, BLUE=BLUE_PRIMARY, RED=Color.rgb(198,40,40);
     static final int BG=Color.WHITE, TEXT=Color.rgb(32,45,60), MUTED=Color.rgb(92,105,120), CARD=Color.WHITE;
     static final int SURFACE_ALT=Color.rgb(247,250,253), BORDER=Color.rgb(210,220,232), ACCENT_LINE=ORANGE_SOFT;
-    volatile boolean startupFinished=false; DB db; LinearLayout root,content,bottom; boolean darkCardMode=false; PopupWindow learningPopup; TextView pageTitle; int textSize=16; String currentPage="الرئيسية"; ArrayDeque<String> pageStack=new ArrayDeque<>(); long currentNotePageId=-1; int noteFontSize=14; boolean noteScrollMode=true;
+    volatile boolean startupFinished=false; DB db; LinearLayout root,content,bottom; boolean darkCardMode=false; PopupWindow learningPopup; TextView pageTitle; int textSize=16; String currentPage="الرئيسية"; ArrayDeque<String> pageStack=new ArrayDeque<>(); long currentNotePageId=-1; int noteFontSize=14; boolean noteScrollMode=true; String noteSearchQuery="";
     Uri cameraScanTempUri; Bitmap scanRawBitmap; String scanFilterMode="magic"; float scanRotation=0; String scanCategoryFilter="الكل"; String scanSearchQuery="";
     EditText transferSenderName,transferSenderPhone,transferReceiverName,transferReceiverPhone,transferContactNameTarget,transferContactPhoneTarget;
     boolean invoiceSaveInProgress=false;
@@ -74,6 +74,7 @@ public class MainActivity extends Activity {
             SQLiteDatabase writable=localDb.getWritableDatabase();
             writable.setForeignKeyConstraintsEnabled(false);
             db=localDb;
+            loadNotePrefs();
             try{ AppStorage.initializeAllDirectories(this); }catch(Throwable e){
                 android.util.Log.w("AlAzziStartup","Storage initialization skipped",e);
             }
@@ -199,6 +200,24 @@ public class MainActivity extends Activity {
         else if(prev.equals("حساب المورد")) suppliers();
         else if(prev.equals("الإعدادات")) settingsHub();
         else home();
+    }
+
+    void loadNotePrefs(){
+        try{
+            SharedPreferences sp=getSharedPreferences("notes_prefs",MODE_PRIVATE);
+            currentNotePageId=sp.getLong("current_note_page_id",-1);
+            noteFontSize=sp.getInt("note_font_size",14);
+        }catch(Exception ignored){}
+    }
+    void saveNotePrefs(){
+        try{
+            SharedPreferences sp=getSharedPreferences("notes_prefs",MODE_PRIVATE);
+            sp.edit().putLong("current_note_page_id",currentNotePageId).putInt("note_font_size",noteFontSize).apply();
+        }catch(Exception ignored){}
+    }
+    @Override protected void onPause(){
+        super.onPause();
+        saveNotePrefs();
     }
 
     GradientDrawable rounded(int color,float radius){ GradientDrawable g=new GradientDrawable(); g.setColor(color); g.setCornerRadius(radius); return g; }
@@ -2761,12 +2780,57 @@ void operationActions(long customerId,String customerName,long tid,String detail
         Button print=button("🖨 طباعة"),shareNotes=button("📤 مشاركة"),clear=button("🧹 تفريغ");clear.setTextColor(RED);
         top2.addView(print,new LinearLayout.LayoutParams(0,dp(44),1));LinearLayout.LayoutParams y1=new LinearLayout.LayoutParams(0,dp(44),1);y1.setMargins(dp(5),0,0,0);top2.addView(shareNotes,y1);LinearLayout.LayoutParams y2=new LinearLayout.LayoutParams(0,dp(44),1);y2.setMargins(dp(5),0,0,0);top2.addView(clear,y2);content.addView(top2);addSpace(6);
         fresh.setOnClickListener(v->newNotesPage());history.setOnClickListener(v->showNotesHistory());shareNotes.setOnClickListener(v->shareCurrentNotes());print.setOnClickListener(v->printCurrentNotes());clear.setOnClickListener(v->clearNotesPage());
-        search.setOnClickListener(v->{final EditText q=field("ابحث في سجل الملاحظات");new AlertDialog.Builder(this).setTitle("بحث في الملاحظات").setView(q).setNegativeButton("إغلاق",null).setPositiveButton("بحث",(d,w)->{String z=q.getText().toString().trim();if(z.isEmpty())return;showNotesHistoryFiltered(z);}).show();});
-        LinearLayout controls=card();LinearLayout cr=new LinearLayout(this);cr.setGravity(Gravity.CENTER);Button minus=button("−");TextView fs=tv("حجم الخط "+noteFontSize,11);fs.setGravity(Gravity.CENTER);Button plus=button("+");minus.setOnClickListener(v->{noteFontSize=Math.max(10,noteFontSize-1);notes();});plus.setOnClickListener(v->{noteFontSize=Math.min(24,noteFontSize+1);notes();});cr.addView(minus,new LinearLayout.LayoutParams(dp(38),dp(34)));cr.addView(fs,new LinearLayout.LayoutParams(dp(100),dp(34)));cr.addView(plus,new LinearLayout.LayoutParams(dp(38),dp(34)));Switch sw=new Switch(this);sw.setText("وضع التمرير: "+(noteScrollMode?"مفعل":"متوقف"));sw.setChecked(noteScrollMode);sw.setOnCheckedChangeListener((b,x)->{noteScrollMode=x;b.setText("وضع التمرير: "+(x?"مفعل":"متوقف"));});cr.addView(sw,new LinearLayout.LayoutParams(-2,dp(34)));controls.addView(cr);content.addView(controls,new LinearLayout.LayoutParams(-1,dp(44)));addSpace(5);
+        search.setOnClickListener(v->{
+            final EditText q=field("ابحث في عناصر الملاحظة الحالية");
+            if(!noteSearchQuery.isEmpty()) q.setText(noteSearchQuery);
+            new AlertDialog.Builder(this)
+                .setTitle("بحث في عناصر الملاحظة الحالية")
+                .setView(q)
+                .setNeutralButton("إلغاء البحث",(d,w)->{noteSearchQuery=""; saveNotePrefs(); notes();})
+                .setNegativeButton("إغلاق",null)
+                .setPositiveButton("بحث",(d,w)->{
+                    noteSearchQuery=q.getText().toString().trim();
+                    saveNotePrefs();
+                    notes();
+                })
+                .show();
+        });
+        LinearLayout controls=card();LinearLayout cr=new LinearLayout(this);cr.setGravity(Gravity.CENTER);Button minus=button("−");TextView fs=tv("حجم الخط "+noteFontSize,11);fs.setGravity(Gravity.CENTER);Button plus=button("+");minus.setOnClickListener(v->{noteFontSize=Math.max(10,noteFontSize-1); saveNotePrefs(); notes();});plus.setOnClickListener(v->{noteFontSize=Math.min(24,noteFontSize+1); saveNotePrefs(); notes();});cr.addView(minus,new LinearLayout.LayoutParams(dp(38),dp(34)));cr.addView(fs,new LinearLayout.LayoutParams(dp(100),dp(34)));cr.addView(plus,new LinearLayout.LayoutParams(dp(38),dp(34)));Switch sw=new Switch(this);sw.setText("وضع التمرير: "+(noteScrollMode?"مفعل":"متوقف"));sw.setChecked(noteScrollMode);sw.setOnCheckedChangeListener((b,x)->{noteScrollMode=x;b.setText("وضع التمرير: "+(x?"مفعل":"متوقف"));});cr.addView(sw,new LinearLayout.LayoutParams(-2,dp(34)));controls.addView(cr);content.addView(controls,new LinearLayout.LayoutParams(-1,dp(44)));addSpace(5);
         if(currentNotePageId<1)currentNotePageId=db.createNotePage("ملاحظة جديدة",db.now());
+        saveNotePrefs();
+
+        if(!noteSearchQuery.isEmpty()){
+            LinearLayout sbB=card();
+            sbB.setOrientation(LinearLayout.HORIZONTAL);
+            sbB.setPadding(dp(10),dp(6),dp(10),dp(6));
+            TextView st=tv("🔍 عناصر مطابقة لـ: «"+noteSearchQuery+"»",12);
+            st.setTextColor(GREEN);
+            sbB.addView(st,new LinearLayout.LayoutParams(0,-2,1));
+            Button clrB=button("إلغاء");
+            clrB.setTextSize(11);
+            clrB.setTextColor(RED);
+            clrB.setBackgroundColor(Color.TRANSPARENT);
+            clrB.setOnClickListener(v->{noteSearchQuery=""; notes();});
+            sbB.addView(clrB,new LinearLayout.LayoutParams(-2,-2));
+            content.addView(sbB,new LinearLayout.LayoutParams(-1,-2));
+            addSpace(4);
+        }
+
         final long pid=currentNotePageId;
         ArrayList<NoteItem> left=new ArrayList<>(),right=new ArrayList<>();
         db.loadNoteItems(pid,left,right);
+        if(!noteSearchQuery.isEmpty()){
+            String qStr=noteSearchQuery.toLowerCase(Locale.ROOT);
+            ArrayList<NoteItem> fLeft=new ArrayList<>();
+            for(NoteItem x: left){
+                if(x.name!=null && x.name.toLowerCase(Locale.ROOT).contains(qStr)) fLeft.add(x);
+            }
+            ArrayList<NoteItem> fRight=new ArrayList<>();
+            for(NoteItem x: right){
+                if(x.name!=null && x.name.toLowerCase(Locale.ROOT).contains(qStr)) fRight.add(x);
+            }
+            left=fLeft; right=fRight;
+        }
         LinearLayout form=card();
         form.setPadding(dp(10),dp(8),dp(10),dp(8));
         LinearLayout fields=new LinearLayout(this);
@@ -2914,7 +2978,44 @@ void operationActions(long customerId,String customerName,long tid,String detail
     void showNotesHistoryFiltered(String q){
         base("بحث الملاحظات");LinearLayout list=new LinearLayout(this);list.setOrientation(LinearLayout.VERTICAL);content.addView(list);
         Cursor cur=db.notePages();int count=0;while(cur.moveToNext()){long id=cur.getLong(0);String title=cur.getString(1),date=cur.getString(2);if((title+" "+date).toLowerCase(Locale.ROOT).contains(q.toLowerCase(Locale.ROOT))){count++;LinearLayout row=card();TextView t=tv("📝 "+title+"\n"+date,14);t.setTextColor(TEXT);row.addView(t,new LinearLayout.LayoutParams(-1,-2));row.setOnClickListener(v->{currentNotePageId=id;notes();});list.addView(row,new LinearLayout.LayoutParams(-1,-2));addSpaceTo(list,5);}}cur.close();if(count==0){TextView e=tv("لا توجد ملاحظات مطابقة.",14);e.setGravity(Gravity.CENTER);e.setTextColor(MUTED);list.addView(e,new LinearLayout.LayoutParams(-1,dp(70)));}}
-    void showNotesHistory(){base("سجل الصفحات");section("الصفحات المحفوظة");Cursor c=db.notePages();while(c.moveToNext()){long id=c.getLong(0);String title=c.getString(1),date=c.getString(2);int n=c.getInt(3);LinearLayout row=card();TextView t=tv("📝 "+title+"\n"+date+" • "+n+" عنصر",12);t.setMaxLines(2);row.addView(t,new LinearLayout.LayoutParams(-1,dp(52)));row.setOnClickListener(v->{currentNotePageId=id;notes();});content.addView(row,new LinearLayout.LayoutParams(-1,dp(62)));addSpace(3);}c.close();}
+    void showNotesHistory(){
+        base("سجل الصفحات");
+        section("الصفحات المحفوظة");
+        Cursor c=db.notePages();
+        while(c.moveToNext()){
+            long id=c.getLong(0);String title=c.getString(1),date=c.getString(2);int n=c.getInt(3);
+            LinearLayout row=card();
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            TextView t=tv("📝 "+title+"\n"+date+" • "+n+" عنصر",12);
+            t.setMaxLines(2);
+            row.addView(t,new LinearLayout.LayoutParams(0,-2,1));
+
+            Button del=button("🗑");
+            del.setTextColor(RED);
+            del.setTextSize(14f);
+            del.setOnClickListener(v->{
+                new AlertDialog.Builder(this)
+                    .setTitle("حذف الصفحة؟")
+                    .setMessage("سيتم حذف هذه الصفحة وجميع عناصرها نهائياً.")
+                    .setPositiveButton("حذف",(d,w)->{
+                        db.deleteNotePage(id);
+                        if(currentNotePageId==id) currentNotePageId=-1;
+                        saveNotePrefs();
+                        showNotesHistory();
+                        Toast.makeText(this,"تم حذف الصفحة",Toast.LENGTH_SHORT).show();
+                    })
+                    .setNegativeButton("إلغاء",null)
+                    .show();
+            });
+            row.addView(del,new LinearLayout.LayoutParams(dp(40),dp(40)));
+
+            row.setOnClickListener(v->{currentNotePageId=id; noteSearchQuery=""; saveNotePrefs(); notes();});
+            content.addView(row,new LinearLayout.LayoutParams(-1,dp(62)));
+            addSpace(3);
+        }
+        c.close();
+    }
     String notesWhatsAppText(){
         StringBuilder s=new StringBuilder("📝 *بقالة العزي للمواد الغذائية - الملاحظات الذكية*\n");
         s.append("━━━━━━━━━━━━━━━━━━\n");
@@ -5952,6 +6053,10 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         void addNoteItem(long pageId,String name,double qty,int side){ContentValues v=new ContentValues();v.put("page_id",pageId);v.put("side",side);v.put("name",name);v.put("qty",qty);v.put("position",nextNotePosition(pageId,side));getWritableDatabase().insert("note_items",null,v);touchNotePage(pageId);}
         void loadNoteItems(long pageId,ArrayList<NoteItem> left,ArrayList<NoteItem> right){Cursor c=getReadableDatabase().rawQuery("SELECT side,name,qty FROM note_items WHERE page_id=? ORDER BY side,position,id",new String[]{String.valueOf(pageId)});while(c.moveToNext()){NoteItem x=new NoteItem(c.getString(1),c.getDouble(2),c.getInt(0));if(x.side==1)left.add(x);else right.add(x);}c.close();}
         void clearNoteItems(long pageId){getWritableDatabase().delete("note_items","page_id=?",new String[]{String.valueOf(pageId)});touchNotePage(pageId);}
+        void deleteNotePage(long pageId){
+            getWritableDatabase().delete("note_pages","id=?",new String[]{String.valueOf(pageId)});
+            getWritableDatabase().delete("note_items","page_id=?",new String[]{String.valueOf(pageId)});
+        }
         void deleteNoteItem(long pageId,String name,double qty,int side){SQLiteDatabase d=getWritableDatabase();d.delete("note_items","id=(SELECT id FROM note_items WHERE page_id=? AND side=? AND name=? AND qty=? ORDER BY position,id LIMIT 1)",new String[]{String.valueOf(pageId),String.valueOf(side),name,String.valueOf(qty)});touchNotePage(pageId);}
         void updateNoteItem(long pageId,String oldName,double oldQty,int side,String newName,double newQty){
             SQLiteDatabase d=getWritableDatabase();
