@@ -2508,15 +2508,19 @@ void operationActions(long customerId,String customerName,long tid,String detail
         sn.setOnItemClickListener((p,v,pos,id)->fillTransferSuggestion((String)p.getItemAtPosition(pos),false,sn,transferSenderPhone));
 
         copy.setOnClickListener(v->{
-            if(lastText[0].isEmpty()){Toast.makeText(this,"جهّز الحوالة أولاً",Toast.LENGTH_SHORT).show();return;}
+            String textNow=preview.getText().toString();
+            if(textNow.trim().isEmpty()||textNow.equals("لم يتم تجهيز حوالة بعد.")){Toast.makeText(this,"جهّز الحوالة أولاً",Toast.LENGTH_SHORT).show();return;}
+            lastText[0]=textNow;
             android.content.ClipboardManager cm=(android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
-            cm.setPrimaryClip(android.content.ClipData.newPlainText("الحوالة",lastText[0]));
+            cm.setPrimaryClip(android.content.ClipData.newPlainText("الحوالة",textNow));
             Toast.makeText(this,"✓ تم نسخ الحوالة",Toast.LENGTH_SHORT).show();
         });
 
         wa.setOnClickListener(v->{
-            if(lastText[0].isEmpty()){Toast.makeText(this,"جهّز الحوالة أولاً",Toast.LENGTH_SHORT).show();return;}
-            shareWhatsAppToCustomer(lastPhone[0],lastText[0],null);
+            String textNow=preview.getText().toString();
+            if(textNow.trim().isEmpty()||textNow.equals("لم يتم تجهيز حوالة بعد.")){Toast.makeText(this,"جهّز الحوالة أولاً",Toast.LENGTH_SHORT).show();return;}
+            lastText[0]=textNow;
+            shareWhatsAppToCustomer(lastPhone[0],textNow,null);
         });
 
         renderTransfers(list);
