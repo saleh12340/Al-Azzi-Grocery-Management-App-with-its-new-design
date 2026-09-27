@@ -25,6 +25,7 @@ import android.bluetooth.BluetoothSocket;
 import android.net.Uri;
 import androidx.core.content.FileProvider;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.InputStream;
@@ -34,6 +35,7 @@ import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.Drawable;
 import android.content.*;
 import android.content.pm.PackageManager;
+import android.print.*;
 import android.provider.ContactsContract;
 import android.database.Cursor;
 import android.database.sqlite.*;
@@ -3225,127 +3227,228 @@ void operationActions(long customerId,String customerName,long tid,String detail
         return sb.toString();
     }
     Bitmap notesReceiptBitmap(){
-        final int width=384, margin=10, contentWidth=width-(margin*2); // 364
-        final int colWidth=(contentWidth-10)/2; // 177 each, 10 gap
-        final float bodyPx=12f*(203f/160f), smallPx=bodyPx*0.85f;
-        TextPaint body=new TextPaint(Paint.ANTI_ALIAS_FLAG|Paint.SUBPIXEL_TEXT_FLAG);
-        body.setColor(TEXT); body.setTypeface(Typeface.create("sans",Typeface.NORMAL));
-        body.setTextSize(bodyPx);
+        final int width=384, margin=2, contentWidth=width-(margin*2);
+        final float sectionW=contentWidth/2f;
+        final float qtyW=34f;
+        final float rowH=21f;
 
         ArrayList<NoteItem> left=new ArrayList<>(), right=new ArrayList<>();
         db.loadNoteItems(currentNotePageId,left,right);
+        int maxRows=Math.max(right.size(), left.size());
+        if(maxRows==0) maxRows=1;
 
-        TextPaint headerP=new TextPaint(body);
-        headerP.setTypeface(Typeface.create("sans",Typeface.BOLD));
-        headerP.setTextSize(bodyPx);
-        
-        TextPaint subP=new TextPaint(body);
-        subP.setTypeface(Typeface.create("sans",Typeface.BOLD));
-        subP.setTextSize(smallPx);
+        int totalH=(int)(margin*2 + rowH * maxRows + 6);
+        Bitmap bmp=Bitmap.createBitmap(width, Math.max(120, totalH), Bitmap.Config.ARGB_8888);
+        Canvas canvas=new Canvas(bmp);
+        canvas.drawColor(Color.WHITE);
 
-        ArrayList<StaticLayout> topLayouts=new ArrayList<>();
-        String[] topTexts={"بقالة العزي للمواد الغذائية", "الملاحظات الذكية", "التاريخ: "+db.now()};
-        for(String t:topTexts){
-            StaticLayout sl=StaticLayout.Builder.obtain(t,0,t.length(),headerP,contentWidth)
-                .setAlignment(Layout.Alignment.ALIGN_CENTER)
-                .setIncludePad(true).setLineSpacing(0,1)
-                .setTextDirection(android.text.TextDirectionHeuristics.RTL).build();
-            topLayouts.add(sl);
-        }
+        TextPaint bodyP=new TextPaint(Paint.ANTI_ALIAS_FLAG);
+        bodyP.setColor(Color.BLACK);
+        bodyP.setTextSize(10f);
+        bodyP.setTypeface(Typeface.create("sans",Typeface.NORMAL));
 
-        StaticLayout leftHeader=StaticLayout.Builder.obtain("الشق الأيسر",0,11,subP,colWidth)
-            .setAlignment(Layout.Alignment.ALIGN_CENTER)
-            .setIncludePad(true).setLineSpacing(0,1)
-            .setTextDirection(android.text.TextDirectionHeuristics.RTL).build();
-        StaticLayout rightHeader=StaticLayout.Builder.obtain("الشق الأيمن",0,11,subP,colWidth)
-            .setAlignment(Layout.Alignment.ALIGN_CENTER)
-            .setIncludePad(true).setLineSpacing(0,1)
-            .setTextDirection(android.text.TextDirectionHeuristics.RTL).build();
+        TextPaint qtyP=new TextPaint(Paint.ANTI_ALIAS_FLAG);
+        qtyP.setColor(Color.BLACK);
+        qtyP.setTextSize(10.5f);
+        qtyP.setTypeface(Typeface.create("sans",Typeface.BOLD));
 
-        int maxRows=Math.max(left.size(), right.size());
-        ArrayList<StaticLayout> leftItemLayouts=new ArrayList<>();
-        ArrayList<StaticLayout> rightItemLayouts=new ArrayList<>();
+        Paint lineP=new Paint(Paint.ANTI_ALIAS_FLAG);
+        lineP.setStyle(Paint.Style.STROKE);
+        lineP.setStrokeWidth(1.0f);
+        lineP.setColor(Color.BLACK);
+
+        float y=margin;
+        float rX=margin+sectionW;
+        float lX=margin;
 
         for(int i=0; i<maxRows; i++){
-            String lText = i<left.size() ? (left.get(i).name+" × "+fmt(left.get(i).qty)) : "";
-            String rText = i<right.size() ? (right.get(i).name+" × "+fmt(right.get(i).qty)) : "";
+            NoteItem rItem=i<right.size()?right.get(i):null;
+            NoteItem lItem=i<left.size()?left.get(i):null;
 
-            StaticLayout ll = StaticLayout.Builder.obtain(lText,0,lText.length(),body,colWidth)
-                .setAlignment(Layout.Alignment.ALIGN_OPPOSITE)
-                .setIncludePad(true).setLineSpacing(0,1)
-                .setTextDirection(android.text.TextDirectionHeuristics.RTL).build();
-            leftItemLayouts.add(ll);
+            String rName=rItem!=null&&rItem.name!=null?rItem.name.trim():"";
+            String rQty=rItem!=null?fmt(rItem.qty):"";
 
-            StaticLayout rl = StaticLayout.Builder.obtain(rText,0,rText.length(),body,colWidth)
-                .setAlignment(Layout.Alignment.ALIGN_OPPOSITE)
-                .setIncludePad(true).setLineSpacing(0,1)
-                .setTextDirection(android.text.TextDirectionHeuristics.RTL).build();
-            rightItemLayouts.add(rl);
+            String lName=lItem!=null&&lItem.name!=null?lItem.name.trim():"";
+            String lQty=lItem!=null?fmt(lItem.qty):"";
+
+            drawNotesTableSection(canvas, rX, y, sectionW, qtyW, rowH, rName, rQty, bodyP, qtyP, lineP);
+            drawNotesTableSection(canvas, lX, y, sectionW, qtyW, rowH, lName, lQty, bodyP, qtyP, lineP);
+            y+=rowH;
         }
 
-        int height=15;
-        for(StaticLayout sl : topLayouts) height += sl.getHeight() + 4;
-        height += 8;
-        int headerRowH = Math.max(leftHeader.getHeight(), rightHeader.getHeight());
-        height += headerRowH + 8;
+        return Bitmap.createBitmap(bmp, 0, 0, width, Math.min((int)(y+margin), bmp.getHeight()));
+    }
 
-        for(int i=0; i<maxRows; i++){
-            int rowH = Math.max(leftItemLayouts.get(i).getHeight(), rightItemLayouts.get(i).getHeight());
-            height += Math.max(rowH, 24) + 6;
+    void drawNotesTableSection(Canvas canvas, float startX, float y, float sectionW, float qtyW, float rowH,
+                               String nameStr, String qtyStr,
+                               TextPaint nameP, TextPaint qtyP, Paint lineP){
+        // إطار الخلية
+        canvas.drawRect(startX, y, startX + sectionW, y + rowH, lineP);
+        // فاصل عمودي بين الكمية واسم الصنف
+        canvas.drawLine(startX + qtyW, y, startX + qtyW, y + rowH, lineP);
+
+        float textY = y + rowH/2f - (nameP.ascent() + nameP.descent())/2f;
+
+        if(nameStr!=null && !nameStr.isEmpty()){
+            nameP.setTextAlign(Paint.Align.RIGHT);
+            float maxNameW = sectionW - qtyW - 6;
+            String safeName = TextUtils.ellipsize(nameStr, nameP, Math.max(10, maxNameW), TextUtils.TruncateAt.END).toString();
+            canvas.drawText(safeName, startX + sectionW - 4, textY, nameP);
         }
-        height += 20;
-
-        Bitmap bmp=Bitmap.createBitmap(width, Math.max(180, height), Bitmap.Config.ARGB_8888);
-        Canvas canvas=new Canvas(bmp); canvas.drawColor(Color.WHITE);
-        int y=8;
-
-        for(StaticLayout sl : topLayouts){
-            canvas.save(); canvas.translate(margin, y); sl.draw(canvas); canvas.restore();
-            y += sl.getHeight() + 4;
+        if(qtyStr!=null && !qtyStr.isEmpty()){
+            qtyP.setTextAlign(Paint.Align.CENTER);
+            canvas.drawText(qtyStr, startX + qtyW/2f, textY, qtyP);
         }
-        y += 4;
-        Paint divider=new Paint(Paint.ANTI_ALIAS_FLAG); divider.setColor(DARK);
-        canvas.drawRect(margin, y, width-margin, y+2, divider);
-        y += 8;
+    }
 
-        int tableStartY = y;
-        int leftColX = margin;
-        int rightColX = width - margin - colWidth;
+    File createNotesPrintPdf(long pageId){
+        File dir=new File(getCacheDir(),"pdf");
+        if(!dir.exists()) dir.mkdirs();
+        File file=new File(dir,"ملاحظات_"+pageId+"_"+System.currentTimeMillis()+".pdf");
 
-        canvas.save(); canvas.translate(leftColX, y); leftHeader.draw(canvas); canvas.restore();
-        canvas.save(); canvas.translate(rightColX, y); rightHeader.draw(canvas); canvas.restore();
-        y += headerRowH + 6;
+        ArrayList<NoteItem> left=new ArrayList<>(), right=new ArrayList<>();
+        db.loadNoteItems(pageId, left, right);
 
-        canvas.drawRect(margin, y, width-margin, y+1, divider);
-        y += 6;
+        int maxRows=Math.max(right.size(), left.size());
+        if(maxRows==0) maxRows=1;
 
-        for(int i=0; i<maxRows; i++){
-            StaticLayout ll = leftItemLayouts.get(i);
-            StaticLayout rl = rightItemLayouts.get(i);
-            int rowH = Math.max(Math.max(ll.getHeight(), rl.getHeight()), 24);
+        final int maxRowsPerPage=40;
+        final float margin=6f;
+        final int pageW=595;
+        final float contentW=pageW-(margin*2f);
+        final float sectionW=contentW/2f;
+        final float qtyW=44f;
+        final float rowH=19.5f;
 
-            if((i&1)==0){
-                Paint bgP=new Paint(Paint.ANTI_ALIAS_FLAG); bgP.setColor(SURFACE_ALT);
-                canvas.drawRect(margin, y, width-margin, y+rowH+4, bgP);
+        TextPaint bodyP=new TextPaint(Paint.ANTI_ALIAS_FLAG);
+        bodyP.setColor(Color.BLACK);
+        bodyP.setTextSize(9.5f);
+        bodyP.setTypeface(Typeface.create("sans",Typeface.NORMAL));
+
+        TextPaint qtyP=new TextPaint(Paint.ANTI_ALIAS_FLAG);
+        qtyP.setColor(Color.BLACK);
+        qtyP.setTextSize(10f);
+        qtyP.setTypeface(Typeface.create("sans",Typeface.BOLD));
+
+        Paint lineP=new Paint(Paint.ANTI_ALIAS_FLAG);
+        lineP.setStyle(Paint.Style.STROKE);
+        lineP.setStrokeWidth(1.0f);
+        lineP.setColor(Color.BLACK);
+
+        android.graphics.pdf.PdfDocument pdf=new android.graphics.pdf.PdfDocument();
+
+        int pageNo=1;
+        int rowIndex=0;
+
+        while(rowIndex<maxRows || (pageNo==1 && maxRows==1 && rowIndex==0)){
+            int rowsThisPage=Math.min(maxRowsPerPage, maxRows - rowIndex);
+            if(rowsThisPage<=0) rowsThisPage=1;
+            int pageH=(int)Math.ceil(margin*2f + rowsThisPage*rowH);
+
+            android.graphics.pdf.PdfDocument.Page page=pdf.startPage(new android.graphics.pdf.PdfDocument.PageInfo.Builder(pageW,pageH,pageNo).create());
+            Canvas canvas=page.getCanvas();
+            canvas.drawColor(Color.WHITE);
+            float y=margin;
+
+            float rX=margin+sectionW; // الشق الأيمن
+            float lX=margin;           // الشق الأيسر
+
+            for(int r=0; r<rowsThisPage && rowIndex<maxRows; r++, rowIndex++){
+                NoteItem rItem = rowIndex<right.size() ? right.get(rowIndex) : null;
+                NoteItem lItem = rowIndex<left.size() ? left.get(rowIndex) : null;
+
+                String rName = rItem!=null && rItem.name!=null ? rItem.name.trim() : "";
+                String rQty = rItem!=null ? fmt(rItem.qty) : "";
+
+                String lName = lItem!=null && lItem.name!=null ? lItem.name.trim() : "";
+                String lQty = lItem!=null ? fmt(lItem.qty) : "";
+
+                drawNotesTableSection(canvas, rX, y, sectionW, qtyW, rowH, rName, rQty, bodyP, qtyP, lineP);
+                drawNotesTableSection(canvas, lX, y, sectionW, qtyW, rowH, lName, lQty, bodyP, qtyP, lineP);
+
+                y+=rowH;
             }
 
-            canvas.save(); canvas.translate(leftColX, y+2); ll.draw(canvas); canvas.restore();
-            canvas.save(); canvas.translate(rightColX, y+2); rl.draw(canvas); canvas.restore();
-
-            y += rowH + 6;
+            pdf.finishPage(page);
+            pageNo++;
+            if(rowIndex>=maxRows) break;
         }
-        int tableEndY = y;
 
-        Paint vertLine = new Paint(Paint.ANTI_ALIAS_FLAG);
-        vertLine.setColor(BORDER);
-        vertLine.setStrokeWidth(1.5f);
-        canvas.drawLine(width / 2, tableStartY, width / 2, tableEndY, vertLine);
-
-        canvas.drawRect(margin, y, width-margin, y+2, divider);
-        y += 10;
-
-        return Bitmap.createBitmap(bmp, 0, 0, width, Math.min(y, bmp.getHeight()));
+        try(FileOutputStream out=new FileOutputStream(file)){
+            pdf.writeTo(out);
+        }catch(Exception e){
+            throw new RuntimeException(e);
+        }finally{
+            pdf.close();
+        }
+        return file;
     }
+
+    void printNotesWithSpooler(){
+        if(currentNotePageId<=0){
+            Toast.makeText(this,"لا توجد صفحة ملاحظات للطباعة",Toast.LENGTH_SHORT).show();
+            return;
+        }
+        try{
+            File pdf=createNotesPrintPdf(currentNotePageId);
+            printPdfWithSpooler("ملاحظات_"+currentNotePageId,pdf);
+        }catch(Exception e){
+            android.util.Log.e("AlAzziPrint","Print spooler error",e);
+            Toast.makeText(this,"تعذر فتح معالج الطباعة",Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    void printPdfWithSpooler(String jobName, File pdfFile){
+        if(pdfFile==null||!pdfFile.exists()){
+            Toast.makeText(this,"ملف الطباعة غير متوفر",Toast.LENGTH_SHORT).show();
+            return;
+        }
+        PrintManager printManager=(PrintManager)getSystemService(Context.PRINT_SERVICE);
+        if(printManager==null){
+            Toast.makeText(this,"خدمة الطباعة غير متوفرة في النظام",Toast.LENGTH_SHORT).show();
+            return;
+        }
+        printManager.print(jobName, new PrintDocumentAdapter(){
+            @Override
+            public void onLayout(PrintAttributes oldAttributes, PrintAttributes newAttributes,
+                                 CancellationSignal cancellationSignal,
+                                 LayoutResultCallback callback, Bundle extras){
+                if(cancellationSignal.isCanceled()){
+                    callback.onLayoutCancelled();
+                    return;
+                }
+                PrintDocumentInfo info=new PrintDocumentInfo.Builder(jobName+".pdf")
+                    .setContentType(PrintDocumentInfo.CONTENT_TYPE_DOCUMENT)
+                    .setPageCount(PrintDocumentInfo.PAGE_COUNT_UNKNOWN)
+                    .build();
+                callback.onLayoutFinished(info, true);
+            }
+
+            @Override
+            public void onWrite(PageRange[] pages, ParcelFileDescriptor destination,
+                                CancellationSignal cancellationSignal,
+                                WriteResultCallback callback){
+                InputStream input=null;
+                OutputStream output=null;
+                try{
+                    input=new FileInputStream(pdfFile);
+                    output=new FileOutputStream(destination.getFileDescriptor());
+                    byte[] buf=new byte[8192];
+                    int len;
+                    while((len=input.read(buf))>0){
+                        output.write(buf,0,len);
+                    }
+                    callback.onWriteFinished(new PageRange[]{PageRange.ALL_PAGES});
+                }catch(Exception e){
+                    callback.onWriteFailed(e.getMessage());
+                }finally{
+                    try{if(input!=null)input.close();}catch(Exception ignored){}
+                    try{if(output!=null)output.close();}catch(Exception ignored){}
+                }
+            }
+        }, null);
+    }
+
     void shareCurrentNotes(){
         if(currentNotePageId>0){
             try{
@@ -3360,14 +3463,9 @@ void operationActions(long customerId,String customerName,long tid,String detail
     }
     void printCurrentNotes(){
         if(currentNotePageId>0){
-            try{
-                Bitmap bmp=notesReceiptBitmap();
-                showCompactPrintPreview("معاينة الملاحظات 58mm",bmp,()->printBitmapBluetooth(bmp),()->shareCurrentNotes());
-            }catch(Exception e){
-                showCompactPrintPreview("معاينة الملاحظات 58mm",notesReceiptText(),()->printTextBluetooth(notesReceiptText()),()->shareCurrentNotes());
-            }
+            printNotesWithSpooler();
         }else{
-            Toast.makeText(this,"لا توجد صفحة ملاحظات للمعاينة أو الطباعة",Toast.LENGTH_SHORT).show();
+            Toast.makeText(this,"لا توجد صفحة ملاحظات للطباعة",Toast.LENGTH_SHORT).show();
         }
     }
     void purchaseInvoices(){
