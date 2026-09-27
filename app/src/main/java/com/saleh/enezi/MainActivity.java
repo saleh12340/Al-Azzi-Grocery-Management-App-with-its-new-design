@@ -3191,9 +3191,9 @@ void operationActions(long customerId,String customerName,long tid,String detail
             NoteItem lItem = i<left.size() ? left.get(i) : null;
 
             String rText = rItem!=null && rItem.name!=null && !rItem.name.trim().isEmpty() 
-                           ? (rItem.name.trim() + " " + fmt(rItem.qty)) : "";
+                           ? ("*" + rItem.name.trim() + " " + fmt(rItem.qty) + "*") : "";
             String lText = lItem!=null && lItem.name!=null && !lItem.name.trim().isEmpty() 
-                           ? (lItem.name.trim() + " " + fmt(lItem.qty)) : "";
+                           ? ("*" + lItem.name.trim() + " " + fmt(lItem.qty) + "*") : "";
 
             if(rText.isEmpty() && lText.isEmpty()) continue;
 
@@ -3218,11 +3218,19 @@ void operationActions(long customerId,String customerName,long tid,String detail
         return sb.toString();
     }
     Bitmap notesReceiptBitmap(){
-        final int margin=6;
-        final float spaceBetween=16f;
-        final float colW=175f;
-        final float rowH=24f;
-        final int width=(int)(margin*2 + colW*2 + spaceBetween);
+        return notesReceiptBitmap(1.0f);
+    }
+
+    Bitmap notesHdReceiptBitmap(){
+        return notesReceiptBitmap(3.0f); // أقصى دقة HD فائقة الوضوح لمشاركة الواتساب (عرض 1152 بكسل مع مضاعفة دقة الخطوط)
+    }
+
+    Bitmap notesReceiptBitmap(float scale){
+        final float margin=6f * scale;
+        final float spaceBetween=16f * scale;
+        final float colW=175f * scale;
+        final float rowH=26f * scale;
+        final int width=Math.round(margin*2f + colW*2f + spaceBetween);
         final float dividerX=margin + colW + (spaceBetween/2f);
         final float rightColLeft=dividerX + (spaceBetween/2f);
         final float leftColLeft=margin;
@@ -3232,28 +3240,28 @@ void operationActions(long customerId,String customerName,long tid,String detail
         int maxRows=Math.max(right.size(), left.size());
         if(maxRows==0) maxRows=1;
 
-        int totalH=(int)(margin*2 + rowH * maxRows + 6);
-        Bitmap bmp=Bitmap.createBitmap(width, Math.max(100, totalH), Bitmap.Config.ARGB_8888);
+        int totalH=Math.round(margin*2f + rowH * maxRows + (6f * scale));
+        Bitmap bmp=Bitmap.createBitmap(width, Math.max((int)(100 * scale), totalH), Bitmap.Config.ARGB_8888);
         Canvas canvas=new Canvas(bmp);
         canvas.drawColor(Color.WHITE);
 
-        TextPaint bodyP=new TextPaint(Paint.ANTI_ALIAS_FLAG);
+        TextPaint bodyP=new TextPaint(Paint.ANTI_ALIAS_FLAG | Paint.SUBPIXEL_TEXT_FLAG);
         bodyP.setColor(Color.BLACK);
-        bodyP.setTextSize(10.5f);
+        bodyP.setTextSize(13.5f * scale);
         bodyP.setTypeface(Typeface.create("sans",Typeface.NORMAL));
 
-        TextPaint qtyP=new TextPaint(Paint.ANTI_ALIAS_FLAG);
+        TextPaint qtyP=new TextPaint(Paint.ANTI_ALIAS_FLAG | Paint.SUBPIXEL_TEXT_FLAG);
         qtyP.setColor(Color.BLACK);
-        qtyP.setTextSize(11f);
+        qtyP.setTextSize(14f * scale);
         qtyP.setTypeface(Typeface.create("sans",Typeface.BOLD));
 
         Paint lineP=new Paint(Paint.ANTI_ALIAS_FLAG);
         lineP.setStyle(Paint.Style.STROKE);
-        lineP.setStrokeWidth(1.5f);
+        lineP.setStrokeWidth(1.5f * scale);
         lineP.setColor(Color.BLACK);
 
         // سطر طولي عمودي مستقيم يقسم الشقين في المنتصف بدقة
-        canvas.drawLine(dividerX, margin - 2, dividerX, margin + maxRows * rowH + 2, lineP);
+        canvas.drawLine(dividerX, margin - (2f * scale), dividerX, margin + maxRows * rowH + (2f * scale), lineP);
 
         float y=margin;
         for(int i=0; i<maxRows; i++){
@@ -3266,8 +3274,8 @@ void operationActions(long customerId,String customerName,long tid,String detail
             String lName=lItem!=null&&lItem.name!=null?lItem.name.trim():"";
             String lQty=lItem!=null?fmt(lItem.qty):"";
 
-            drawNotesItem(canvas, rightColLeft, y, colW, rowH, rName, rQty, bodyP, qtyP);
-            drawNotesItem(canvas, leftColLeft, y, colW, rowH, lName, lQty, bodyP, qtyP);
+            drawNotesItem(canvas, rightColLeft, y, colW, rowH, rName, rQty, bodyP, qtyP, scale);
+            drawNotesItem(canvas, leftColLeft, y, colW, rowH, lName, lQty, bodyP, qtyP, scale);
             y+=rowH;
         }
 
@@ -3277,17 +3285,23 @@ void operationActions(long customerId,String customerName,long tid,String detail
     void drawNotesItem(Canvas canvas, float colLeft, float y, float colW, float rowH,
                        String nameStr, String qtyStr,
                        TextPaint nameP, TextPaint qtyP){
+        drawNotesItem(canvas, colLeft, y, colW, rowH, nameStr, qtyStr, nameP, qtyP, 1.0f);
+    }
+
+    void drawNotesItem(Canvas canvas, float colLeft, float y, float colW, float rowH,
+                       String nameStr, String qtyStr,
+                       TextPaint nameP, TextPaint qtyP, float scale){
         float textY = y + rowH/2f - (nameP.ascent() + nameP.descent())/2f;
 
         if(nameStr!=null && !nameStr.isEmpty()){
             nameP.setTextAlign(Paint.Align.RIGHT);
-            float maxNameW = colW - 36f;
+            float maxNameW = colW - (40f * scale);
             String safeName = TextUtils.ellipsize(nameStr, nameP, Math.max(10, maxNameW), TextUtils.TruncateAt.END).toString();
-            canvas.drawText(safeName, colLeft + colW - 4f, textY, nameP);
+            canvas.drawText(safeName, colLeft + colW - (4f * scale), textY, nameP);
         }
         if(qtyStr!=null && !qtyStr.isEmpty()){
             qtyP.setTextAlign(Paint.Align.CENTER);
-            canvas.drawText(qtyStr, colLeft + 18f, textY, qtyP);
+            canvas.drawText(qtyStr, colLeft + (20f * scale), textY, qtyP);
         }
     }
 
@@ -3302,13 +3316,13 @@ void operationActions(long customerId,String customerName,long tid,String detail
         int maxRows=Math.max(right.size(), left.size());
         if(maxRows==0) maxRows=1;
 
-        final int maxRowsPerPage=40;
+        final int maxRowsPerPage=36;
         final float margin=10f;
         final int pageW=595;
         final float contentW=pageW - (margin * 2f);
         final float spaceBetween=20f;
         final float colW=(contentW - spaceBetween) / 2f;
-        final float rowH=20.5f;
+        final float rowH=24f;
 
         final float leftColLeft = margin;
         final float dividerX = margin + colW + (spaceBetween / 2f);
@@ -3316,12 +3330,12 @@ void operationActions(long customerId,String customerName,long tid,String detail
 
         TextPaint bodyP=new TextPaint(Paint.ANTI_ALIAS_FLAG);
         bodyP.setColor(Color.BLACK);
-        bodyP.setTextSize(10f);
+        bodyP.setTextSize(13f);
         bodyP.setTypeface(Typeface.create("sans",Typeface.NORMAL));
 
         TextPaint qtyP=new TextPaint(Paint.ANTI_ALIAS_FLAG);
         qtyP.setColor(Color.BLACK);
-        qtyP.setTextSize(10.5f);
+        qtyP.setTextSize(13.5f);
         qtyP.setTypeface(Typeface.create("sans",Typeface.BOLD));
 
         Paint lineP=new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -3446,7 +3460,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
     void shareCurrentNotes(){
         if(currentNotePageId>0){
             try{
-                Bitmap bmp=notesReceiptBitmap();
+                Bitmap bmp=notesHdReceiptBitmap();
                 Uri uri=saveReceiptBitmap(bmp,"ملاحظات_"+currentNotePageId+"_"+System.currentTimeMillis());
                 String text=notesWhatsAppText();
                 shareWhatsAppToCustomer("", text, uri);
