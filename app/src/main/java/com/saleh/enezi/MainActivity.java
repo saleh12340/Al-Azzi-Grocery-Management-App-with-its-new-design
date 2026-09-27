@@ -279,8 +279,45 @@ public class MainActivity extends Activity {
         }
     }
 
+    void normalizeInputText(TextView t){
+        if(t==null) return;
+        t.setIncludeFontPadding(true);
+        t.setEllipsize(null);
+        if(t instanceof EditText){
+            EditText e=(EditText)t;
+            if(e.isSingleLine() || e.getMaxLines()<=1){
+                e.setSingleLine(true);
+                e.setMaxLines(1);
+                e.setHorizontallyScrolling(false);
+                if(Build.VERSION.SDK_INT>=26){
+                    try{
+                        float current=e.getTextSize()/getResources().getDisplayMetrics().scaledDensity;
+                        int max=Math.max(13,Math.round(current));
+                        e.setAutoSizeTextTypeUniformWithConfiguration(11,max,1,android.util.TypedValue.COMPLEX_UNIT_SP);
+                    }catch(Throwable ignored){}
+                }
+            }else{
+                e.setSingleLine(false);
+                e.setMaxLines(Integer.MAX_VALUE);
+                e.setHorizontallyScrolling(false);
+                e.setEllipsize(null);
+                if(Build.VERSION.SDK_INT>=26){
+                    try{
+                        float current=e.getTextSize()/getResources().getDisplayMetrics().scaledDensity;
+                        int max=Math.max(13,Math.round(current));
+                        e.setAutoSizeTextTypeUniformWithConfiguration(11,max,1,android.util.TypedValue.COMPLEX_UNIT_SP);
+                    }catch(Throwable ignored){}
+                }
+                ViewGroup.LayoutParams lp=e.getLayoutParams();
+                if(lp!=null && lp.height>0){lp.height=ViewGroup.LayoutParams.WRAP_CONTENT;e.setLayoutParams(lp);}
+            }
+            e.post(()->{e.requestLayout();e.invalidate();});
+        }
+    }
     void normalizeAppText(View v){
-        if(v instanceof TextView && !(v instanceof Button) && !(v instanceof EditText)){
+        if(v instanceof EditText){
+            normalizeInputText((TextView)v);
+        }else if(v instanceof TextView && !(v instanceof Button)){
             TextView t=(TextView)v;t.setIncludeFontPadding(true);t.setSingleLine(false);t.setMaxLines(Integer.MAX_VALUE);t.setEllipsize(null);t.setHorizontallyScrolling(false);
             if(Build.VERSION.SDK_INT>=23){try{t.setBreakStrategy(android.text.Layout.BREAK_STRATEGY_HIGH_QUALITY);}catch(Throwable ignored){}}
             if(Build.VERSION.SDK_INT>=28){try{t.setFallbackLineSpacing(true);}catch(Throwable ignored){}try{t.setElegantTextHeight(true);}catch(Throwable ignored){}}
@@ -385,7 +422,13 @@ public class MainActivity extends Activity {
         e.setHint(h);
         e.setTextSize(15.5f);
         e.setSingleLine(true);
-        e.setIncludeFontPadding(false);
+        e.setMaxLines(1);
+        e.setEllipsize(null);
+        e.setHorizontallyScrolling(false);
+        e.setIncludeFontPadding(true);
+        if(Build.VERSION.SDK_INT>=26){
+            try{e.setAutoSizeTextTypeUniformWithConfiguration(11,16,1,android.util.TypedValue.COMPLEX_UNIT_SP);}catch(Throwable ignored){}
+        }
         e.setTextColor(TEXT);
         e.setHintTextColor(Color.rgb(105,105,105));
         e.setPadding(dp(10),0,dp(10),0);
