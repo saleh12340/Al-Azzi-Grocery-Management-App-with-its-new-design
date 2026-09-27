@@ -2548,6 +2548,85 @@ void operationActions(long customerId,String customerName,long tid,String detail
         refresh[0].run();
     }
     static class NoteItem { String name; double qty; int side; NoteItem(String n,double q,int s){name=n;qty=q;side=s;} }
+
+    void parseAndFillTransferText(String text, EditText amount, AutoCompleteTextView rn, EditText rp, AutoCompleteTextView sn, EditText sp){
+        if(text==null||text.trim().isEmpty()) return;
+        String t=text.trim();
+
+        // 1. استخراج المبلغ
+        java.util.regex.Pattern pAmount = java.util.regex.Pattern.compile("(?:المبلغ|مبلغ|صافي)?\\s*[:=\\-]?(?:مبلغ)?\\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\\.[0-9]+)?|[0-9]+(?:\\.[0-9]+)?)\\s*(?:صافي|ريال|ر\\.ي)?", java.util.regex.Pattern.CASE_INSENSITIVE);
+        java.util.regex.Matcher mAmount = pAmount.matcher(t);
+        String foundAmount = "";
+        while(mAmount.find()){
+            String matched = mAmount.group(0);
+            String val = mAmount.group(1).replace(",", "");
+            try{
+                double d = Double.parseDouble(val);
+                if(d > 0){
+                    foundAmount = val;
+                    if(matched.contains("صافي") || matched.contains("المبلغ")) break;
+                }
+            }catch(Exception ignored){}
+        }
+
+        // تفكيك النص لأسطر لاستخراج المستلم والمرسل وأرقام الهاتف
+        String[] lines = t.split("\n");
+        String foundReceiver = "", foundReceiverPhone = "";
+        String foundSender = "", foundSenderPhone = "";
+
+        for(int i=0; i<lines.length; i++){
+            String line = lines[i].trim();
+            if(line.isEmpty()) continue;
+
+            // كشف المستلم
+            if(line.contains("المستلم") || line.contains("المستفيد") || line.contains("إلى")){
+                String clean = line.replaceAll(".*(?:المستلم|المستفيد|إلى)\\s*[:=\\-/]?\\s*", "").trim();
+                java.util.regex.Matcher pm = java.util.regex.Pattern.compile("(?:\\+?967|00967|0)?([7][01378][0-9]{7})").matcher(clean);
+                if(pm.find()){
+                    foundReceiverPhone = pm.group(0);
+                    clean = clean.replace(foundReceiverPhone, "").replaceAll("[:\\-/]", "").trim();
+                }
+                if(!clean.isEmpty()) foundReceiver = clean;
+                if(foundReceiverPhone.isEmpty() && i + 1 < lines.length){
+                    String next = lines[i+1].trim();
+                    java.util.regex.Matcher npm = java.util.regex.Pattern.compile("(?:\\+?967|00967|0)?([7][01378][0-9]{7})").matcher(next);
+                    if(npm.find()){
+                        foundReceiverPhone = npm.group(0);
+                    }
+                }
+            }
+
+            // كشف المرسل
+            if(line.contains("المرسل") || line.contains("المودع") || line.contains("من")){
+                String clean = line.replaceAll(".*(?:المرسل|المودع|من)\\s*[:=\\-/]?\\s*", "").trim();
+                java.util.regex.Matcher pm = java.util.regex.Pattern.compile("(?:\\+?967|00967|0)?([7][01378][0-9]{7})").matcher(clean);
+                if(pm.find()){
+                    foundSenderPhone = pm.group(0);
+                    clean = clean.replace(foundSenderPhone, "").replaceAll("[:\\-/]", "").trim();
+                }
+                if(!clean.isEmpty()) foundSender = clean;
+                if(foundSenderPhone.isEmpty() && i + 1 < lines.length){
+                    String next = lines[i+1].trim();
+                    java.util.regex.Matcher npm = java.util.regex.Pattern.compile("(?:\\+?967|00967|0)?([7][01378][0-9]{7})").matcher(next);
+                    if(npm.find()){
+                        foundSenderPhone = npm.group(0);
+                    }
+                }
+            }
+        }
+
+        boolean anyFound = false;
+        if(!foundAmount.isEmpty()){ amount.setText(foundAmount); anyFound = true; }
+        if(!foundReceiver.isEmpty()){ rn.setText(foundReceiver); anyFound = true; }
+        if(!foundReceiverPhone.isEmpty()){ rp.setText(foundReceiverPhone); anyFound = true; }
+        if(!foundSender.isEmpty()){ sn.setText(foundSender); anyFound = true; }
+        if(!foundSenderPhone.isEmpty()){ sp.setText(foundSenderPhone); anyFound = true; }
+
+        if(anyFound){
+            Toast.makeText(this,"✓ تم التعرف على بيانات الحوالة وتعبئتها",Toast.LENGTH_SHORT).show();
+        }
+    }
+
     void transfers(){
         base("الحوالات");
         darkCardMode=false;
@@ -2654,7 +2733,10 @@ void operationActions(long customerId,String customerName,long tid,String detail
         previewBox.addView(previewTitle,new LinearLayout.LayoutParams(-1,-2));
         addSpaceTo(previewBox,4);
 
+        final boolean[] isAutoUpdating={false};
+
         EditText preview=new EditText(this);
+        preview.setHint("يمكنك كتابة أو لصق نص الحوالة هنا للتعرف على البيانات تلقائياً...");
         preview.setText("لم يتم تجهيز حوالة بعد.");
         preview.setTextSize(14.5f);
         preview.setTextColor(TEXT);
@@ -2680,19 +2762,32 @@ void operationActions(long customerId,String customerName,long tid,String detail
         preview.addTextChangedListener(new TextWatcher(){
             public void beforeTextChanged(CharSequence s,int st,int c,int a){}
             public void onTextChanged(CharSequence s,int st,int before,int count){preview.post(()->{preview.requestLayout();});}
-            public void afterTextChanged(Editable e){}
+            public void afterTextChanged(Editable e){
+                if(isAutoUpdating[0]) return;
+                String raw=e.toString().trim();
+                if(raw.isEmpty()||raw.equals("لم يتم تجهيز حوالة بعد.")||raw.equals("لم يتم إدخال بيانات الحوالة بعد.")) return;
+                boolean emptyFields = amount.getText().toString().trim().isEmpty() 
+                                   && rn.getText().toString().trim().isEmpty() 
+                                   && sn.getText().toString().trim().isEmpty();
+                if(emptyFields){
+                    parseAndFillTransferText(raw, amount, rn, transferReceiverPhone, sn, transferSenderPhone);
+                }
+            }
         });
         previewBox.addView(preview,new LinearLayout.LayoutParams(-1,dp(150)));
         addSpaceTo(previewBox,6);
 
-        // 6. صف: نسخ | مشاركة
+        // 6. صف: نسخ | لصق وتعبئة | مشاركة
         LinearLayout shareRow=new LinearLayout(this);
         shareRow.setOrientation(LinearLayout.HORIZONTAL);
         shareRow.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         Button copy=button("📋 نسخ");
+        Button paste=button("📥 لصق وتعبئة");
         Button wa=action("📤 مشاركة واتساب",GREEN);
         shareRow.addView(copy,new LinearLayout.LayoutParams(0,dp(42),1));
-        LinearLayout.LayoutParams wp=new LinearLayout.LayoutParams(0,dp(42),1); wp.setMargins(dp(6),0,0,0);
+        LinearLayout.LayoutParams pp=new LinearLayout.LayoutParams(0,dp(42),1.1f); pp.setMargins(dp(5),0,0,0);
+        shareRow.addView(paste,pp);
+        LinearLayout.LayoutParams wp=new LinearLayout.LayoutParams(0,dp(42),1.2f); wp.setMargins(dp(5),0,0,0);
         shareRow.addView(wa,wp);
         previewBox.addView(shareRow,new LinearLayout.LayoutParams(-1,-2));
         content.addView(previewBox);
@@ -2710,11 +2805,14 @@ void operationActions(long customerId,String customerName,long tid,String detail
         final String[] lastText={""},lastPhone={""};
 
         Runnable updatePreview=()->{
+            if(isAutoUpdating[0]) return;
             String av=amount.getText().toString().trim();
             String r=rn.getText().toString().trim(),rp=transferReceiverPhone.getText().toString().trim();
             String sName=sn.getText().toString().trim(),sp=transferSenderPhone.getText().toString().trim();
             if(av.isEmpty()&&r.isEmpty()&&rp.isEmpty()&&sName.isEmpty()&&sp.isEmpty()){
+                isAutoUpdating[0]=true;
                 preview.setText("لم يتم إدخال بيانات الحوالة بعد.");
+                isAutoUpdating[0]=false;
                 return;
             }
             double a=parseDoubleSafe(av.replace(",",""),0);
@@ -2724,7 +2822,9 @@ void operationActions(long customerId,String customerName,long tid,String detail
             if(!rp.isEmpty()) live.append("\n").append(rp);
             if(!sName.isEmpty()) live.append("\nالمرسل ").append(sName);
             if(!sp.isEmpty()) live.append("\n").append(sp);
+            isAutoUpdating[0]=true;
             preview.setText(live.toString());
+            isAutoUpdating[0]=false;
         };
         TextWatcher liveWatcher=new TextWatcher(){
             public void beforeTextChanged(CharSequence s,int st,int c,int a){}
@@ -2753,7 +2853,9 @@ void operationActions(long customerId,String customerName,long tid,String detail
             String txt=fmt(a)+" صافي\nالمستلم "+r+(rp.isEmpty()?"":"\n"+rp)+"\nالمرسل "+sName+(sp.isEmpty()?"":"\n"+sp);
             lastText[0]=txt;
             lastPhone[0]=rp;
+            isAutoUpdating[0]=true;
             preview.setText(txt);
+            isAutoUpdating[0]=false;
             try{
                 if(!db.transferDuplicate(a,sp,rp)) db.addTransfer(a,sName,sp,r,rp,"",0);
             }catch(Exception ignored){}
@@ -2765,8 +2867,10 @@ void operationActions(long customerId,String customerName,long tid,String detail
 
         prepare.setOnClickListener(v->build.run());
         clear.setOnClickListener(v->{
+            isAutoUpdating[0]=true;
             amount.setText(""); rn.setText(""); transferReceiverPhone.setText(""); sn.setText(""); transferSenderPhone.setText("");
             preview.setText("لم يتم تجهيز حوالة بعد."); lastText[0]=""; lastPhone[0]=""; netBadge.setText("0 صافي");
+            isAutoUpdating[0]=false;
             amount.requestFocus();
         });
 
@@ -2780,6 +2884,23 @@ void operationActions(long customerId,String customerName,long tid,String detail
             android.content.ClipboardManager cm=(android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
             cm.setPrimaryClip(android.content.ClipData.newPlainText("الحوالة",textNow));
             Toast.makeText(this,"✓ تم نسخ الحوالة",Toast.LENGTH_SHORT).show();
+        });
+
+        paste.setOnClickListener(v->{
+            try{
+                android.content.ClipboardManager cm=(android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
+                if(cm!=null && cm.hasPrimaryClip() && cm.getPrimaryClip()!=null && cm.getPrimaryClip().getItemCount()>0){
+                    CharSequence cs=cm.getPrimaryClip().getItemAt(0).coerceToText(this);
+                    if(cs!=null && cs.length()>0){
+                        String pText=cs.toString().trim();
+                        parseAndFillTransferText(pText, amount, rn, transferReceiverPhone, sn, transferSenderPhone);
+                        return;
+                    }
+                }
+                Toast.makeText(this,"الحافظة فارغة",Toast.LENGTH_SHORT).show();
+            }catch(Exception e){
+                Toast.makeText(this,"تعذر قراءة الحافظة",Toast.LENGTH_SHORT).show();
+            }
         });
 
         wa.setOnClickListener(v->{
@@ -3241,7 +3362,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
         if(currentNotePageId>0){
             try{
                 Bitmap bmp=notesReceiptBitmap();
-                showCompactPrintPreview("معاينة الملاحظات 58mm",bmp,()->printTextBluetooth(notesReceiptText()),()->shareCurrentNotes());
+                showCompactPrintPreview("معاينة الملاحظات 58mm",bmp,()->printBitmapBluetooth(bmp),()->shareCurrentNotes());
             }catch(Exception e){
                 showCompactPrintPreview("معاينة الملاحظات 58mm",notesReceiptText(),()->printTextBluetooth(notesReceiptText()),()->shareCurrentNotes());
             }
@@ -8452,24 +8573,65 @@ Uri saveReceiptBitmap(Bitmap bitmap,String no)throws Exception{
                 socket.connect();
             }catch(Exception first){
                 try{if(socket!=null)socket.close();}catch(Exception ignored){}
-                socket=device.createInsecureRfcommSocketToServiceRecord(spp);
-                socket.connect();
+                try{
+                    socket=device.createInsecureRfcommSocketToServiceRecord(spp);
+                    socket.connect();
+                }catch(Exception second){
+                    try{if(socket!=null)socket.close();}catch(Exception ignored){}
+                    java.lang.reflect.Method m=device.getClass().getMethod("createRfcommSocket",new Class[]{int.class});
+                    socket=(BluetoothSocket)m.invoke(device,1);
+                    socket.connect();
+                }
             }
             out=socket.getOutputStream();
-            out.write(new byte[]{0x1B,0x40});
-            byte[] raster=rasterBytes(bitmap);
-            final int chunk=2048;
-            for(int offset=0;offset<raster.length;offset+=chunk){
-                int len=Math.min(chunk,raster.length-offset);
-                out.write(raster,offset,len);
-                out.flush();
-                try{Thread.sleep(8);}catch(InterruptedException ie){Thread.currentThread().interrupt();throw ie;}
+            out.write(new byte[]{0x1B,0x40}); // تهيئة الطابعة
+            out.write(new byte[]{0x1B,0x61,0x00}); // محاذاة لليسار
+
+            // ضمان أن عرض الصورة 384 بكسل (المقاس القياسي لطابعات 58mm)
+            final int targetWidth=384;
+            Bitmap prepared=bitmap;
+            if(bitmap.getWidth()!=targetWidth){
+                float scale=(float)targetWidth/bitmap.getWidth();
+                int newH=Math.max(1,Math.round(bitmap.getHeight()*scale));
+                prepared=Bitmap.createScaledBitmap(bitmap,targetWidth,newH,true);
             }
-            out.write(new byte[]{0x1B,0x64,0x03});
+
+            int width=prepared.getWidth(),height=prepared.getHeight();
+            int bpr=(width+7)/8; // 48 بايت لكل سطر نقطي
+            final int sliceH=48; // إرسال 48 سطر نقطي في كل أمر لتجنب امتلاء ذاكرة الطابعة
+
+            for(int y=0;y<height;y+=sliceH){
+                int curH=Math.min(sliceH,height-y);
+                byte[] cmd=new byte[8+bpr*curH];
+                cmd[0]=0x1D;cmd[1]=0x76;cmd[2]=0x30;cmd[3]=0x00;
+                cmd[4]=(byte)(bpr&0xFF);cmd[5]=(byte)((bpr>>8)&0xFF);
+                cmd[6]=(byte)(curH&0xFF);cmd[7]=(byte)((curH>>8)&0xFF);
+                int p=8;
+                for(int sy=0;sy<curH;sy++){
+                    int actualY=y+sy;
+                    for(int xb=0;xb<bpr;xb++){
+                        int v=0;
+                        for(int bit=0;bit<8;bit++){
+                            int x=xb*8+bit;
+                            if(x<width){
+                                int px=prepared.getPixel(x,actualY);
+                                int g=(Color.red(px)+Color.green(px)+Color.blue(px))/3;
+                                if(g<180)v|=1<<(7-bit);
+                            }
+                        }
+                        cmd[p++]=(byte)v;
+                    }
+                }
+                out.write(cmd);
+                out.flush();
+                try{Thread.sleep(12);}catch(InterruptedException ie){Thread.currentThread().interrupt();throw ie;}
+            }
+
+            out.write(new byte[]{0x1B,0x64,0x04}); // دفع 4 أسطر بعد الطباعة
             out.flush();
             try{Thread.sleep(120);}catch(InterruptedException ie){Thread.currentThread().interrupt();}
             try{out.write(new byte[]{0x1D,0x56,0x00});out.flush();}catch(Throwable ignored){}
-            runOnUiThread(()->Toast.makeText(this,"تم إرسال الإيصال إلى الطابعة بنجاح",Toast.LENGTH_SHORT).show());
+            runOnUiThread(()->Toast.makeText(this,"✓ تم إرسال الإيصال المجدول إلى الطابعة بنجاح",Toast.LENGTH_SHORT).show());
         }catch(SecurityException e){
             runOnUiThread(()->Toast.makeText(this,"يلزم السماح باتصال Bluetooth للطباعة.",Toast.LENGTH_LONG).show());
         }catch(Exception e){
