@@ -2944,7 +2944,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
         LinearLayout top2=new LinearLayout(this);top2.setOrientation(LinearLayout.HORIZONTAL);top2.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);addSpace(5);
         Button print=button("🖨 طباعة"),shareNotes=button("📤 مشاركة"),clear=button("🧹 تفريغ");clear.setTextColor(RED);
         top2.addView(print,new LinearLayout.LayoutParams(0,dp(44),1));LinearLayout.LayoutParams y1=new LinearLayout.LayoutParams(0,dp(44),1);y1.setMargins(dp(5),0,0,0);top2.addView(shareNotes,y1);LinearLayout.LayoutParams y2=new LinearLayout.LayoutParams(0,dp(44),1);y2.setMargins(dp(5),0,0,0);top2.addView(clear,y2);content.addView(top2);addSpace(6);
-        fresh.setOnClickListener(v->newNotesPage());history.setOnClickListener(v->showNotesHistory());shareNotes.setOnClickListener(v->shareCurrentNotes());print.setOnClickListener(v->printCurrentNotes());clear.setOnClickListener(v->clearNotesPage());
+        fresh.setOnClickListener(v->newNotesPage());history.setOnClickListener(v->showNotesHistory());shareNotes.setOnClickListener(v->shareCurrentNotes());print.setOnClickListener(v->printCurrentNotes());print.setOnLongClickListener(v->{showSmartPrintDialog();return true;});clear.setOnClickListener(v->clearNotesPage());
         search.setOnClickListener(v->{
             final EditText q=field("ابحث في عناصر الملاحظة الحالية");
             if(!noteSearchQuery.isEmpty()) q.setText(noteSearchQuery);
@@ -3470,11 +3470,86 @@ void operationActions(long customerId,String customerName,long tid,String detail
         }else Toast.makeText(this,"لا توجد صفحة ملاحظات للمشاركة",Toast.LENGTH_SHORT).show();
     }
     void printCurrentNotes(){
-        if(currentNotePageId>0){
-            printNotesWithSpooler();
-        }else{
+        if(currentNotePageId<=0){
             Toast.makeText(this,"لا توجد صفحة ملاحظات للطباعة",Toast.LENGTH_SHORT).show();
+            return;
         }
+        smartPrintNotes();
+    }
+
+    void smartPrintNotes(){
+        android.content.SharedPreferences sp=getSharedPreferences("printer_settings",MODE_PRIVATE);
+        String defaultMode=sp.getString("notes_smart_print_mode","");
+
+        if("spooler".equals(defaultMode)){
+            printNotesWithSpooler();
+            return;
+        }else if("bluetooth".equals(defaultMode)){
+            try{
+                Bitmap bmp=notesReceiptBitmap();
+                printBitmapBluetooth(bmp);
+            }catch(Exception e){
+                printNotesWithSpooler();
+            }
+            return;
+        }
+
+        showSmartPrintDialog();
+    }
+
+    void showSmartPrintDialog(){
+        if(currentNotePageId<=0){
+            Toast.makeText(this,"لا توجد صفحة ملاحظات للطباعة",Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String[] options=new String[]{
+            "📄 معالج طباعة أندرويد (Print Spooler / ESC POS)",
+            "📶 طباعة بلوتوث حرارية مباشرة (Direct Bluetooth 58mm)",
+            "👁️ معاينة الإيصال والطباعة"
+        };
+
+        new AlertDialog.Builder(this)
+            .setTitle("وضع الطباعة الذكية ⚡")
+            .setItems(options,(d,which)->{
+                if(which==0){
+                    printNotesWithSpooler();
+                }else if(which==1){
+                    try{
+                        Bitmap bmp=notesReceiptBitmap();
+                        printBitmapBluetooth(bmp);
+                    }catch(Exception e){
+                        Toast.makeText(this,"تعذر تجهيز الصورة للطباعة",Toast.LENGTH_SHORT).show();
+                    }
+                }else if(which==2){
+                    try{
+                        Bitmap bmp=notesReceiptBitmap();
+                        showCompactPrintPreview("معاينة الملاحظات 58mm",bmp,()->printBitmapBluetooth(bmp),()->shareCurrentNotes());
+                    }catch(Exception e){
+                        Toast.makeText(this,"تعذر عرض المعاينة",Toast.LENGTH_SHORT).show();
+                    }
+                }
+            })
+            .setNeutralButton("⚙️ الوضع الافتراضي",(d,which)->{
+                String[] modes=new String[]{
+                    "السؤال في كل مرة (الوضع التفاعلي الذكي)",
+                    "معالج طباعة أندرويد دائماً (Print Spooler)",
+                    "طباعة بلوتوث مباشرة دائماً (Direct Bluetooth)"
+                };
+                new AlertDialog.Builder(this)
+                    .setTitle("اختر الوضع الافتراضي للطباعة")
+                    .setItems(modes,(d2,w2)->{
+                        android.content.SharedPreferences.Editor ed=getSharedPreferences("printer_settings",MODE_PRIVATE).edit();
+                        if(w2==0) ed.putString("notes_smart_print_mode","");
+                        else if(w2==1) ed.putString("notes_smart_print_mode","spooler");
+                        else if(w2==2) ed.putString("notes_smart_print_mode","bluetooth");
+                        ed.apply();
+                        Toast.makeText(this,"تم حفظ إعداد الطباعة الذكية",Toast.LENGTH_SHORT).show();
+                    })
+                    .setNegativeButton("إلغاء",null)
+                    .show();
+            })
+            .setNegativeButton("إلغاء",null)
+            .show();
     }
     void purchaseInvoices(){
         // المسار القديم للمشتريات لم يعد شاشة مستقلة؛ جميع عمليات البيع والشراء تمر عبر نموذج الفواتير الموحد.
