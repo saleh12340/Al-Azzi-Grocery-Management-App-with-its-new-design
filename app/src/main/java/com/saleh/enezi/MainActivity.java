@@ -2937,65 +2937,51 @@ void operationActions(long customerId,String customerName,long tid,String detail
     void notes(){
         base("الملاحظات");
         TextView title=tv("📝 الملاحظات",20);title.setTextColor(GREEN);title.setTypeface(Typeface.DEFAULT,Typeface.BOLD);content.addView(title,new LinearLayout.LayoutParams(-1,dp(42)));
+        addSpace(4);
+
+        final EditText searchInput=field("🔍 ابحث في عناصر الملاحظة الحالية تلقائياً...");
+        searchInput.setTextSize(14f);
+        if(!noteSearchQuery.isEmpty()){
+            searchInput.setText(noteSearchQuery);
+            try{ searchInput.setSelection(noteSearchQuery.length()); }catch(Exception ignored){}
+        }
+
+        LinearLayout searchBar=new LinearLayout(this);
+        searchBar.setOrientation(LinearLayout.HORIZONTAL);
+        searchBar.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        searchBar.setGravity(Gravity.CENTER_VERTICAL);
+        searchBar.addView(searchInput,new LinearLayout.LayoutParams(0,dp(44),1));
+
+        final Button clearSearch=button("✖");
+        clearSearch.setTextSize(13);
+        clearSearch.setTextColor(RED);
+        clearSearch.setBackgroundColor(Color.TRANSPARENT);
+        clearSearch.setVisibility(noteSearchQuery.isEmpty()?View.GONE:View.VISIBLE);
+        LinearLayout.LayoutParams csp=new LinearLayout.LayoutParams(dp(36),dp(44));
+        csp.setMargins(dp(4),0,0,0);
+        searchBar.addView(clearSearch,csp);
+
+        content.addView(searchBar,new LinearLayout.LayoutParams(-1,-2));
         addSpace(5);
+
         LinearLayout top1=new LinearLayout(this);top1.setOrientation(LinearLayout.HORIZONTAL);top1.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        Button fresh=action("＋ ملاحظة جديدة",GREEN);Button search=button("🔎 بحث");Button history=button("📚 السجل");
-        top1.addView(fresh,new LinearLayout.LayoutParams(0,dp(46),1));LinearLayout.LayoutParams x1=new LinearLayout.LayoutParams(0,dp(46),1);x1.setMargins(dp(5),0,0,0);top1.addView(search,x1);LinearLayout.LayoutParams x2=new LinearLayout.LayoutParams(0,dp(46),1);x2.setMargins(dp(5),0,0,0);top1.addView(history,x2);content.addView(top1);
+        Button fresh=action("＋ ملاحظة جديدة",GREEN);Button history=button("📚 السجل");
+        top1.addView(fresh,new LinearLayout.LayoutParams(0,dp(46),1));
+        LinearLayout.LayoutParams x1=new LinearLayout.LayoutParams(0,dp(46),1);
+        x1.setMargins(dp(6),0,0,0);
+        top1.addView(history,x1);
+        content.addView(top1);
+
         LinearLayout top2=new LinearLayout(this);top2.setOrientation(LinearLayout.HORIZONTAL);top2.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);addSpace(5);
         Button print=button("🖨 طباعة"),shareNotes=button("📤 مشاركة"),clear=button("🧹 تفريغ");clear.setTextColor(RED);
         top2.addView(print,new LinearLayout.LayoutParams(0,dp(44),1));LinearLayout.LayoutParams y1=new LinearLayout.LayoutParams(0,dp(44),1);y1.setMargins(dp(5),0,0,0);top2.addView(shareNotes,y1);LinearLayout.LayoutParams y2=new LinearLayout.LayoutParams(0,dp(44),1);y2.setMargins(dp(5),0,0,0);top2.addView(clear,y2);content.addView(top2);addSpace(6);
         fresh.setOnClickListener(v->newNotesPage());history.setOnClickListener(v->showNotesHistory());shareNotes.setOnClickListener(v->shareCurrentNotes());print.setOnClickListener(v->printCurrentNotes());print.setOnLongClickListener(v->{showSmartPrintDialog();return true;});clear.setOnClickListener(v->clearNotesPage());
-        search.setOnClickListener(v->{
-            final EditText q=field("ابحث في عناصر الملاحظة الحالية");
-            if(!noteSearchQuery.isEmpty()) q.setText(noteSearchQuery);
-            new AlertDialog.Builder(this)
-                .setTitle("بحث في عناصر الملاحظة الحالية")
-                .setView(q)
-                .setNeutralButton("إلغاء البحث",(d,w)->{noteSearchQuery=""; saveNotePrefs(); notes();})
-                .setNegativeButton("إغلاق",null)
-                .setPositiveButton("بحث",(d,w)->{
-                    noteSearchQuery=q.getText().toString().trim();
-                    saveNotePrefs();
-                    notes();
-                })
-                .show();
-        });
+
         LinearLayout controls=card();LinearLayout cr=new LinearLayout(this);cr.setGravity(Gravity.CENTER);Button minus=button("−");TextView fs=tv("حجم الخط "+noteFontSize,11);fs.setGravity(Gravity.CENTER);Button plus=button("+");minus.setOnClickListener(v->{noteFontSize=Math.max(10,noteFontSize-1); saveNotePrefs(); notes();});plus.setOnClickListener(v->{noteFontSize=Math.min(24,noteFontSize+1); saveNotePrefs(); notes();});cr.addView(minus,new LinearLayout.LayoutParams(dp(38),dp(34)));cr.addView(fs,new LinearLayout.LayoutParams(dp(100),dp(34)));cr.addView(plus,new LinearLayout.LayoutParams(dp(38),dp(34)));Switch sw=new Switch(this);sw.setText("وضع التمرير: "+(noteScrollMode?"مفعل":"متوقف"));sw.setChecked(noteScrollMode);sw.setOnCheckedChangeListener((b,x)->{noteScrollMode=x;b.setText("وضع التمرير: "+(x?"مفعل":"متوقف"));});cr.addView(sw,new LinearLayout.LayoutParams(-2,dp(34)));controls.addView(cr);content.addView(controls,new LinearLayout.LayoutParams(-1,dp(44)));addSpace(5);
         if(currentNotePageId<1)currentNotePageId=db.createNotePage("ملاحظة جديدة",db.now());
         saveNotePrefs();
 
-        if(!noteSearchQuery.isEmpty()){
-            LinearLayout sbB=card();
-            sbB.setOrientation(LinearLayout.HORIZONTAL);
-            sbB.setPadding(dp(10),dp(6),dp(10),dp(6));
-            TextView st=tv("🔍 عناصر مطابقة لـ: «"+noteSearchQuery+"»",12);
-            st.setTextColor(GREEN);
-            sbB.addView(st,new LinearLayout.LayoutParams(0,-2,1));
-            Button clrB=button("إلغاء");
-            clrB.setTextSize(11);
-            clrB.setTextColor(RED);
-            clrB.setBackgroundColor(Color.TRANSPARENT);
-            clrB.setOnClickListener(v->{noteSearchQuery=""; notes();});
-            sbB.addView(clrB,new LinearLayout.LayoutParams(-2,-2));
-            content.addView(sbB,new LinearLayout.LayoutParams(-1,-2));
-            addSpace(4);
-        }
-
         final long pid=currentNotePageId;
-        ArrayList<NoteItem> left=new ArrayList<>(),right=new ArrayList<>();
-        db.loadNoteItems(pid,left,right);
-        if(!noteSearchQuery.isEmpty()){
-            String qStr=noteSearchQuery.toLowerCase(Locale.ROOT);
-            ArrayList<NoteItem> fLeft=new ArrayList<>();
-            for(NoteItem x: left){
-                if(x.name!=null && x.name.toLowerCase(Locale.ROOT).contains(qStr)) fLeft.add(x);
-            }
-            ArrayList<NoteItem> fRight=new ArrayList<>();
-            for(NoteItem x: right){
-                if(x.name!=null && x.name.toLowerCase(Locale.ROOT).contains(qStr)) fRight.add(x);
-            }
-            left=fLeft; right=fRight;
-        }
         LinearLayout form=card();
         form.setPadding(dp(10),dp(8),dp(10),dp(8));
         LinearLayout fields=new LinearLayout(this);
@@ -3033,7 +3019,56 @@ void operationActions(long customerId,String customerName,long tid,String detail
         form.addView(adds,new LinearLayout.LayoutParams(-1,-2));
         content.addView(form,new LinearLayout.LayoutParams(-1,-2));
         addSpace(6);
-        LinearLayout split=new LinearLayout(this);split.setOrientation(LinearLayout.HORIZONTAL);split.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);split.addView(noteColumn("الشق الأيسر",left,1,pid),new LinearLayout.LayoutParams(0,-2,1));LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(0,-2,1);rp.setMargins(dp(4),0,0,0);split.addView(noteColumn("الشق الأيمن",right,2,pid),rp);content.addView(split,new LinearLayout.LayoutParams(-1,-2));
+
+        final LinearLayout split=new LinearLayout(this);
+        split.setOrientation(LinearLayout.HORIZONTAL);
+        split.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        content.addView(split,new LinearLayout.LayoutParams(-1,-2));
+
+        final Runnable updateColumns=()->{
+            split.removeAllViews();
+            String q=searchInput.getText().toString().trim();
+            noteSearchQuery=q;
+            saveNotePrefs();
+            clearSearch.setVisibility(q.isEmpty()?View.GONE:View.VISIBLE);
+
+            ArrayList<NoteItem> l=new ArrayList<>(), r=new ArrayList<>();
+            db.loadNoteItems(pid,l,r);
+
+            if(!q.isEmpty()){
+                String qLower=q.toLowerCase(Locale.ROOT);
+                ArrayList<NoteItem> fLeft=new ArrayList<>();
+                for(NoteItem x:l){
+                    if(x.name!=null && x.name.toLowerCase(Locale.ROOT).contains(qLower)) fLeft.add(x);
+                }
+                ArrayList<NoteItem> fRight=new ArrayList<>();
+                for(NoteItem x:r){
+                    if(x.name!=null && x.name.toLowerCase(Locale.ROOT).contains(qLower)) fRight.add(x);
+                }
+                l=fLeft; r=fRight;
+            }
+
+            split.addView(noteColumn("الشق الأيسر",l,1,pid),new LinearLayout.LayoutParams(0,-2,1));
+            LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(0,-2,1);
+            rp.setMargins(dp(4),0,0,0);
+            split.addView(noteColumn("الشق الأيمن",r,2,pid),rp);
+        };
+
+        searchInput.addTextChangedListener(new TextWatcher(){
+            public void beforeTextChanged(CharSequence s,int start,int count,int after){}
+            public void onTextChanged(CharSequence s,int start,int before,int count){
+                updateColumns.run();
+            }
+            public void afterTextChanged(Editable s){}
+        });
+
+        clearSearch.setOnClickListener(v->{
+            searchInput.setText("");
+            searchInput.requestFocus();
+            updateColumns.run();
+        });
+
+        updateColumns.run();
     }
     LinearLayout noteColumn(String title,ArrayList<NoteItem> items,int side,long pid){
         LinearLayout col=new LinearLayout(this);
