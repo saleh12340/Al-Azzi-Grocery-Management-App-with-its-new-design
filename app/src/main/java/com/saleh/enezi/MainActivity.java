@@ -225,6 +225,60 @@ public class MainActivity extends Activity {
     GradientDrawable rounded(int color,float radius){ GradientDrawable g=new GradientDrawable(); g.setColor(color); g.setCornerRadius(radius); return g; }
     GradientDrawable outlined(int color,int stroke,float radius){ GradientDrawable g=rounded(color,radius); g.setStroke(stroke,Color.rgb(105,105,105)); return g; }
     float fitText(float z){return Math.max(9f, z);}
+    void configureFullTextInput(EditText e){
+        if(e==null) return;
+        e.setIncludeFontPadding(true);
+        e.setEllipsize(null);
+        e.setHorizontallyScrolling(false);
+        e.setTextDirection(View.TEXT_DIRECTION_RTL);
+        e.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        e.setTextColor(TEXT);
+        int currentInputType=e.getInputType();
+        boolean numeric=(currentInputType & InputType.TYPE_MASK_CLASS)==InputType.TYPE_CLASS_NUMBER
+                || (currentInputType & InputType.TYPE_MASK_CLASS)==InputType.TYPE_CLASS_PHONE
+                || isNumericOrFinancial(String.valueOf(e.getHint()));
+        if(numeric || e.isSingleLine()){
+            e.setSingleLine(true);
+            e.setMaxLines(1);
+            e.setMinLines(1);
+            e.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+            if(Build.VERSION.SDK_INT>=26){
+                try{e.setAutoSizeTextTypeUniformWithConfiguration(10,17,1,android.util.TypedValue.COMPLEX_UNIT_SP);}catch(Throwable ignored){}
+            }
+        }else{
+            e.setSingleLine(false);
+            e.setHorizontallyScrolling(false);
+            e.setMaxLines(4);
+            e.setMinLines(1);
+            e.setGravity(Gravity.TOP|Gravity.RIGHT);
+            if(Build.VERSION.SDK_INT>=26){
+                try{e.setAutoSizeTextTypeUniformWithConfiguration(11,17,1,android.util.TypedValue.COMPLEX_UNIT_SP);}catch(Throwable ignored){}
+            }
+            ViewGroup.LayoutParams lp=e.getLayoutParams();
+            if(lp!=null && lp.height>0 && lp.height<dp(54)){
+                lp.height=ViewGroup.LayoutParams.WRAP_CONTENT;
+                e.setLayoutParams(lp);
+            }
+        }
+        int lr=Math.max(dp(8),e.getPaddingLeft());
+        int rr=Math.max(dp(8),e.getPaddingRight());
+        int top=e.getPaddingTop();
+        int bottomPad=e.getPaddingBottom();
+        e.setPadding(lr,Math.max(dp(4),top),rr,Math.max(dp(4),bottomPad));
+        e.setHorizontallyScrolling(false);
+    }
+
+    void normalizeInputViews(View v){
+        if(v instanceof EditText){
+            configureFullTextInput((EditText)v);
+        }
+        if(v instanceof ViewGroup){
+            ViewGroup g=(ViewGroup)v;
+            g.setClipChildren(false);
+            for(int i=0;i<g.getChildCount();i++) normalizeInputViews(g.getChildAt(i));
+        }
+    }
+
     void normalizeAppText(View v){
         if(v instanceof TextView && !(v instanceof Button) && !(v instanceof EditText)){
             TextView t=(TextView)v;t.setIncludeFontPadding(true);t.setSingleLine(false);t.setMaxLines(Integer.MAX_VALUE);t.setEllipsize(null);t.setHorizontallyScrolling(false);
@@ -242,6 +296,7 @@ public class MainActivity extends Activity {
     void finalizeAdaptiveLayout(View rootView){
         if(rootView==null) return;
         rootView.post(()->{
+            normalizeInputViews(rootView);
             normalizeAppText(rootView);
             rootView.requestLayout();
         });
@@ -368,6 +423,7 @@ public class MainActivity extends Activity {
         } else {
             attachLearning(e,h);
         }
+        configureFullTextInput(e);
         return e;
     }
     String learningKind(String hint){
@@ -449,6 +505,7 @@ public class MainActivity extends Activity {
         e.setRawInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL|InputType.TYPE_NUMBER_VARIATION_NORMAL);
         e.setPrivateImeOptions("noAutoCorrect noSuggestions noLearning");
         e.setKeyListener(DigitsKeyListener.getInstance("0123456789."));
+        configureFullTextInput(e);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             e.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);
         }
@@ -460,6 +517,7 @@ public class MainActivity extends Activity {
         e.setInputType(InputType.TYPE_CLASS_PHONE);
         e.setRawInputType(InputType.TYPE_CLASS_PHONE);
         e.setPrivateImeOptions("noAutoCorrect noSuggestions noLearning");
+        configureFullTextInput(e);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             e.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);
         }
