@@ -4308,6 +4308,35 @@ void operationActions(long customerId,String customerName,long tid,String detail
         fields.addView(row1,new LinearLayout.LayoutParams(-1,dp(50)));
         fields.addView(row2,new LinearLayout.LayoutParams(-1,dp(50)));
 
+        // الحقول الأساسية كانت معرفة في التخطيط القديم ثم حُذفت أثناء إعادة توزيع الصفوف؛
+        // نعيد تعريفها هنا قبل استخدامها، مع الحفاظ على نفس ترتيب الإدخال المطلوب.
+        EditText total=numberField("الإجمالي");
+        EditText qty=numberField("الكمية");
+        qty.setText("1");
+        AutoCompleteTextView name=new AutoCompleteTextView(this);
+        name.setHint("اسم الصنف");
+        name.setTextSize(15);
+        name.setSingleLine(true);
+        name.setMaxLines(1);
+        name.setTextColor(TEXT);
+        name.setHintTextColor(MUTED);
+        name.setPadding(dp(7),dp(4),dp(7),dp(4));
+        name.setBackground(outline(CARD,10));
+        name.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+        name.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        name.setTextDirection(View.TEXT_DIRECTION_RTL);
+        name.setEllipsize(null);
+        name.setHorizontallyScrolling(false);
+        name.setSelectAllOnFocus(true);
+        name.setThreshold(1);
+        name.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_dropdown_item_1line,db.itemNames()));
+
+        EditText unit=numberField("سعر الوحدة");
+        unit.setEnabled(false);
+        unit.setAlpha(.85f);
+        EditText salePrice=numberField("سعر البيع");
+        salePrice.setVisibility(sale?View.GONE:View.VISIBLE);
+
         LinearLayout.LayoutParams totalLp=new LinearLayout.LayoutParams(0,dp(48),1.05f);
         LinearLayout.LayoutParams qtyLp=new LinearLayout.LayoutParams(0,dp(48),0.85f);
         qtyLp.setMargins(dp(4),0,0,0);
