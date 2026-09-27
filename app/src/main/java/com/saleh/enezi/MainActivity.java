@@ -3619,8 +3619,9 @@ void operationActions(long customerId,String customerName,long tid,String detail
             return;
         }
         try{
-            Bitmap bmp=notesReceiptBitmap(1.0f);
-            String name="ملاحظات_"+currentNotePageId+"_"+new SimpleDateFormat("yyyyMMdd_HHmmss",Locale.US).format(new Date())+".png";
+            // حفظ نسخة HD بنفس مقاس 58mm المنطقي، مع دقة 3x للحفاظ على وضوح النص عند التكبير والمشاركة.
+            Bitmap bmp=notesHdReceiptBitmap();
+            String name="ملاحظات_HD_"+currentNotePageId+"_"+new SimpleDateFormat("yyyyMMdd_HHmmss",Locale.US).format(new Date())+".png";
             ContentResolver resolver=getContentResolver();
             Uri savedUri=null;
             if(Build.VERSION.SDK_INT>=29){
