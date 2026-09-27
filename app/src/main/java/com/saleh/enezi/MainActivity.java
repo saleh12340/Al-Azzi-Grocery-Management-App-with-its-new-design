@@ -4270,7 +4270,10 @@ void operationActions(long customerId,String customerName,long tid,String detail
         party.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         party.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         party.setTextDirection(View.TEXT_DIRECTION_RTL);
-        party.setPadding(dp(9),dp(4),dp(9),dp(4));
+        party.setPadding(dp(12),dp(4),dp(12),dp(4));
+        party.setEllipsize(null);
+        party.setHorizontallyScrolling(false);
+        if(Build.VERSION.SDK_INT>=26){try{party.setAutoSizeTextTypeUniformWithConfiguration(11,16,1,android.util.TypedValue.COMPLEX_UNIT_SP);}catch(Throwable ignored){}}
         party.setBackground(outlined(CARD,1,dp(10)));
         party.setSelectAllOnFocus(true);
         party.setThreshold(1);
@@ -4287,51 +4290,48 @@ void operationActions(long customerId,String customerName,long tid,String detail
         itemBox.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         content.addView(itemBox);
 
+        // تخطيط متجاوب: لا نضغط حقول البيع والشراء في صف واحد ضيق.
         LinearLayout fields=new LinearLayout(this);
-        fields.setOrientation(LinearLayout.HORIZONTAL);
+        fields.setOrientation(LinearLayout.VERTICAL);
         fields.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
-        // الإلزام: الإجمالي -> الكمية -> اسم الصنف
-        EditText total=numberField("الإجمالي");
-        EditText qty=numberField("الكمية");
-        qty.setText("1");
-        AutoCompleteTextView name=new AutoCompleteTextView(this);
-        name.setHint("اسم الصنف");
-        name.setTextSize(15);
-        name.setSingleLine(true);
-        name.setTextColor(TEXT);
-        name.setHintTextColor(MUTED);
-        name.setPadding(dp(7),dp(4),dp(7),dp(4));
-        name.setBackground(outline(CARD,10));
-        name.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
-        name.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        name.setTextDirection(View.TEXT_DIRECTION_RTL);
-        name.setSelectAllOnFocus(true);
-        name.setThreshold(1);
-        name.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_dropdown_item_1line,db.itemNames()));
+        LinearLayout row1=new LinearLayout(this);
+        row1.setOrientation(LinearLayout.HORIZONTAL);
+        row1.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        row1.setGravity(Gravity.CENTER_VERTICAL);
 
-        EditText unit=numberField("سعر الوحدة");
-        unit.setEnabled(false);
-        unit.setAlpha(.85f);
-        EditText salePrice=numberField("سعر البيع");
-        salePrice.setVisibility(sale?View.GONE:View.VISIBLE);
+        LinearLayout row2=new LinearLayout(this);
+        row2.setOrientation(LinearLayout.HORIZONTAL);
+        row2.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        row2.setGravity(Gravity.CENTER_VERTICAL);
 
-        fields.addView(total,new LinearLayout.LayoutParams(0,dp(48),1.0f));
-        LinearLayout.LayoutParams qlp=new LinearLayout.LayoutParams(0,dp(48),.72f);
-        qlp.setMargins(dp(3),0,0,0);
-        fields.addView(qty,qlp);
-        LinearLayout.LayoutParams nlp=new LinearLayout.LayoutParams(0,dp(48),1.25f);
-        nlp.setMargins(dp(3),0,0,0);
-        fields.addView(name,nlp);
-        LinearLayout.LayoutParams ulp=new LinearLayout.LayoutParams(0,dp(48),.9f);
-        ulp.setMargins(dp(3),0,0,0);
-        fields.addView(unit,ulp);
+        fields.addView(row1,new LinearLayout.LayoutParams(-1,dp(50)));
+        fields.addView(row2,new LinearLayout.LayoutParams(-1,dp(50)));
+
+        LinearLayout.LayoutParams totalLp=new LinearLayout.LayoutParams(0,dp(48),1.05f);
+        LinearLayout.LayoutParams qtyLp=new LinearLayout.LayoutParams(0,dp(48),0.85f);
+        qtyLp.setMargins(dp(4),0,0,0);
+        LinearLayout.LayoutParams nameLp=new LinearLayout.LayoutParams(0,dp(48),1.65f);
+        nameLp.setMargins(dp(4),0,0,0);
+        row1.addView(total,totalLp);
+        row1.addView(qty,qtyLp);
+        row1.addView(name,nameLp);
+
+        LinearLayout.LayoutParams unitLp=new LinearLayout.LayoutParams(0,dp(48),1f);
         if(!sale){
-            LinearLayout.LayoutParams slp=new LinearLayout.LayoutParams(0,dp(48),.9f);
-            slp.setMargins(dp(3),0,0,0);
-            fields.addView(salePrice,slp);
+            LinearLayout.LayoutParams saleLp=new LinearLayout.LayoutParams(0,dp(48),1f);
+            saleLp.setMargins(dp(4),0,0,0);
+            row2.addView(unit,unitLp);
+            row2.addView(salePrice,saleLp);
+        }else{
+            row2.addView(unit,unitLp);
+            TextView unitHint=tv("سعر الوحدة محسوب تلقائياً",11);
+            unitHint.setTextColor(MUTED);
+            unitHint.setGravity(Gravity.CENTER);
+            row2.addView(unitHint,new LinearLayout.LayoutParams(0,dp(48),1f));
         }
-        itemBox.addView(fields,new LinearLayout.LayoutParams(-1,dp(50)));
+
+        itemBox.addView(fields,new LinearLayout.LayoutParams(-1,dp(104)));
 
         Runnable recalcUnit=()->{
             try{
