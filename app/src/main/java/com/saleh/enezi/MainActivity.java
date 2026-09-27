@@ -3074,9 +3074,15 @@ void operationActions(long customerId,String customerName,long tid,String detail
         content.addView(top1);
 
         LinearLayout top2=new LinearLayout(this);top2.setOrientation(LinearLayout.HORIZONTAL);top2.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);addSpace(5);
-        Button print=button("🖨 طباعة"),shareNotes=button("📤 مشاركة"),clear=button("🧹 تفريغ");clear.setTextColor(RED);
-        top2.addView(print,new LinearLayout.LayoutParams(0,dp(44),1));LinearLayout.LayoutParams y1=new LinearLayout.LayoutParams(0,dp(44),1);y1.setMargins(dp(5),0,0,0);top2.addView(shareNotes,y1);LinearLayout.LayoutParams y2=new LinearLayout.LayoutParams(0,dp(44),1);y2.setMargins(dp(5),0,0,0);top2.addView(clear,y2);content.addView(top2);addSpace(6);
-        fresh.setOnClickListener(v->newNotesPage());history.setOnClickListener(v->showNotesHistory());shareNotes.setOnClickListener(v->shareCurrentNotes());print.setOnClickListener(v->printCurrentNotes());print.setOnLongClickListener(v->{showSmartPrintDialog();return true;});clear.setOnClickListener(v->clearNotesPage());
+        Button print=button("🖨 طباعة"),shareNotes=button("📲 واتساب"),saveImage=button("💾 حفظ صورة"),clear=button("🧹 تفريغ");clear.setTextColor(RED);
+        top2.addView(print,new LinearLayout.LayoutParams(0,dp(44),1));
+        LinearLayout.LayoutParams y1=new LinearLayout.LayoutParams(0,dp(44),1);y1.setMargins(dp(5),0,0,0);top2.addView(shareNotes,y1);
+        LinearLayout.LayoutParams y2=new LinearLayout.LayoutParams(0,dp(44),1);y2.setMargins(dp(5),0,0,0);top2.addView(saveImage,y2);
+        LinearLayout.LayoutParams y3=new LinearLayout.LayoutParams(0,dp(44),1);y3.setMargins(dp(5),0,0,0);top2.addView(clear,y3);
+        content.addView(top2);addSpace(6);
+        fresh.setOnClickListener(v->newNotesPage());history.setOnClickListener(v->showNotesHistory());
+        shareNotes.setOnClickListener(v->shareCurrentNotes());saveImage.setOnClickListener(v->saveCurrentNotesImage());
+        print.setOnClickListener(v->printCurrentNotes());print.setOnLongClickListener(v->{showSmartPrintDialog();return true;});clear.setOnClickListener(v->clearNotesPage());
 
         LinearLayout controls=card();LinearLayout cr=new LinearLayout(this);cr.setGravity(Gravity.CENTER);Button minus=button("−");TextView fs=tv("حجم الخط "+noteFontSize,11);fs.setGravity(Gravity.CENTER);Button plus=button("+");minus.setOnClickListener(v->{noteFontSize=Math.max(10,noteFontSize-1); saveNotePrefs(); notes();});plus.setOnClickListener(v->{noteFontSize=Math.min(24,noteFontSize+1); saveNotePrefs(); notes();});cr.addView(minus,new LinearLayout.LayoutParams(dp(38),dp(34)));cr.addView(fs,new LinearLayout.LayoutParams(dp(100),dp(34)));cr.addView(plus,new LinearLayout.LayoutParams(dp(38),dp(34)));Switch sw=new Switch(this);sw.setText("وضع التمرير: "+(noteScrollMode?"مفعل":"متوقف"));sw.setChecked(noteScrollMode);sw.setOnCheckedChangeListener((b,x)->{noteScrollMode=x;b.setText("وضع التمرير: "+(x?"مفعل":"متوقف"));});cr.addView(sw,new LinearLayout.LayoutParams(-2,dp(34)));controls.addView(cr);content.addView(controls,new LinearLayout.LayoutParams(-1,dp(44)));addSpace(5);
         if(currentNotePageId<1)currentNotePageId=db.createNotePage("ملاحظة جديدة",db.now());
@@ -3362,10 +3368,12 @@ void operationActions(long customerId,String customerName,long tid,String detail
     }
 
     Bitmap notesReceiptBitmap(float scale){
-        final float margin=6f * scale;
-        final float spaceBetween=16f * scale;
-        final float colW=175f * scale;
-        final float rowH=26f * scale;
+        // إيصال الملاحظات مصمم فعلياً بعرض حراري 58mm (384px عند المقياس 1x).
+        // عند 3x تصبح الصورة 1152px للمشاركة عالية الدقة فقط، مع بقاء النسبة نفسها.
+        final float margin=8f * scale;
+        final float spaceBetween=8f * scale;
+        final float colW=180f * scale;
+        final float rowH=30f * scale;
         final int width=Math.round(margin*2f + colW*2f + spaceBetween);
         final float dividerX=margin + colW + (spaceBetween/2f);
         final float rightColLeft=dividerX + (spaceBetween/2f);
@@ -3605,6 +3613,49 @@ void operationActions(long customerId,String customerName,long tid,String detail
             }
         }else Toast.makeText(this,"لا توجد صفحة ملاحظات للمشاركة",Toast.LENGTH_SHORT).show();
     }
+    void saveCurrentNotesImage(){
+        if(currentNotePageId<=0){
+            Toast.makeText(this,"لا توجد صفحة ملاحظات للحفظ",Toast.LENGTH_SHORT).show();
+            return;
+        }
+        try{
+            Bitmap bmp=notesReceiptBitmap(1.0f);
+            String name="ملاحظات_"+currentNotePageId+"_"+new SimpleDateFormat("yyyyMMdd_HHmmss",Locale.US).format(new Date())+".png";
+            ContentResolver resolver=getContentResolver();
+            Uri savedUri=null;
+            if(Build.VERSION.SDK_INT>=29){
+                ContentValues values=new ContentValues();
+                values.put(MediaStore.Images.Media.DISPLAY_NAME,name);
+                values.put(MediaStore.Images.Media.MIME_TYPE,"image/png");
+                values.put(MediaStore.Images.Media.RELATIVE_PATH,Environment.DIRECTORY_PICTURES+"/بقالة العزي/الملاحظات");
+                values.put(MediaStore.Images.Media.IS_PENDING,1);
+                savedUri=resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,values);
+                if(savedUri==null) throw new IllegalStateException("تعذر إنشاء ملف الصورة");
+                try(OutputStream out=resolver.openOutputStream(savedUri)){
+                    if(out==null || !bmp.compress(Bitmap.CompressFormat.PNG,100,out)) throw new IllegalStateException("تعذر كتابة الصورة");
+                    out.flush();
+                }
+                ContentValues done=new ContentValues();
+                done.put(MediaStore.Images.Media.IS_PENDING,0);
+                resolver.update(savedUri,done,null,null);
+            }else{
+                File dir=new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES),"بقالة العزي/الملاحظات");
+                if(!dir.exists() && !dir.mkdirs()) throw new IllegalStateException("تعذر إنشاء مجلد الصور");
+                File file=new File(dir,name);
+                try(FileOutputStream out=new FileOutputStream(file)){
+                    if(!bmp.compress(Bitmap.CompressFormat.PNG,100,out)) throw new IllegalStateException("تعذر كتابة الصورة");
+                    out.flush();
+                }
+                savedUri=Uri.fromFile(file);
+                sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,savedUri));
+            }
+            Toast.makeText(this,"تم حفظ صورة الملاحظة في الصور",Toast.LENGTH_LONG).show();
+        }catch(Exception e){
+            android.util.Log.e("AlAzziNotes","Save note image failed",e);
+            Toast.makeText(this,"تعذر حفظ صورة الملاحظة",Toast.LENGTH_LONG).show();
+        }
+    }
+
     void printCurrentNotes(){
         if(currentNotePageId<=0){
             Toast.makeText(this,"لا توجد صفحة ملاحظات للطباعة",Toast.LENGTH_SHORT).show();
