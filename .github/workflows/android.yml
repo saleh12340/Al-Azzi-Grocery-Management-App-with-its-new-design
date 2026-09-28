@@ -29,6 +29,8 @@ jobs:
           wget -q https://services.gradle.org/distributions/gradle-8.9-bin.zip
           sudo unzip -q -o gradle-8.9-bin.zip -d /opt
           echo "/opt/gradle-8.9/bin" >> "$GITHUB_PATH"
+      - name: Run unit tests
+        run: gradle :app:testDebugUnitTest --stacktrace --no-daemon
       - name: Build debug APK
         run: gradle :app:assembleDebug --stacktrace --no-daemon
       - name: Verify APK
