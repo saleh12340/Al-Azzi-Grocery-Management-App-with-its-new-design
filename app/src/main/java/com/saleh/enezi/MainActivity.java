@@ -954,6 +954,7 @@ void showMoreMenu(){
 
     int safeLowStockCount(){try{return db==null?0:db.lowStockCount();}catch(Throwable e){return 0;}}
     double safeTodaySales(){try{return db==null?0:db.todaySales();}catch(Throwable e){return 0;}}
+    double safeTodayPurchases(){try{return db==null?0:db.todayPurchases();}catch(Throwable e){return 0;}}
     int safeTodayInvoiceCount(){try{return db==null?0:db.todayInvoiceCount();}catch(Throwable e){return 0;}}
     int safeCustomerCount(){try{return db==null?0:db.customerCount();}catch(Throwable e){return 0;}}
     int safeScannedInvoiceCount(){try{return db==null?0:db.scannedInvoiceCount();}catch(Throwable e){return 0;}}
@@ -969,41 +970,48 @@ void showMoreMenu(){
         hero.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         hero.setPadding(dp(16),dp(14),dp(16),dp(14));
         hero.setBackground(rounded(DARK,dp(18)));
+
         TextView brand=tv("بقالة العزي",22);
         brand.setTextColor(Color.WHITE);
         brand.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         brand.setGravity(Gravity.RIGHT);
         hero.addView(brand,new LinearLayout.LayoutParams(-1,-2));
-        TextView subtitle=tv("إدارة المبيعات والحسابات والمخزون",13);
+
+        TextView subtitle=tv("مركز التحكم اليومي للمبيعات والحسابات والمخزون",13);
         subtitle.setTextColor(Color.WHITE);
-        subtitle.setAlpha(.88f);
+        subtitle.setAlpha(.9f);
         hero.addView(subtitle,new LinearLayout.LayoutParams(-1,-2));
         content.addView(hero,new LinearLayout.LayoutParams(-1,-2));
         addSpace(10);
 
-        LinearLayout stats=new LinearLayout(this);
-        stats.setOrientation(LinearLayout.HORIZONTAL);
-        stats.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        String[] statLabels={"مبيعات اليوم","فواتير اليوم","العملاء","نواقص المخزون"};
-        String[] statValues={fmt(safeTodaySales())+" ر.ي",String.valueOf(safeTodayInvoiceCount()),String.valueOf(safeCustomerCount()),String.valueOf(safeLowStockCount())};
-        int[] statColors={ORANGE,DARK,BLUE_PRIMARY,RED};
-        for(int i=0;i<4;i++){
-            LinearLayout s=new LinearLayout(this);
-            s.setOrientation(LinearLayout.VERTICAL);
-            s.setGravity(Gravity.CENTER);
-            s.setPadding(dp(5),dp(8),dp(5),dp(8));
-            s.setBackground(outlined(Color.WHITE,1,12));
-            TextView v=tv(statValues[i],15);
-            v.setTextColor(statColors[i]); v.setTypeface(Typeface.DEFAULT,Typeface.BOLD); v.setGravity(Gravity.CENTER);
-            TextView l=tv(statLabels[i],10.5f);
-            l.setTextColor(MUTED); l.setGravity(Gravity.CENTER);
-            s.addView(v,new LinearLayout.LayoutParams(-1,dp(25)));
-            s.addView(l,new LinearLayout.LayoutParams(-1,dp(22)));
-            LinearLayout.LayoutParams sp=new LinearLayout.LayoutParams(0,dp(60),1);
-            if(i>0)sp.setMargins(dp(5),0,0,0);
-            stats.addView(s,sp);
-        }
-        content.addView(stats,new LinearLayout.LayoutParams(-1,-2));
+        // ملخص واحد واضح بدل شبكة بطاقات صغيرة: أهم الأرقام المالية في مكان واحد.
+        LinearLayout summary=new LinearLayout(this);
+        summary.setOrientation(LinearLayout.VERTICAL);
+        summary.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        summary.setPadding(dp(12),dp(8),dp(12),dp(8));
+        summary.setBackground(outlined(Color.WHITE,dp(1),dp(14)));
+
+        TextView summaryTitle=tv("ملخص اليوم",14);
+        summaryTitle.setTextColor(DARK);
+        summaryTitle.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        summaryTitle.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+        summary.addView(summaryTitle,new LinearLayout.LayoutParams(-1,dp(28)));
+
+        LinearLayout rowA=new LinearLayout(this);
+        rowA.setOrientation(LinearLayout.HORIZONTAL);
+        rowA.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        addHomeSummaryCell(rowA,"مبيعات اليوم",fmt(safeTodaySales())+" ر.ي",GREEN);
+        addHomeSummaryCell(rowA,"مشتريات اليوم",fmt(safeTodayPurchases())+" ر.ي",GOLD);
+        summary.addView(rowA,new LinearLayout.LayoutParams(-1,dp(54)));
+
+        LinearLayout rowB=new LinearLayout(this);
+        rowB.setOrientation(LinearLayout.HORIZONTAL);
+        rowB.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        addHomeSummaryCell(rowB,"عليك",fmt(db==null?0:db.totalDebts())+" ر.ي",RED);
+        addHomeSummaryCell(rowB,"لك",fmt(db==null?0:db.totalCredits())+" ر.ي",BLUE_PRIMARY);
+        summary.addView(rowB,new LinearLayout.LayoutParams(-1,dp(54)));
+
+        content.addView(summary,new LinearLayout.LayoutParams(-1,-2));
         addSpace(12);
 
         TextView quickTitle=section("العمليات الأساسية");
@@ -1013,7 +1021,7 @@ void showMoreMenu(){
         quick.setOrientation(LinearLayout.HORIZONTAL);
         quick.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         String[] qLabels={"فاتورة بيع","فاتورة شراء","عملية عميل","عملية مورد"};
-        View.OnClickListener[] qActions={v->unifiedInvoiceForm(InvoiceType.SALE),v->unifiedInvoiceForm(InvoiceType.PURCHASE),v->showCustomerTransactionDialog(false),v->suppliers()};
+        View.OnClickListener[] qActions={v->unifiedInvoiceForm(InvoiceType.SALE),v->unifiedInvoiceForm(InvoiceType.PURCHASE),v->showCustomerTransactionDialog(false),v->showGeneralActions()};
         for(int i=0;i<qLabels.length;i++){
             Button b=action(qLabels[i],i<2?ORANGE:DARK);
             b.setTextSize(13.5f);
@@ -1041,29 +1049,65 @@ void showMoreMenu(){
             row.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
             row.setPadding(dp(12),dp(8),dp(12),dp(8));
             row.setBackground(outlined(Color.WHITE,1,12));
+
             TextView title=tv(labels[i],15);
-            title.setTextColor(TEXT); title.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+            title.setTextColor(TEXT);
+            title.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+            title.setGravity(Gravity.RIGHT);
+
             TextView desc=tv(descriptions[i],10.5f);
             desc.setTextColor(MUTED);
+            desc.setGravity(Gravity.RIGHT);
+
             LinearLayout textBox=new LinearLayout(this);
             textBox.setOrientation(LinearLayout.VERTICAL);
             textBox.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
             textBox.addView(title,new LinearLayout.LayoutParams(-1,-2));
             textBox.addView(desc,new LinearLayout.LayoutParams(-1,-2));
+
             row.addView(textBox,new LinearLayout.LayoutParams(0,-2,1));
             TextView arrow=tv("‹",24);
-            arrow.setTextColor(DARK); arrow.setGravity(Gravity.CENTER);
+            arrow.setTextColor(DARK);
+            arrow.setGravity(Gravity.CENTER);
             row.addView(arrow,new LinearLayout.LayoutParams(dp(30),dp(44)));
             row.setOnClickListener(actions[i]);
+
             LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,-2);
             if(i>0)rp.setMargins(0,dp(6),0,0);
             modules.addView(row,rp);
         }
         content.addView(modules,new LinearLayout.LayoutParams(-1,-2));
+
         addSpace(10);
         TextView footer=tv("بقالة العزي للمواد الغذائية",11);
-        footer.setTextColor(MUTED); footer.setGravity(Gravity.CENTER);
+        footer.setTextColor(MUTED);
+        footer.setGravity(Gravity.CENTER);
         content.addView(footer,new LinearLayout.LayoutParams(-1,dp(28)));
+    }
+
+    void addHomeSummaryCell(LinearLayout parent,String label,String value,int accent){
+        LinearLayout cell=new LinearLayout(this);
+        cell.setOrientation(LinearLayout.VERTICAL);
+        cell.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+        cell.setPadding(dp(6),0,dp(6),0);
+
+        TextView v=tv(value,15);
+        v.setTextColor(accent);
+        v.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
+        v.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+        v.setSingleLine(true);
+        v.setEllipsize(null);
+
+        TextView l=tv(label,10.5f);
+        l.setTextColor(MUTED);
+        l.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
+        l.setSingleLine(true);
+
+        cell.addView(v,new LinearLayout.LayoutParams(-1,dp(28)));
+        cell.addView(l,new LinearLayout.LayoutParams(-1,dp(22)));
+
+        LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(0,dp(54),1);
+        parent.addView(cell,cp);
     }
 
     void addHomeFab(){
@@ -7080,6 +7124,11 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         double todaySales(){
             String today=new SimpleDateFormat("yyyy-MM-dd",Locale.US).format(new Date())+"%";
             Cursor c=getReadableDatabase().rawQuery("SELECT COALESCE(SUM(total),0) FROM invoices WHERE date LIKE ?",new String[]{today});
+            double x=c.moveToFirst()?c.getDouble(0):0;c.close();return x;
+        }
+        double todayPurchases(){
+            String today=new SimpleDateFormat("yyyy-MM-dd",Locale.US).format(new Date())+"%";
+            Cursor c=getReadableDatabase().rawQuery("SELECT COALESCE(SUM(total),0) FROM purchase_invoices WHERE date LIKE ?",new String[]{today});
             double x=c.moveToFirst()?c.getDouble(0):0;c.close();return x;
         }
         int todayInvoiceCount(){
