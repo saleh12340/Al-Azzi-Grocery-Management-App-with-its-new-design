@@ -242,8 +242,18 @@ public class MainActivity extends Activity {
             e.setMaxLines(1);
             e.setMinLines(1);
             e.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
-            if(Build.VERSION.SDK_INT>=26){
-                try{e.setAutoSizeTextTypeUniformWithConfiguration(10,17,1,android.util.TypedValue.COMPLEX_UNIT_SP);}catch(Throwable ignored){}
+            if(numeric){
+                // القيم المالية والهاتف لا تُصغّر لإخفاء المشكلة؛ الحقل قابل للتمرير أفقيًا
+                // حتى تبقى الأرقام كاملة وبحجم مقروء عند إدخال قيم طويلة.
+                e.setHorizontallyScrolling(true);
+                if(Build.VERSION.SDK_INT>=26){
+                    try{e.setAutoSizeTextTypeWithDefaults(android.widget.TextView.AUTO_SIZE_TEXT_TYPE_NONE);}catch(Throwable ignored){}
+                }
+            }else{
+                e.setHorizontallyScrolling(false);
+                if(Build.VERSION.SDK_INT>=26){
+                    try{e.setAutoSizeTextTypeUniformWithConfiguration(12,17,1,android.util.TypedValue.COMPLEX_UNIT_SP);}catch(Throwable ignored){}
+                }
             }
         }else{
             e.setSingleLine(false);
@@ -421,6 +431,7 @@ public class MainActivity extends Activity {
         EditText e=new EditText(this);
         e.setHint(h);
         e.setTextSize(15.5f);
+        e.setMinHeight(dp(50));
         e.setSingleLine(true);
         e.setMaxLines(1);
         e.setEllipsize(null);
