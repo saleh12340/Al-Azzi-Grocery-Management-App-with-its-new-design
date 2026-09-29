@@ -1021,7 +1021,7 @@ void showMoreMenu(){
         quick.setOrientation(LinearLayout.HORIZONTAL);
         quick.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         String[] qLabels={"فاتورة بيع","فاتورة شراء","عملية عميل","عملية مورد"};
-        View.OnClickListener[] qActions={v->unifiedInvoiceForm(InvoiceType.SALE),v->unifiedInvoiceForm(InvoiceType.PURCHASE),v->showCustomerTransactionDialog(false),v->showGeneralActions()};
+        View.OnClickListener[] qActions={v->unifiedInvoiceForm(InvoiceType.SALE),v->unifiedInvoiceForm(InvoiceType.PURCHASE),v->showCustomerTransactionDialog(false),v->suppliers()};
         for(int i=0;i<qLabels.length;i++){
             Button b=action(qLabels[i],i<2?ORANGE:DARK);
             b.setTextSize(13.5f);
