@@ -6570,6 +6570,21 @@ void operationActions(long customerId,String customerName,long tid,String detail
             d.execSQL("CREATE TABLE IF NOT EXISTS transfers(id INTEGER PRIMARY KEY AUTOINCREMENT,amount REAL NOT NULL,sender_name TEXT,sender_phone TEXT,receiver_name TEXT,receiver_phone TEXT,date TEXT,note TEXT,review INTEGER DEFAULT 0)");
             d.execSQL("CREATE TABLE IF NOT EXISTS supplier_transactions(id INTEGER PRIMARY KEY AUTOINCREMENT,supplier_id INTEGER NOT NULL,amount REAL NOT NULL,details TEXT,type INTEGER DEFAULT 2,date TEXT,invoice_no TEXT)");
             d.execSQL("CREATE INDEX IF NOT EXISTS idx_supplier_transactions_supplier ON supplier_transactions(supplier_id,date,id)");
+            d.execSQL("CREATE TABLE IF NOT EXISTS warehouses(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,location TEXT,active INTEGER DEFAULT 1,created_at TEXT DEFAULT CURRENT_TIMESTAMP)");
+            d.execSQL("CREATE TABLE IF NOT EXISTS warehouse_transfers(id INTEGER PRIMARY KEY AUTOINCREMENT,from_warehouse_id INTEGER,to_warehouse_id INTEGER,item_id INTEGER,qty REAL NOT NULL,unit TEXT,date TEXT,details TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP)");
+            d.execSQL("CREATE TABLE IF NOT EXISTS product_prices(id INTEGER PRIMARY KEY AUTOINCREMENT,item_id INTEGER NOT NULL,price_type TEXT NOT NULL,price REAL NOT NULL DEFAULT 0,unit TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP)");
+            d.execSQL("CREATE TABLE IF NOT EXISTS units(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,abbreviation TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP)");
+            d.execSQL("CREATE TABLE IF NOT EXISTS currencies(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,code TEXT,rate REAL NOT NULL DEFAULT 1,active INTEGER DEFAULT 1)");
+            d.execSQL("CREATE TABLE IF NOT EXISTS offers(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL,item_id INTEGER,start_date TEXT,end_date TEXT,discount REAL DEFAULT 0,active INTEGER DEFAULT 1)");
+            d.execSQL("CREATE TABLE IF NOT EXISTS orders(id INTEGER PRIMARY KEY AUTOINCREMENT,no TEXT UNIQUE,customer TEXT,status TEXT DEFAULT 'open',total REAL DEFAULT 0,paid REAL DEFAULT 0,date TEXT,details TEXT)");
+            d.execSQL("CREATE TABLE IF NOT EXISTS notifications(id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT NOT NULL,body TEXT,date TEXT,read INTEGER DEFAULT 0)");
+            d.execSQL("CREATE TABLE IF NOT EXISTS app_settings(key TEXT PRIMARY KEY,value TEXT)");
+            d.execSQL("CREATE TABLE IF NOT EXISTS cash_receipts(id INTEGER PRIMARY KEY AUTOINCREMENT,customer_id INTEGER,amount REAL NOT NULL,details TEXT,date TEXT,reference TEXT)");
+            d.execSQL("CREATE TABLE IF NOT EXISTS cash_payments(id INTEGER PRIMARY KEY AUTOINCREMENT,supplier_id INTEGER,amount REAL NOT NULL,details TEXT,date TEXT,reference TEXT)");
+            d.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS ux_product_prices_type ON product_prices(item_id,price_type,unit)");
+            d.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS ux_units_name ON units(name)");
+            d.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS ux_warehouses_name ON warehouses(name)");
+            d.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS ux_items_barcode ON items(barcode) WHERE barcode IS NOT NULL AND trim(barcode)<>''");
         }
         public void onUpgrade(SQLiteDatabase d,int o,int n){ create(d); normalizeAndConstrain(d); }
         @Override public void onOpen(SQLiteDatabase d){ super.onOpen(d); normalizeAndConstrain(d); }
