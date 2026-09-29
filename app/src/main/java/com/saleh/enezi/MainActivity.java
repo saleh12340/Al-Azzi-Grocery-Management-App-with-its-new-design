@@ -6599,6 +6599,8 @@ void operationActions(long customerId,String customerName,long tid,String detail
                 ensureColumn(d,"customers","normalized_name","TEXT");
                 ensureColumn(d,"suppliers","normalized_name","TEXT");
                 ensureColumn(d,"items","normalized_name","TEXT");
+                ensureColumn(d,"items","barcode","TEXT");
+                ensureColumn(d,"items","unit","TEXT");
                 mergeCustomers(d);
                 mergeSuppliers(d);
                 mergeItems(d);
