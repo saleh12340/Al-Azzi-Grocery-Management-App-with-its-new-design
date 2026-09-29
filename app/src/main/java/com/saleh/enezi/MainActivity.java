@@ -4729,6 +4729,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
             no=db.purchaseNo(purchaseId);
             db.replacePurchaseLines(purchaseId,lines);
             db.updateStockFromPurchase(lines);
+            db.getWritableDatabase().execSQL("UPDATE purchase_invoices SET paid=? WHERE id=?",new Object[]{paid,purchaseId});
             long supplierId=db.supplierIdByName(supplierName.trim());
             if(supplierId>0 && paid>0) db.addSupplierPayment(supplierId,paid,"دفعة فاتورة شراء رقم "+no,no);
             tx.setTransactionSuccessful();
@@ -7411,13 +7412,14 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
             c.close();
 
             // سجل الفواتير الموحد: المبيعات والمشتريات في شاشة واحدة فقط.
-            Cursor pc=db.getReadableDatabase().rawQuery("SELECT id,no,supplier,total,date FROM purchase_invoices ORDER BY datetime(date) DESC,id DESC LIMIT 100",null);
+            Cursor pc=db.getReadableDatabase().rawQuery("SELECT id,no,supplier,total,COALESCE(paid,0),date FROM purchase_invoices ORDER BY datetime(date) DESC,id DESC LIMIT 100",null);
             while(pc.moveToNext()){
                 long pid=pc.getLong(0);
                 String pno=pc.getString(1)==null?"":pc.getString(1);
                 String supplier=pc.getString(2)==null?"بدون مورد":pc.getString(2);
                 double ptotal=pc.getDouble(3);
-                String pdate=pc.getString(4)==null?"":pc.getString(4);
+                double ppaid=pc.getDouble(4);
+                String pdate=pc.getString(5)==null?"":pc.getString(5);
                 if(!query.isEmpty() && !pno.toLowerCase().contains(query) && !supplier.toLowerCase().contains(query)) continue;
                 displayedCount++;
 
@@ -7446,9 +7448,17 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
                 pi.addView(pd,new LinearLayout.LayoutParams(-1,dp(16)));
                 pr.addView(pi,new LinearLayout.LayoutParams(0,-2,1));
 
+                LinearLayout money=new LinearLayout(this);
+                money.setOrientation(LinearLayout.VERTICAL);
+                money.setGravity(Gravity.LEFT|Gravity.CENTER_VERTICAL);
                 TextView pv=tv(fmt(ptotal)+" ر.ي",14);
                 pv.setTextColor(GOLD);pv.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
-                pr.addView(pv,new LinearLayout.LayoutParams(-2,-2));
+                TextView prem=tv("مدفوع "+fmt(ppaid)+" • متبقي "+fmt(Math.max(0,ptotal-ppaid)),10.5f);
+                prem.setTextColor(ppaid>=ptotal?BLUE_PRIMARY:RED);
+                prem.setGravity(Gravity.LEFT);
+                money.addView(pv,new LinearLayout.LayoutParams(-1,dp(24)));
+                money.addView(prem,new LinearLayout.LayoutParams(-1,dp(18)));
+                pr.addView(money,new LinearLayout.LayoutParams(0,-2,0.75f));
                 pcard.addView(pr,new LinearLayout.LayoutParams(-1,-2));
 
                 pcard.setOnClickListener(v->showPurchaseInvoiceDialog(pid,pno,supplier,ptotal,pdate));
