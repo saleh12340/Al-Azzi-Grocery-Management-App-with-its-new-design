@@ -4578,17 +4578,14 @@ void operationActions(long customerId,String customerName,long tid,String detail
         finalTotal.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         content.addView(finalTotal,new LinearLayout.LayoutParams(-1,dp(38)));
 
-        EditText paid=null;
-        EditText remaining=null;
-        if(sale){
-            paid=numberField("المبلغ المدفوع");
-            remaining=numberField("المتبقي");
-            remaining.setEnabled(false);
-            content.addView(paid,new LinearLayout.LayoutParams(-1,dp(44)));
-            addSpace(4);
-            content.addView(remaining,new LinearLayout.LayoutParams(-1,dp(44)));
-        }else{
-            TextView supplierHint=tv("تُربط الفاتورة بحساب المورد عند الحفظ.",10.5f);
+        EditText paid=numberField(sale?"المبلغ المدفوع":"المبلغ المدفوع للمورد");
+        EditText remaining=numberField("المتبقي");
+        remaining.setEnabled(false);
+        content.addView(paid,new LinearLayout.LayoutParams(-1,dp(44)));
+        addSpace(4);
+        content.addView(remaining,new LinearLayout.LayoutParams(-1,dp(44)));
+        if(!sale){
+            TextView supplierHint=tv("يُسجل المدفوع كسداد للمورد ويُفصل عن إجمالي الفاتورة.",10.5f);
             supplierHint.setTextColor(MUTED);
             supplierHint.setGravity(Gravity.RIGHT);
             content.addView(supplierHint,new LinearLayout.LayoutParams(-1,dp(30)));
@@ -4608,10 +4605,8 @@ void operationActions(long customerId,String customerName,long tid,String detail
                 rows.addView(row,new LinearLayout.LayoutParams(-1,dp(38)));
             }
             finalTotal.setText("الإجمالي النهائي: "+fmt(sum)+" ريال");
-            if(sale && paidRef!=null && remainingRef!=null){
-                double p=parseDoubleSafe(paidRef.getText().toString(),0);
-                remainingRef.setText(fmt(Math.max(0,sum-p)));
-            }
+            double p=parseDoubleSafe(paidRef.getText().toString(),0);
+            remainingRef.setText(fmt(Math.max(0,sum-p)));
         };
 
         add.setOnClickListener(v->{
@@ -4681,7 +4676,9 @@ void operationActions(long customerId,String customerName,long tid,String detail
                 String no=invNo.getText().toString().trim();
                 invoiceHeaderNo.setText("فاتورة شراء رقم "+no);
                 if(no.isEmpty()){invNo.setError("رقم الفاتورة مطلوب");return;}
-                saveUnifiedPurchase(partyName,no,purchaseLines,sum);
+                double paidAmount=parseDoubleSafe(paidRef.getText().toString(),0);
+                if(paidAmount<0 || paidAmount>sum){Toast.makeText(this,"المبلغ المدفوع غير صحيح",Toast.LENGTH_SHORT).show();return;}
+                saveUnifiedPurchase(partyName,no,purchaseLines,sum,paidAmount);
             }
         });
 
@@ -4716,7 +4713,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
         }catch(Exception e){return fallback;}
     }
 
-    void saveUnifiedPurchase(String supplierName,String no,ArrayList<PurchaseLine> lines,double sum){
+    void saveUnifiedPurchase(String supplierName,String no,ArrayList<PurchaseLine> lines,double sum,double paid){
         if(invoiceSaveInProgress){Toast.makeText(this,"جاري حفظ الفاتورة بالفعل.",Toast.LENGTH_SHORT).show();return;}
         invoiceSaveInProgress=true;
         SQLiteDatabase tx=null;
@@ -4732,6 +4729,8 @@ void operationActions(long customerId,String customerName,long tid,String detail
             no=db.purchaseNo(purchaseId);
             db.replacePurchaseLines(purchaseId,lines);
             db.updateStockFromPurchase(lines);
+            long supplierId=db.supplierIdByName(supplierName.trim());
+            if(supplierId>0 && paid>0) db.addSupplierPayment(supplierId,paid,"دفعة فاتورة شراء رقم "+no,no);
             tx.setTransactionSuccessful();
             saved=true;
         }catch(Exception e){
