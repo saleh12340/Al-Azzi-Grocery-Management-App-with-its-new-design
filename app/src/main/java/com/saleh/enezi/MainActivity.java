@@ -2256,7 +2256,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
     }
 
     String operationBalanceLabel(double balanceAfter){
-        if(balanceAfter>0.005)return "رصيدكم عليكم: "+fmt(balanceAfter)+" ريال";
+        if(balanceAfter>0.005)return "عليك: "+fmt(balanceAfter)+" ريال";
         if(balanceAfter<-0.005)return "الرصيد لكم: "+fmt(Math.abs(balanceAfter))+" ريال";
         return "الرصيد التراكمي: 0 ريال";
     }
@@ -9158,7 +9158,7 @@ Uri saveReceiptBitmap(Bitmap bitmap,String no)throws Exception{
             out.flush();
             try{Thread.sleep(120);}catch(InterruptedException ie){Thread.currentThread().interrupt();}
             try{out.write(new byte[]{0x1D,0x56,0x00});out.flush();}catch(Throwable ignored){}
-            runOnUiThread(()->Toast.makeText(this,"✓ تم إرسال الإيصال المجدول إلى الطابعة بنجاح",Toast.LENGTH_SHORT).show());
+            runOnUiThread(()->Toast.makeText(this,"✓ تم إرسال الإيصال إلى الطابعة بنجاح",Toast.LENGTH_SHORT).show());
         }catch(SecurityException e){
             runOnUiThread(()->Toast.makeText(this,"يلزم السماح باتصال Bluetooth للطباعة.",Toast.LENGTH_LONG).show());
         }catch(Exception e){
