@@ -430,8 +430,8 @@ public class MainActivity extends Activity {
     EditText field(String h){
         EditText e=new EditText(this);
         e.setHint(h);
-        e.setTextSize(15.5f);
-        e.setMinHeight(dp(50));
+        e.setTextSize(14f);
+        e.setMinHeight(dp(44));
         e.setSingleLine(true);
         e.setMaxLines(1);
         e.setEllipsize(null);
@@ -4424,12 +4424,12 @@ void operationActions(long customerId,String customerName,long tid,String detail
         pp.setMargins(dp(5),0,0,0);
         toggle.addView(pb,pp);
         content.addView(toggle);
-        addSpace(5);
+        addSpace(3);
         TextView invoiceHeaderNo=tv((sale?"فاتورة مبيعات رقم ":"فاتورة شراء رقم ")+displayInvoiceNo(String.valueOf(sale?db.nextInvoice():db.nextPurchaseNo())),15.5f);
         invoiceHeaderNo.setTextColor(sale?GREEN:GOLD); invoiceHeaderNo.setTypeface(Typeface.DEFAULT,Typeface.BOLD); invoiceHeaderNo.setGravity(Gravity.CENTER);
         invoiceHeaderNo.setBackground(outlined(Color.WHITE,1,dp(10)));
-        content.addView(invoiceHeaderNo,new LinearLayout.LayoutParams(-1,dp(40)));
-        addSpace(5);
+        content.addView(invoiceHeaderNo,new LinearLayout.LayoutParams(-1,dp(36)));
+        addSpace(3);
 
         AutoCompleteTextView party=new AutoCompleteTextView(this);
         party.setHint(sale?"اسم العميل":"اسم المورد");
@@ -4440,17 +4440,17 @@ void operationActions(long customerId,String customerName,long tid,String detail
         party.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         party.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         party.setTextDirection(View.TEXT_DIRECTION_RTL);
-        party.setPadding(dp(12),dp(4),dp(12),dp(4));
+        party.setPadding(dp(9),0,dp(9),0);
         party.setEllipsize(null);
         party.setHorizontallyScrolling(false);
         if(Build.VERSION.SDK_INT>=26){try{party.setAutoSizeTextTypeUniformWithConfiguration(11,16,1,android.util.TypedValue.COMPLEX_UNIT_SP);}catch(Throwable ignored){}}
-        party.setBackground(outlined(CARD,1,dp(10)));
+        party.setBackground(outlined(CARD,dp(1),dp(14)));
         party.setSelectAllOnFocus(true);
         party.setThreshold(1);
         party.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_dropdown_item_1line,
             sale?db.customerNames():db.supplierNames()));
-        content.addView(party,new LinearLayout.LayoutParams(-1,dp(48)));
-        addSpace(5);
+        content.addView(party,new LinearLayout.LayoutParams(-1,dp(44)));
+        addSpace(3);
 
         TextView invNo=tv(displayInvoiceNo(String.valueOf(sale?db.nextInvoice():db.nextPurchaseNo())),13.5f);
         invNo.setVisibility(View.GONE);
