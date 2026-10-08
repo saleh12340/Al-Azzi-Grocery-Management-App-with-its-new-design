@@ -4455,43 +4455,41 @@ void operationActions(long customerId,String customerName,long tid,String detail
         TextView invNo=tv(displayInvoiceNo(String.valueOf(sale?db.nextInvoice():db.nextPurchaseNo())),13.5f);
         invNo.setVisibility(View.GONE);
 
+        // إدخال مدمج ومرن: يمتلئ العمود الأيمن أولاً ثم ينتقل الباقي إلى الأيسر.
         LinearLayout itemBox=card();
-        itemBox.setPadding(dp(6),dp(6),dp(6),dp(6));
+        itemBox.setPadding(dp(5),dp(5),dp(5),dp(5));
         itemBox.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        content.addView(itemBox);
 
-        // تخطيط متجاوب: لا نضغط حقول البيع والشراء في صف واحد ضيق.
-        LinearLayout fields=new LinearLayout(this);
-        fields.setOrientation(LinearLayout.VERTICAL);
-        fields.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        LinearLayout fieldColumns=new LinearLayout(this);
+        fieldColumns.setOrientation(LinearLayout.HORIZONTAL);
+        fieldColumns.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        fieldColumns.setGravity(Gravity.TOP);
 
-        LinearLayout row1=new LinearLayout(this);
-        row1.setOrientation(LinearLayout.HORIZONTAL);
-        row1.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        row1.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout rightFields=new LinearLayout(this);
+        rightFields.setOrientation(LinearLayout.VERTICAL);
+        rightFields.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        rightFields.setPadding(0,0,dp(2),0);
 
-        LinearLayout row2=new LinearLayout(this);
-        row2.setOrientation(LinearLayout.HORIZONTAL);
-        row2.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        row2.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout leftFields=new LinearLayout(this);
+        leftFields.setOrientation(LinearLayout.VERTICAL);
+        leftFields.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        leftFields.setPadding(dp(2),0,0,0);
 
-        fields.addView(row1,new LinearLayout.LayoutParams(-1,dp(50)));
-        fields.addView(row2,new LinearLayout.LayoutParams(-1,dp(50)));
+        fieldColumns.addView(rightFields,new LinearLayout.LayoutParams(0,-2,1f));
+        fieldColumns.addView(leftFields,new LinearLayout.LayoutParams(0,-2,1f));
 
-        // الحقول الأساسية كانت معرفة في التخطيط القديم ثم حُذفت أثناء إعادة توزيع الصفوف؛
-        // نعيد تعريفها هنا قبل استخدامها، مع الحفاظ على نفس ترتيب الإدخال المطلوب.
         EditText total=numberField("الإجمالي");
         EditText qty=numberField("الكمية");
         qty.setText("1");
+
         AutoCompleteTextView name=new AutoCompleteTextView(this);
         name.setHint("اسم الصنف");
-        name.setTextSize(15);
+        name.setTextSize(14);
         name.setSingleLine(true);
         name.setMaxLines(1);
         name.setTextColor(TEXT);
-        name.setHintTextColor(MUTED);
-        name.setPadding(dp(7),dp(4),dp(7),dp(4));
-        name.setBackground(outline(CARD,10));
+        name.setHintTextColor(Color.rgb(105,105,105));
+        name.setPadding(dp(8),0,dp(8),0);
         name.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         name.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         name.setTextDirection(View.TEXT_DIRECTION_RTL);
@@ -4500,37 +4498,32 @@ void operationActions(long customerId,String customerName,long tid,String detail
         name.setSelectAllOnFocus(true);
         name.setThreshold(1);
         name.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_dropdown_item_1line,db.itemNames()));
+        name.setBackground(outlined(CARD,dp(1),14));
+        name.setOnClickListener(v->name.selectAll());
+        name.setOnFocusChangeListener((v,has)->{
+            name.setBackground(outlined(CARD,has?dp(2):dp(1),14));
+            if(has)name.postDelayed(name::selectAll,60);
+        });
 
         EditText unit=numberField("سعر الوحدة");
         unit.setEnabled(false);
-        unit.setAlpha(.85f);
+        unit.setAlpha(.88f);
         EditText salePrice=numberField("سعر البيع");
         salePrice.setVisibility(sale?View.GONE:View.VISIBLE);
 
-        LinearLayout.LayoutParams totalLp=new LinearLayout.LayoutParams(0,dp(48),1.05f);
-        LinearLayout.LayoutParams qtyLp=new LinearLayout.LayoutParams(0,dp(48),0.85f);
-        qtyLp.setMargins(dp(4),0,0,0);
-        LinearLayout.LayoutParams nameLp=new LinearLayout.LayoutParams(0,dp(48),1.65f);
-        nameLp.setMargins(dp(4),0,0,0);
-        row1.addView(total,totalLp);
-        row1.addView(qty,qtyLp);
-        row1.addView(name,nameLp);
+        java.util.function.BiConsumer<LinearLayout,View> addInvoiceField=(column,view)->{
+            LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(-1,dp(44));
+            lp.setMargins(0,0,0,dp(4));
+            column.addView(view,lp);
+        };
 
-        LinearLayout.LayoutParams unitLp=new LinearLayout.LayoutParams(0,dp(48),1f);
-        if(!sale){
-            LinearLayout.LayoutParams saleLp=new LinearLayout.LayoutParams(0,dp(48),1f);
-            saleLp.setMargins(dp(4),0,0,0);
-            row2.addView(unit,unitLp);
-            row2.addView(salePrice,saleLp);
-        }else{
-            row2.addView(unit,unitLp);
-            TextView unitHint=tv("سعر الوحدة محسوب تلقائياً",11);
-            unitHint.setTextColor(MUTED);
-            unitHint.setGravity(Gravity.CENTER);
-            row2.addView(unitHint,new LinearLayout.LayoutParams(0,dp(48),1f));
-        }
+        addInvoiceField.accept(rightFields,total);
+        addInvoiceField.accept(rightFields,qty);
+        addInvoiceField.accept(rightFields,name);
+        addInvoiceField.accept(leftFields,unit);
+        if(!sale)addInvoiceField.accept(leftFields,salePrice);
 
-        itemBox.addView(fields,new LinearLayout.LayoutParams(-1,dp(104)));
+        itemBox.addView(fieldColumns,new LinearLayout.LayoutParams(-1,-2));
 
         Runnable recalcUnit=()->{
             try{
@@ -4553,7 +4546,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
             String selected=(String)p.getItemAtPosition(pos);
             double price=sale?db.itemSalePrice(selected):db.itemCostPrice(selected);
             if(price>0){
-                qty.setText(qty.getText().toString().trim().isEmpty()?"1":qty.getText().toString());
+                if(qty.getText().toString().trim().isEmpty())qty.setText("1");
                 total.setText(fmt(price*Math.max(1,parseDoubleSafe(qty.getText().toString(),1))));
                 if(!sale && salePrice.getText().toString().trim().isEmpty()){
                     double sp=db.itemSalePrice(selected);
@@ -4563,13 +4556,13 @@ void operationActions(long customerId,String customerName,long tid,String detail
         });
 
         Button add=action("＋ إضافة الصنف",GREEN);
-        itemBox.addView(add,new LinearLayout.LayoutParams(-1,dp(38)));
-        addSpace(6);
-
-        LinearLayout rows= new LinearLayout(this);
-        rows.setOrientation(LinearLayout.VERTICAL);
-        rows.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
-        content.addView(rows,new LinearLayout.LayoutParams(-1,-2));
+        add.setTextSize(12);
+        add.setPadding(dp(6),0,dp(6),0);
+        LinearLayout.LayoutParams addLp=new LinearLayout.LayoutParams(-1,dp(36));
+        addLp.setMargins(0,dp(2),0,0);
+        itemBox.addView(add,addLp);
+        content.addView(itemBox,new LinearLayout.LayoutParams(-1,-2));
+        addSpace(3);
 
         ArrayList<UnifiedInvoiceItem> items=new ArrayList<>();
         TextView finalTotal=tv("الإجمالي النهائي: 0 ريال",15.5f);
