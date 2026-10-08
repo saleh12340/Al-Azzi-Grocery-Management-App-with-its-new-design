@@ -4564,6 +4564,12 @@ void operationActions(long customerId,String customerName,long tid,String detail
         content.addView(itemBox,new LinearLayout.LayoutParams(-1,-2));
         addSpace(3);
 
+        LinearLayout rows=new LinearLayout(this);
+        rows.setOrientation(LinearLayout.VERTICAL);
+        rows.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+        content.addView(rows,new LinearLayout.LayoutParams(-1,-2));
+        addSpace(2);
+
         ArrayList<UnifiedInvoiceItem> items=new ArrayList<>();
         TextView finalTotal=tv("الإجمالي النهائي: 0 ريال",15.5f);
         finalTotal.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
@@ -4577,13 +4583,6 @@ void operationActions(long customerId,String customerName,long tid,String detail
         content.addView(paid,new LinearLayout.LayoutParams(-1,dp(44)));
         addSpace(4);
         content.addView(remaining,new LinearLayout.LayoutParams(-1,dp(44)));
-        if(!sale){
-            TextView supplierHint=tv("يُسجل المدفوع كسداد للمورد ويُفصل عن إجمالي الفاتورة.",10.5f);
-            supplierHint.setTextColor(MUTED);
-            supplierHint.setGravity(Gravity.RIGHT);
-            content.addView(supplierHint,new LinearLayout.LayoutParams(-1,dp(30)));
-        }
-
         final EditText paidRef=paid;
         final EditText remainingRef=remaining;
         Runnable redraw=()->{
