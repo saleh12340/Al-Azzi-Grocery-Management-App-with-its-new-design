@@ -662,17 +662,18 @@ public class MainActivity extends Activity {
         LinearLayout nav=new LinearLayout(this); nav.setTag("fixedNavigation"); nav.setOrientation(LinearLayout.HORIZONTAL);
         nav.setGravity(Gravity.CENTER_VERTICAL); nav.setLayoutDirection(View.LAYOUT_DIRECTION_RTL); nav.setPadding(dp(4),dp(3),dp(4),dp(3));
         nav.setBackground(darkCardMode ? rounded(Color.BLACK,dp(14)) : outlined(CARD,dp(1),dp(14))); nav.setElevation(dp(7));
-        String[] labels={"الفواتير","الحسابات","المخزون","الرئيسية"};
-        String[] icons={"▤","●","□","⌂"};
+        // لا يوجد زر رئيسية سفلي؛ الرجوع العلوي مخصص للتنقل إلى الشاشة السابقة.
+        String[] labels={"الفواتير","الحسابات","المخزون"};
+        String[] icons={"▤","●","□"};
         for(int i=0;i<labels.length;i++){
             final int idx=i;
             LinearLayout tab=new LinearLayout(this); tab.setOrientation(LinearLayout.VERTICAL); tab.setGravity(Gravity.CENTER); tab.setPadding(0,dp(2),0,dp(2));
-            boolean active=(i==0&&activeTitle!=null&&activeTitle.contains("فاتورة"))||(i==1&&activeTitle!=null&&activeTitle.contains("حساب"))||(i==2&&activeTitle!=null&&activeTitle.contains("مخزون"))||(i==3&&activeTitle!=null&&activeTitle.contains("رئيسية"));
+            boolean active=(i==0&&activeTitle!=null&&activeTitle.contains("فاتورة"))||(i==1&&activeTitle!=null&&activeTitle.contains("حساب"))||(i==2&&activeTitle!=null&&activeTitle.contains("مخزون"));
             if(active) tab.setBackground(rounded(Color.WHITE,dp(10)));
             TextView ic=tv(icons[i],19); ic.setGravity(Gravity.CENTER); ic.setTextColor(darkCardMode ? (active?Color.rgb(105,105,105):Color.WHITE) : (active?GREEN:TEXT)); tab.addView(ic,new LinearLayout.LayoutParams(-1,dp(25)));
             TextView lab=tv(labels[i],12.5f); lab.setGravity(Gravity.CENTER); lab.setTextColor(darkCardMode ? (active?Color.rgb(105,105,105):Color.WHITE) : (active?GREEN:MUTED)); if(active)lab.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
             tab.addView(lab,new LinearLayout.LayoutParams(-1,dp(23)));
-            tab.setOnClickListener(v->{hideKeyboard(); if(idx==0)invoicesHub(); else if(idx==1)customers(); else if(idx==2)inventory(); else home();});
+            tab.setOnClickListener(v->{hideKeyboard(); if(idx==0)invoicesHub(); else if(idx==1)customers(); else inventory();});
             LinearLayout.LayoutParams lp=new LinearLayout.LayoutParams(0,dp(54),1); lp.setMargins(dp(2),0,dp(2),0); nav.addView(tab,lp);
         }
         bottom.addView(nav,new LinearLayout.LayoutParams(-1,dp(60)));
@@ -1013,14 +1014,14 @@ void showMoreMenu(){
         rowA.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         addHomeSummaryCell(rowA,"مبيعات اليوم",fmt(safeTodaySales())+" ر.ي",GREEN);
         addHomeSummaryCell(rowA,"مشتريات اليوم",fmt(safeTodayPurchases())+" ر.ي",GOLD);
-        summary.addView(rowA,new LinearLayout.LayoutParams(-1,dp(54)));
+        summary.addView(rowA,new LinearLayout.LayoutParams(-1,dp(62)));
 
         LinearLayout rowB=new LinearLayout(this);
         rowB.setOrientation(LinearLayout.HORIZONTAL);
         rowB.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         addHomeSummaryCell(rowB,"عليك",fmt(db==null?0:db.totalDebts())+" ر.ي",RED);
         addHomeSummaryCell(rowB,"لك",fmt(db==null?0:db.totalCredits())+" ر.ي",BLUE_PRIMARY);
-        summary.addView(rowB,new LinearLayout.LayoutParams(-1,dp(54)));
+        summary.addView(rowB,new LinearLayout.LayoutParams(-1,dp(62)));
 
         content.addView(summary,new LinearLayout.LayoutParams(-1,-2));
         addSpace(12);
@@ -1100,24 +1101,27 @@ void showMoreMenu(){
         LinearLayout cell=new LinearLayout(this);
         cell.setOrientation(LinearLayout.VERTICAL);
         cell.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
-        cell.setPadding(dp(6),0,dp(6),0);
+        cell.setPadding(dp(9),dp(4),dp(9),dp(4));
+        cell.setBackground(rounded(DARK,dp(12)));
 
         TextView v=tv(value,15);
-        v.setTextColor(accent);
+        v.setTextColor(Color.WHITE);
         v.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         v.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         v.setSingleLine(true);
         v.setEllipsize(null);
+        fitInside(v,15f,10f);
 
         TextView l=tv(label,10.5f);
-        l.setTextColor(MUTED);
+        l.setTextColor(Color.rgb(226,232,240));
         l.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         l.setSingleLine(true);
 
         cell.addView(v,new LinearLayout.LayoutParams(-1,dp(28)));
         cell.addView(l,new LinearLayout.LayoutParams(-1,dp(22)));
 
-        LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(0,dp(54),1);
+        LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(0,dp(58),1);
+        cp.setMargins(dp(3),dp(2),dp(3),dp(2));
         parent.addView(cell,cp);
     }
 
