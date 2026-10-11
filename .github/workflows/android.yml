@@ -1,8 +1,7 @@
 name: Build Al-Azzi Grocery APK
 
+# Retained as a manual fallback. Automatic builds run in android_build.yml.
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
 
 permissions:
