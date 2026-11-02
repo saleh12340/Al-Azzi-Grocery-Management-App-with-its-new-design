@@ -1899,7 +1899,12 @@ void showGeneralActions(){
     void showBackupRestore(){
         new AlertDialog.Builder(this).setTitle("النسخ الاحتياطي والاسترجاع")
             .setMessage("النسخة التلقائية: كل يوم الساعة 11:59 مساءً.\n\nالمسار: Download/بقالة العزي للمواد الغذائية خاص/النسخ الاحتياطية\n\nيمكنك إنشاء نسخة احتياطية يدوياً الآن في أي وقت.")
-            .setPositiveButton("💾 إنشاء نسخة الآن",(d,w)->{ BackupReceiver.backup(this); Toast.makeText(this,"تم حفظ النسخة في:\nDownload/بقالة العزي للمواد الغذائية خاص/النسخ الاحتياطية",Toast.LENGTH_LONG).show(); })
+            .setPositiveButton("💾 إنشاء نسخة الآن",(d,w)->{
+                boolean saved=BackupReceiver.backup(this);
+                Toast.makeText(this,saved
+                    ?"تم إنشاء النسخة الاحتياطية والتحقق منها بنجاح.\nDownload/بقالة العزي للمواد الغذائية خاص/النسخ الاحتياطية"
+                    :"تعذر إنشاء النسخة الاحتياطية. لم يتم تأكيد حفظها.",Toast.LENGTH_LONG).show();
+            })
             .setNeutralButton("استرجاع نسخة",(d,w)->{Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.setType("*/*");i.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(i,8801);})
             .setNegativeButton("إغلاق",null).show();
     }
