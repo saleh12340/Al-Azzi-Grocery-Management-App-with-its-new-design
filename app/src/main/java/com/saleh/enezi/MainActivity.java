@@ -821,7 +821,11 @@ void showMoreMenu(){
                 db=new DB(this);
                 Toast.makeText(this,"تم استرجاع النسخة الاحتياطية بنجاح.",Toast.LENGTH_LONG).show();
                 home();
-            }catch(Exception e){Toast.makeText(this,"تعذر استرجاع النسخة الاحتياطية: "+e.getMessage(),Toast.LENGTH_LONG).show();}
+            }catch(Exception e){
+                android.util.Log.e("AlAzziRestore","Restore failed; reopening current database",e);
+                try{db=new DB(this);db.getWritableDatabase();home();}catch(Exception reopen){android.util.Log.e("AlAzziRestore","Could not reopen database after restore failure",reopen);}
+                Toast.makeText(this,"تعذر استرجاع النسخة الاحتياطية. تم الحفاظ على النسخة السابقة إن كانت موجودة: "+e.getMessage(),Toast.LENGTH_LONG).show();
+            }
         }else if(requestCode==4106&&resultCode==RESULT_OK&&data!=null&&data.getData()!=null){Cursor c=null;try{c=getContentResolver().query(data.getData(),new String[]{ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,ContactsContract.CommonDataKinds.Phone.NUMBER},null,null,null);if(c!=null&&c.moveToFirst()){if(transferContactPhoneTarget!=null)transferContactPhoneTarget.setText(c.getString(1));}}catch(Exception ignored){}finally{if(c!=null)c.close();}
         }else if(requestCode==REQ_CAMERA_SCAN&&resultCode==RESULT_OK){
             handleScanCameraResult(data);
