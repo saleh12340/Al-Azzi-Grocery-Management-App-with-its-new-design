@@ -1741,10 +1741,10 @@ void showGeneralActions(){
                     if(paid>0)db.addPaymentTransaction(cid,paid,"دفعة فاتورة رقم "+savedNo,date);
                 }
                 txDb.setTransactionSuccessful();
-                saved=true;
             }finally{
                 if(txDb.inTransaction())txDb.endTransaction();
             }
+            saved=true;
         }catch(Exception ex){
             android.util.Log.e("AlAzziInvoice","Sale invoice save failed",ex);
             Toast.makeText(this,ex instanceof IllegalArgumentException?ex.getMessage():"تعذر حفظ الفاتورة.",Toast.LENGTH_LONG).show();
