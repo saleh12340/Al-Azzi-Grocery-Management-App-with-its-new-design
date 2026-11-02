@@ -4905,11 +4905,25 @@ void operationActions(long customerId,String customerName,long tid,String detail
     }
 
     double supplierBalance(String name){
-        long sid=db.supplierIdByName(name); if(sid<=0)return 0;
-        SQLiteDatabase d=db.getReadableDatabase(); double bal=0; Cursor c=d.rawQuery("SELECT COALESCE(SUM(total),0),COALESCE(SUM(paid),0) FROM purchase_invoices WHERE lower(trim(supplier))=lower(trim(?))",new String[]{name});
-        if(c.moveToFirst())bal=c.getDouble(0)-c.getDouble(1);c.close();
+        long sid=db.supplierIdByName(name);
+        if(sid<=0)return 0;
+        SQLiteDatabase d=db.getReadableDatabase();
+        double total=0,legacyPaid=0,transactions=0;
+        // Invoice-linked payments are already represented in supplier_transactions.
+        // Use purchase_invoices.paid only for older invoices without that ledger row.
+        Cursor c=d.rawQuery(
+            "SELECT COALESCE(SUM(pi.total),0),COALESCE(SUM(CASE WHEN EXISTS("+
+            "SELECT 1 FROM supplier_transactions st WHERE st.supplier_id=? AND st.invoice_no=pi.no "+
+            "AND st.details LIKE 'دفعة فاتورة شراء رقم %') THEN 0 ELSE COALESCE(pi.paid,0) END),0) "+
+            "FROM purchase_invoices pi WHERE lower(trim(pi.supplier))=lower(trim(?))",
+            new String[]{String.valueOf(sid),name});
+        if(c.moveToFirst()){total=c.getDouble(0);legacyPaid=c.getDouble(1);}
+        c.close();
         c=d.rawQuery("SELECT COALESCE(SUM(amount),0) FROM supplier_transactions WHERE supplier_id=?",new String[]{String.valueOf(sid)});
-        if(c.moveToFirst())bal-=c.getDouble(0);c.close(); return Math.abs(bal)<0.005?0:bal;
+        if(c.moveToFirst())transactions=c.getDouble(0);
+        c.close();
+        double balance=total-legacyPaid-transactions;
+        return Math.abs(balance)<0.005?0:balance;
     }
     String supplierBalanceLabel(double b){return b>0.005?"على البقالة":b< -0.005?"لصالح البقالة":"خالص";}
     void showAddSupplierDialog(Runnable refresh){
