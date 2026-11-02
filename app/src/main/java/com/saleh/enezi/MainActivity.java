@@ -1836,7 +1836,7 @@ void showGeneralActions(){
             String s=statement(id,name);Bitmap b=receiptBitmap(s);
             String fn="كشف_"+name.replaceAll("[\\/:*?\"<>|]","_")+"_"+new SimpleDateFormat("yyyyMMdd_HHmmss",Locale.US).format(new Date())+".png";
             AppStorage.saveAppImage(this, b, fn);
-            Toast.makeText(this,"تم حفظ صورة كشف الحساب في:\nDownload/بقالة العزي للمواد الغذائية خاص/الصور التي ينتجها التطبيق",Toast.LENGTH_LONG).show();
+            Toast.makeText(this,"تم حفظ صورة كشف الحساب في:\nDownload/بقالة العزي خاص/الصور التي ينتجها التطبيق",Toast.LENGTH_LONG).show();
         }catch(Exception e){Toast.makeText(this,"تعذر حفظ صورة كشف الحساب",Toast.LENGTH_SHORT).show();}
     }
     static void copyFileChecked(File source,File destination) throws java.io.IOException{
@@ -1930,11 +1930,11 @@ void showGeneralActions(){
     }
     void showBackupRestore(){
         new AlertDialog.Builder(this).setTitle("النسخ الاحتياطي والاسترجاع")
-            .setMessage("النسخة التلقائية: كل يوم الساعة 11:59 مساءً.\n\nالمسار: Download/بقالة العزي للمواد الغذائية خاص/النسخ الاحتياطية\n\nيمكنك إنشاء نسخة احتياطية يدوياً الآن في أي وقت.")
+            .setMessage("النسخة التلقائية: كل يوم الساعة 11:59 مساءً.\n\nالمسار: Download/بقالة العزي خاص/النسخ الاحتياطية\n\nيمكنك إنشاء نسخة احتياطية يدوياً الآن في أي وقت.")
             .setPositiveButton("💾 إنشاء نسخة الآن",(d,w)->{
                 boolean saved=BackupReceiver.backup(this);
                 Toast.makeText(this,saved
-                    ?"تم إنشاء النسخة الاحتياطية والتحقق منها بنجاح.\nDownload/بقالة العزي للمواد الغذائية خاص/النسخ الاحتياطية"
+                    ?"تم إنشاء النسخة الاحتياطية والتحقق منها بنجاح.\nDownload/بقالة العزي خاص/النسخ الاحتياطية"
                     :"تعذر إنشاء النسخة الاحتياطية. لم يتم تأكيد حفظها.",Toast.LENGTH_LONG).show();
             })
             .setNeutralButton("استرجاع نسخة",(d,w)->{Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.setType("*/*");i.addCategory(Intent.CATEGORY_OPENABLE);startActivityForResult(i,8801);})
@@ -6397,7 +6397,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
             if(savedPath!=null){
                 String fileName=new File(savedPath).getName();
                 db.addScannedInvoice(name,fileName,cat,notes,date,savedPath);
-                Toast.makeText(this,"تم الحفظ في:\nDownload/بقالة العزي للمواد الغذائية خاص/صور الفواتير",Toast.LENGTH_LONG).show();
+                Toast.makeText(this,"تم الحفظ في:\nDownload/بقالة العزي خاص/صور الفواتير",Toast.LENGTH_LONG).show();
                 dlg.dismiss();
                 scanner();
             }else{
@@ -6415,7 +6415,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
             if(savedPath!=null){
                 String fileName=new File(savedPath).getName();
                 db.addScannedInvoice(name,fileName,cat,notes,date,savedPath);
-                Toast.makeText(this,"تم الحفظ في:\nDownload/بقالة العزي للمواد الغذائية خاص/صور الفواتير",Toast.LENGTH_SHORT).show();
+                Toast.makeText(this,"تم الحفظ في:\nDownload/بقالة العزي خاص/صور الفواتير",Toast.LENGTH_SHORT).show();
                 dlg.dismiss();
                 scanner();
                 shareScannedInvoice(savedPath,name);
