@@ -91,12 +91,11 @@ public class MainActivity extends Activity {
         }catch(Throwable e){
             android.util.Log.e("AlAzziStartup","Database startup failed",e);
             startupFinished=true;
-            try{ home(); }catch(Throwable uiError){
-                android.util.Log.e("AlAzziStartup","Fallback home failed",uiError);
-                showSafeHome(uiError);
-            }
+            // لا تفتح شاشات تعتمد على قاعدة بيانات فشل تهيئتها.
+            // شاشة الاسترداد توفر إعادة المحاولة دون تعريض بيانات المستخدم للخطر.
+            showStartupRecovery(e);
             Toast.makeText(this,
-                "تعذر تجهيز قاعدة البيانات. أعد المحاولة.",
+                "تعذر تجهيز قاعدة البيانات. يمكنك إعادة المحاولة.",
                 Toast.LENGTH_LONG).show();
         }
     }
