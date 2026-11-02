@@ -4479,13 +4479,13 @@ void operationActions(long customerId,String customerName,long tid,String detail
                     db.updatePurchase(purchaseId,no,sn,sum);
                     db.revertStockFromPurchase(purchaseId);
                     db.replacePurchaseLines(purchaseId,lines);
-                    db.updateStockFromPurchase(lines);
+                    db.updateStockFromPurchase(lines,purchaseId);
                     savedPurchaseId=purchaseId;
                 }else{
                     long pid=db.addPurchase(no,sn,sum,db.now());
                     if(pid<=0)throw new Exception("تعذر حفظ الفاتورة");
                     db.replacePurchaseLines(pid,lines);
-                    db.updateStockFromPurchase(lines);
+                    db.updateStockFromPurchase(lines,pid); 
                     savedPurchaseId=pid;
                 }
                 ptx.setTransactionSuccessful();
@@ -4845,7 +4845,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
             if(purchaseId<=0)throw new Exception("purchase");
             savedNo=db.purchaseNo(purchaseId);
             db.replacePurchaseLines(purchaseId,lines);
-            db.updateStockFromPurchase(lines);
+            db.updateStockFromPurchase(lines,purchaseId);
             tx.execSQL("UPDATE purchase_invoices SET paid=? WHERE id=?",new Object[]{paid,purchaseId});
             long supplierId=db.supplierIdByName(savedSupplier);
             if(supplierId>0&&paid>0)db.addSupplierPayment(supplierId,paid,"دفعة فاتورة شراء رقم "+savedNo,savedNo);
@@ -7015,15 +7015,28 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         }
         void replacePurchaseLines(long id,ArrayList<PurchaseLine> ls){SQLiteDatabase d=getWritableDatabase();for(PurchaseLine l:ls){ContentValues v=new ContentValues();v.put("purchase_id",id);v.put("name",l.name);v.put("qty",l.qty);v.put("cost",l.cost);v.put("sale",l.sale);v.put("total",l.total);d.insert("purchase_items",null,v);}}
         void updateStockFromPurchase(ArrayList<PurchaseLine> ls){
+            updateStockFromPurchase(ls,-1);
+        }
+        void updateStockFromPurchase(ArrayList<PurchaseLine> ls,long purchaseId){
             SQLiteDatabase d=getWritableDatabase();
             for(PurchaseLine l:ls){
                 String name=canon(l.name),key=norm(name);
                 Cursor c=d.rawQuery("SELECT id,qty FROM items WHERE normalized_name=? LIMIT 1",new String[]{key});
+                long itemId;
                 if(c.moveToFirst()){
-                    long id=c.getLong(0); double q=c.getDouble(1); c.close();
-                    ContentValues v=new ContentValues();v.put("qty",q+l.qty);v.put("cost",l.cost);v.put("sale",l.sale);d.update("items",v,"id=?",new String[]{String.valueOf(id)});
+                    itemId=c.getLong(0); double q=c.getDouble(1); c.close();
+                    ContentValues v=new ContentValues();v.put("qty",q+l.qty);v.put("cost",l.cost);v.put("sale",l.sale);
+                    d.update("items",v,"id=?",new String[]{String.valueOf(itemId)});
                 }else{
-                    c.close(); ContentValues v=new ContentValues();v.put("name",name);v.put("normalized_name",key);v.put("qty",l.qty);v.put("min_qty",0);v.put("cost",l.cost);v.put("sale",l.sale);d.insertOrThrow("items",null,v);
+                    c.close(); ContentValues v=new ContentValues();v.put("name",name);v.put("normalized_name",key);v.put("qty",l.qty);v.put("min_qty",0);v.put("cost",l.cost);v.put("sale",l.sale);
+                    itemId=d.insertOrThrow("items",null,v);
+                }
+                if(purchaseId>0&&itemId>0){
+                    ContentValues movement=new ContentValues();
+                    movement.put("item_id",itemId);movement.put("item_name",name);movement.put("qty",l.qty);
+                    movement.put("unit_cost",l.cost);movement.put("source_type","purchase");
+                    movement.put("source_id",purchaseId);movement.put("created_at",now());
+                    d.insertOrThrow("stock_movements",null,movement);
                 }
             }
         }
@@ -7160,21 +7173,31 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         void updatePurchase(long id,String no,String supplier,double total){ContentValues v=new ContentValues();v.put("no",no);v.put("supplier",supplier);v.put("total",total);getWritableDatabase().update("purchase_invoices",v,"id=?",new String[]{String.valueOf(id)});}
         void revertStockFromPurchase(long purchaseId){
             SQLiteDatabase d=getWritableDatabase();
-            Cursor c=d.rawQuery("SELECT name,qty FROM purchase_items WHERE purchase_id=?",new String[]{String.valueOf(purchaseId)});
-            while(c.moveToNext()){
-                String name=c.getString(0);
-                double q=c.getDouble(1);
-                Cursor ic=d.rawQuery("SELECT id,qty FROM items WHERE name=? LIMIT 1",new String[]{name});
-                if(ic.moveToFirst()){
-                    long iid=ic.getLong(0);
-                    double currentQ=ic.getDouble(1);
-                    ContentValues v=new ContentValues();
-                    v.put("qty",Math.max(0,currentQ-q));
-                    d.update("items",v,"id=?",new String[]{String.valueOf(iid)});
+            Cursor c=null;
+            try{
+                c=d.rawQuery("SELECT name,qty,cost FROM purchase_items WHERE purchase_id=?",new String[]{String.valueOf(purchaseId)});
+                while(c.moveToNext()){
+                    String name=c.getString(0)==null?"":c.getString(0);
+                    double q=c.getDouble(1),cost=c.getDouble(2);
+                    Cursor ic=d.rawQuery("SELECT id,qty FROM items WHERE normalized_name=? LIMIT 1",new String[]{norm(name)});
+                    if(ic.moveToFirst()){
+                        long iid=ic.getLong(0);
+                        double currentQ=ic.getDouble(1);
+                        ContentValues v=new ContentValues();
+                        // لا نصفر المخزون: قد يكون الرصيد سالباً بسبب مبيعات سابقة.
+                        v.put("qty",currentQ-q);
+                        d.update("items",v,"id=?",new String[]{String.valueOf(iid)});
+                        ContentValues movement=new ContentValues();
+                        movement.put("item_id",iid);movement.put("item_name",name);movement.put("qty",-q);
+                        movement.put("unit_cost",cost);movement.put("source_type","purchase_reversal");
+                        movement.put("source_id",purchaseId);movement.put("created_at",now());
+                        d.insertOrThrow("stock_movements",null,movement);
+                    }
+                    ic.close();
                 }
-                ic.close();
+            }finally{
+                if(c!=null)c.close();
             }
-            c.close();
             d.delete("purchase_items","purchase_id=?",new String[]{String.valueOf(purchaseId)});
         }
         void deletePurchase(long id){if(id<=0)return;revertStockFromPurchase(id);getWritableDatabase().delete("purchase_invoices","id=?",new String[]{String.valueOf(id)});}
