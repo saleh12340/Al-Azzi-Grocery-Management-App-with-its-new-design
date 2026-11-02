@@ -1707,8 +1707,14 @@ void showGeneralActions(){
         long cid=-1;
         String saleType=(total>0&&paid>=total)?"cash":"credit";
         try{
-            if(paid<0||total<0)throw new IllegalArgumentException("بيانات الفاتورة غير صحيحة");
+            if(Double.isNaN(paid)||Double.isInfinite(paid)||paid<0||Double.isNaN(total)||Double.isInfinite(total)||total<0)
+                throw new IllegalArgumentException("بيانات الفاتورة غير صحيحة");
             if(lines==null||lines.isEmpty())throw new IllegalArgumentException("أضف صنفاً واحداً على الأقل");
+            for(Line line:lines){
+                if(line==null||line.name==null||line.name.trim().isEmpty()||Double.isNaN(line.qty)||Double.isInfinite(line.qty)||line.qty<=0
+                    ||Double.isNaN(line.total)||Double.isInfinite(line.total)||line.total<0)
+                    throw new IllegalArgumentException("يوجد صنف ببيانات غير صحيحة");
+            }
             date=db.now();
             txDb=db.getWritableDatabase();
             txDb.beginTransaction();
