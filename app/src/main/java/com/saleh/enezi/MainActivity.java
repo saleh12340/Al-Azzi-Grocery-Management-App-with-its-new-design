@@ -773,6 +773,16 @@ void showMoreMenu(){
             printTextBluetooth(text,width);
             return;
         }
+        if(requestCode==5103){
+            Bitmap bitmap=pendingPrintBitmap;
+            pendingPrintBitmap=null;
+            if(grantResults.length>0&&grantResults[0]==PackageManager.PERMISSION_GRANTED&&bitmap!=null){
+                printBitmapBluetooth(bitmap);
+            }else{
+                Toast.makeText(this,"لم يتم منح إذن Bluetooth؛ لم تتم الطباعة.",Toast.LENGTH_LONG).show();
+            }
+            return;
+        }
     }
     void addVoiceButton(LinearLayout container,EditText target,int requestCode,String prompt){
         Button mic=button("🎙"); mic.setContentDescription("إدخال صوتي"); mic.setTextSize(14); mic.setPadding(0,0,0,0);
@@ -2585,10 +2595,12 @@ void operationActions(long customerId,String customerName,long tid,String detail
         }
     }
 
+    Bitmap pendingPrintBitmap;
     void printBitmapBluetooth(Bitmap bitmap){
         if(bitmap==null){Toast.makeText(this,"لا يوجد كشف للطباعة",Toast.LENGTH_SHORT).show();return;}
         if(Build.VERSION.SDK_INT>=31&&checkSelfPermission("android.permission.BLUETOOTH_CONNECT")!=PackageManager.PERMISSION_GRANTED){
-            Toast.makeText(this,"يلزم السماح باتصال Bluetooth للطباعة.",Toast.LENGTH_LONG).show();
+            pendingPrintBitmap=bitmap;
+            requestPermissions(new String[]{"android.permission.BLUETOOTH_CONNECT"},5103);
             return;
         }
         BluetoothAdapter a=BluetoothAdapter.getDefaultAdapter();
