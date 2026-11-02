@@ -59,9 +59,9 @@ jobs:
         run: |
           APK=app/build/outputs/apk/debug/app-debug.apk
           BADGING=$("$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK")
-          echo "$BADGING" | grep -F "package: name='com.saleh.alazzigrocery.newapp'"
-          if echo "$BADGING" | grep -Fq "package: name='com.saleh.enezi'"; then
-            echo 'APK unexpectedly uses the legacy application ID' >&2
+          echo "$BADGING" | grep -F "package: name='com.saleh.alazzigrocery.sidebyside'"
+          if echo "$BADGING" | grep -Fq "package: name='com.saleh.alazzigrocery.newapp'"; then
+            echo 'APK package ID matches the currently installed app; side-by-side install would fail' >&2
             exit 1
           fi
 
