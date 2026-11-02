@@ -1803,17 +1803,94 @@ void showGeneralActions(){
             Toast.makeText(this,"تم حفظ صورة كشف الحساب في:\nDownload/بقالة العزي للمواد الغذائية خاص/الصور التي ينتجها التطبيق",Toast.LENGTH_LONG).show();
         }catch(Exception e){Toast.makeText(this,"تعذر حفظ صورة كشف الحساب",Toast.LENGTH_SHORT).show();}
     }
+    static void copyFileChecked(File source,File destination) throws java.io.IOException{
+        if(source==null||!source.isFile()||source.length()<=0)throw new java.io.IOException("ملف المصدر فارغ");
+        File parent=destination.getParentFile();
+        if(parent!=null&&!parent.exists()&&!parent.mkdirs())throw new java.io.IOException("تعذر إنشاء مجلد النسخة الاحتياطية");
+        try(InputStream in=new FileInputStream(source);OutputStream out=new FileOutputStream(destination,false)){
+            byte[] buffer=new byte[16384];int count;
+            while((count=in.read(buffer))!=-1)out.write(buffer,0,count);
+            out.flush();
+        }
+        if(!destination.isFile()||destination.length()!=source.length())throw new java.io.IOException("لم تكتمل عملية نسخ الملف");
+    }
+    static void validateRestoreDatabase(File file) throws java.io.IOException{
+        if(file==null||!file.isFile()||file.length()<4096)throw new java.io.IOException("حجم قاعدة البيانات غير صالح");
+        SQLiteDatabase check=null;
+        try{
+            check=SQLiteDatabase.openDatabase(file.getAbsolutePath(),null,SQLiteDatabase.OPEN_READONLY);
+            Cursor integrity=check.rawQuery("PRAGMA quick_check",null);
+            boolean valid=integrity.moveToFirst()&&"ok".equalsIgnoreCase(integrity.getString(0));
+            integrity.close();
+            if(!valid)throw new java.io.IOException("فشل فحص سلامة قاعدة البيانات");
+            String[] required={"customers","invoices","items","invoice_items","suppliers","purchase_invoices","purchase_items"};
+            for(String table:required){
+                Cursor found=check.rawQuery("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",new String[]{table});
+                boolean exists=found.moveToFirst();found.close();
+                if(!exists)throw new java.io.IOException("الملف لا يحتوي على جدول أساسي: "+table);
+            }
+        }catch(java.io.IOException e){throw e;}
+        catch(Exception e){throw new java.io.IOException("الملف ليس قاعدة بيانات صالحة للتطبيق",e);}
+        finally{if(check!=null)try{check.close();}catch(Exception ignored){}}
+    }
     static void restoreDatabaseFromUri(Context c,Uri uri){
         DB helper=new DB(c);helper.close();
-        File target=c.getDatabasePath(DB.DB_NAME);File tmp=new File(c.getCacheDir(),"restore_enezi.db");
+        File target=c.getDatabasePath(DB.DB_NAME);
+        File tmp=new File(c.getCacheDir(),"restore_enezi.tmp.db");
+        File backupDir=new File(c.getFilesDir(),"restore_backups");
+        String stamp=new SimpleDateFormat("yyyyMMdd_HHmmss",Locale.US).format(new Date());
+        File backup=new File(backupDir,"before_restore_"+stamp+".db");
+        File wal=new File(target.getPath()+"-wal"),shm=new File(target.getPath()+"-shm");
+        boolean originalMoved=false;
         try{
-            try(InputStream in=c.getContentResolver().openInputStream(uri);OutputStream out=new FileOutputStream(tmp)){
-                if(in==null)throw new Exception("null");byte[] buf=new byte[8192];int n;while((n=in.read(buf))>0)out.write(buf,0,n);
+            if(uri==null)throw new java.io.IOException("لم يتم اختيار ملف");
+            if(tmp.exists()&&!tmp.delete())throw new java.io.IOException("تعذر تنظيف ملف الاستعادة المؤقت");
+            try(InputStream in=c.getContentResolver().openInputStream(uri);OutputStream out=new FileOutputStream(tmp,false)){
+                if(in==null)throw new java.io.IOException("تعذر قراءة الملف المحدد");
+                byte[] buffer=new byte[16384];int count;
+                while((count=in.read(buffer))!=-1)out.write(buffer,0,count);
+                out.flush();
             }
-            if(target.exists())target.delete();File wal=new File(target.getPath()+"-wal"),shm=new File(target.getPath()+"-shm");if(wal.exists())wal.delete();if(shm.exists())shm.delete();
-            if(!tmp.renameTo(target)){try(InputStream in=new java.io.FileInputStream(tmp);OutputStream out=new FileOutputStream(target)){byte[] buf=new byte[8192];int n;while((n=in.read(buf))>0)out.write(buf,0,n);}}
-            tmp.delete();new DB(c).close();
-        }catch(Exception e){throw new RuntimeException(e);}
+            validateRestoreDatabase(tmp);
+            // احتفظ بنسخة مستقلة من قاعدة البيانات الحالية قبل أي استبدال.
+            if(target.exists())copyFileChecked(target,backup);
+            if(target.exists()){
+                File parent=target.getParentFile();
+                if(parent==null||!parent.exists())throw new java.io.IOException("مسار قاعدة البيانات غير صالح");
+                File staged=new File(parent,target.getName()+".pre_restore");
+                if(staged.exists()&&!staged.delete())throw new java.io.IOException("تعذر تجهيز الاستبدال الآمن");
+                if(!target.renameTo(staged))throw new java.io.IOException("تعذر نقل قاعدة البيانات الحالية إلى النسخة الآمنة");
+                originalMoved=true;
+                if(!tmp.renameTo(target)){
+                    copyFileChecked(tmp,target);
+                }
+                if(!target.isFile()||target.length()==0)throw new java.io.IOException("فشل تثبيت قاعدة البيانات الجديدة");
+                // لا نحذف النسخة المرحلية؛ تبقى متاحة كنسخة استرداد إضافية.
+            }else{
+                copyFileChecked(tmp,target);
+            }
+            if(wal.exists()&&!wal.delete())android.util.Log.w("AlAzziRestore","Could not remove old WAL sidecar");
+            if(shm.exists()&&!shm.delete())android.util.Log.w("AlAzziRestore","Could not remove old SHM sidecar");
+            DB restored=new DB(c);
+            SQLiteDatabase opened=restored.getWritableDatabase();
+            opened.close();
+            restored.close();
+            tmp.delete();
+        }catch(Exception e){
+            // إذا فشل الاستبدال، أعد الملف الأصلي ولا تترك قاعدة البيانات الحالية محذوفة.
+            try{
+                if(originalMoved){
+                    File staged=new File(target.getParentFile(),target.getName()+".pre_restore");
+                    if(target.exists())target.delete();
+                    if(staged.exists()&&!staged.renameTo(target)&&backup.exists())copyFileChecked(backup,target);
+                }else if(!target.exists()&&backup.exists()){
+                    copyFileChecked(backup,target);
+                }
+            }catch(Exception rollback){android.util.Log.e("AlAzziRestore","Rollback failed",rollback);}
+            throw new RuntimeException("فشلت الاستعادة مع الاحتفاظ بنسخة البيانات السابقة",e);
+        }finally{
+            if(tmp.exists())tmp.delete();
+        }
     }
     void showBackupRestore(){
         new AlertDialog.Builder(this).setTitle("النسخ الاحتياطي والاسترجاع")
