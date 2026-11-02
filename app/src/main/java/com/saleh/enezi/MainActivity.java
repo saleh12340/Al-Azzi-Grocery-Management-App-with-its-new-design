@@ -9547,8 +9547,7 @@ void account(long id,String name){
         head.setOrientation(LinearLayout.HORIZONTAL); head.setGravity(Gravity.CENTER_VERTICAL);
         head.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         head.setPadding(dp(6),dp(5),dp(6),dp(5)); head.setBackground(glassFill(Color.argb(215,255,255,255)));
-        Button back=button("‹"); back.setTextSize(24); back.setTextColor(DARK); back.setBackgroundColor(Color.TRANSPARENT);
-        back.setOnClickListener(v->goBack()); head.addView(back,new LinearLayout.LayoutParams(dp(34),dp(38)));
+        // زر الرجوع موجود بالفعل في شريط الصفحة العام؛ لا نكرر زر رجوع ثانياً هنا.
         TextView hname=denseText(name,15.5f,13f,DARK); hname.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         hname.setGravity(Gravity.CENTER_VERTICAL|Gravity.RIGHT); head.addView(hname,new LinearLayout.LayoutParams(0,dp(38),1));
         TextView balHead=denseText("الإجمالي: "+fmt(Math.abs(currentBal))+" ريال",12.5f,11f,currentBal>0.005?RED:(currentBal<-0.005?BLUE:GREEN));
