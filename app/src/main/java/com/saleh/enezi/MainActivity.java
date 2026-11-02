@@ -1691,53 +1691,69 @@ void showGeneralActions(){
         dlg.show();
     }
     void saveInvoice(String name,String no,ArrayList<Line> lines,double total,double paid,String phone,boolean edit,long oldId){
-        if(invoiceSaveInProgress){ Toast.makeText(this,"جاري حفظ الفاتورة بالفعل.",Toast.LENGTH_SHORT).show(); return; }
+        if(invoiceSaveInProgress){
+            Toast.makeText(this,"جاري حفظ الفاتورة بالفعل.",Toast.LENGTH_SHORT).show();
+            return;
+        }
         invoiceSaveInProgress=true;
-        String customerName=(name==null?"":name.trim());
-        boolean cashCustomer=customerName.isEmpty() || "نقدي".equals(customerName) || "عميل نقدي".equals(customerName);
-        String saleType=(total>0 && paid>=total)?"cash":"credit";
-        if(paid<0 || total<0){invoiceSaveInProgress=false;Toast.makeText(this,"بيانات الفاتورة غير صحيحة.",Toast.LENGTH_SHORT).show();return;}
-        if(lines==null||lines.isEmpty()){invoiceSaveInProgress=false;Toast.makeText(this,"أضف صنفاً واحداً على الأقل.",Toast.LENGTH_SHORT).show();return;}
-        String stockWarning=db.saleStockWarning(lines,edit?oldId:-1);
+        SQLiteDatabase txDb=null;
+        boolean saved=false;
+        String customerName=name==null?"":name.trim();
+        boolean cashCustomer=customerName.isEmpty()||"نقدي".equals(customerName)||"عميل نقدي".equals(customerName);
         String storedCustomer=cashCustomer?"نقدي":customerName;
-        long cid=cashCustomer?-1:db.customer(storedCustomer,phone==null?"":phone);
-        String date=db.now();
-        SQLiteDatabase txDb=db.getWritableDatabase();
-        txDb.beginTransaction();
+        String savedNo=no==null?"":no.trim();
+        String date="";
+        String stockWarning="";
+        long cid=-1;
+        String saleType=(total>0&&paid>=total)?"cash":"credit";
         try{
-            if(edit && oldId>0) db.revertStockFromInvoice(oldId);
-            if(edit){
-                String oldNo=db.invoiceNo(oldId);
-                db.deleteInvoiceTransactions(oldNo);
-                db.updateInvoice(oldId,no,storedCustomer,total,paid,date,saleType);
-                db.replaceInvoiceLines(oldId,lines);
-                if(!db.applyStockFromSale(lines,oldId)) throw new Exception("stock");
-            }else{
-                long id=db.addInvoiceAuto(storedCustomer,total,paid,date,saleType);
-                if(id<=0) throw new Exception("invoice");
-                no=db.invoiceNo(id);
-                db.replaceInvoiceLines(id,lines);
-                if(!db.applyStockFromSale(lines,id)) throw new Exception("stock");
+            if(paid<0||total<0)throw new IllegalArgumentException("بيانات الفاتورة غير صحيحة");
+            if(lines==null||lines.isEmpty())throw new IllegalArgumentException("أضف صنفاً واحداً على الأقل");
+            date=db.now();
+            txDb=db.getWritableDatabase();
+            txDb.beginTransaction();
+            try{
+                stockWarning=db.saleStockWarning(lines,edit?oldId:-1);
+                // إنشاء العميل داخل نفس المعاملة حتى لا يبقى سجل يتيم عند فشل الفاتورة.
+                if(!cashCustomer)cid=db.customer(storedCustomer,phone==null?"":phone);
+                if(edit&&oldId>0){
+                    String oldNo=db.invoiceNo(oldId);
+                    db.revertStockFromInvoice(oldId);
+                    db.deleteInvoiceTransactions(oldNo);
+                    db.updateInvoice(oldId,savedNo,storedCustomer,total,paid,date,saleType);
+                    db.replaceInvoiceLines(oldId,lines);
+                    if(!db.applyStockFromSale(lines,oldId))throw new Exception("stock");
+                }else{
+                    long id=db.addInvoiceAuto(storedCustomer,total,paid,date,saleType);
+                    if(id<=0)throw new Exception("invoice");
+                    savedNo=db.invoiceNo(id);
+                    db.replaceInvoiceLines(id,lines);
+                    if(!db.applyStockFromSale(lines,id))throw new Exception("stock");
+                }
+                if(!cashCustomer){
+                    if(total>0)db.addTransactionOnce(cid,total,"فاتورة مبيعات رقم "+savedNo,date);
+                    if(paid>0)db.addPaymentTransaction(cid,paid,"دفعة فاتورة رقم "+savedNo,date);
+                }
+                txDb.setTransactionSuccessful();
+                saved=true;
+            }finally{
+                if(txDb.inTransaction())txDb.endTransaction();
             }
-            if(!cashCustomer){
-                if(total>0) db.addTransactionOnce(cid,total,"فاتورة مبيعات رقم "+no,date);
-                if(paid>0) db.addPaymentTransaction(cid,paid,"دفعة فاتورة رقم "+no,date);
-            }
-            txDb.setTransactionSuccessful();
-            cacheLastInvoice(no,storedCustomer,lines,total,date);
-            clearInvoiceDraft();
-            saveReceiptImage(no,storedCustomer,lines,total);
-            showPostSaveActions(no,storedCustomer,lines,total,cid,paid,stockWarning);
-            invoiceHistory();
         }catch(Exception ex){
-            Toast.makeText(this,"تعذر حفظ الفاتورة.",Toast.LENGTH_LONG).show();
+            android.util.Log.e("AlAzziInvoice","Sale invoice save failed",ex);
+            Toast.makeText(this,ex instanceof IllegalArgumentException?ex.getMessage():"تعذر حفظ الفاتورة.",Toast.LENGTH_LONG).show();
         }finally{
-            txDb.endTransaction();
             invoiceSaveInProgress=false;
-            if(invoiceSaveButton!=null) invoiceSaveButton.setEnabled(true);
+            if(invoiceSaveButton!=null)invoiceSaveButton.setEnabled(true);
+        }
+        if(saved){
+            cacheLastInvoice(savedNo,storedCustomer,lines,total,date);
+            clearInvoiceDraft();
+            saveReceiptImage(savedNo,storedCustomer,lines,total);
+            showPostSaveActions(savedNo,storedCustomer,lines,total,cid,paid,stockWarning);
+            invoiceHistory();
         }
     }
-    
     void cacheLastInvoice(String no,String customer,ArrayList<Line> lines,double total,String date){
         try{
             File dir=new File(getCacheDir(),"invoices"); if(!dir.exists())dir.mkdirs();
