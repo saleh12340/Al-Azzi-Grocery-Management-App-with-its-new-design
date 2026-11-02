@@ -6808,6 +6808,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
                 else{
                     long k=keep.get(key); String kn=names.get(key);
                     d.execSQL("UPDATE transactions SET customer_id=? WHERE customer_id=?",new Object[]{k,id});
+                    d.execSQL("UPDATE cash_receipts SET customer_id=? WHERE customer_id=?",new Object[]{k,id});
                     d.execSQL("UPDATE invoices SET customer=? WHERE customer=?",new Object[]{kn,raw});
                     String phone=c.getString(2); if(phone!=null&&!phone.trim().isEmpty()){Cursor pc=d.rawQuery("SELECT COALESCE(phone,'') FROM customers WHERE id=?",new String[]{String.valueOf(k)});String kp=pc.moveToFirst()?pc.getString(0):"";pc.close();if(kp.trim().isEmpty()){ContentValues pv=new ContentValues();pv.put("phone",phone.trim());d.update("customers",pv,"id=?",new String[]{String.valueOf(k)});}}
                     del.add(id);
@@ -6820,7 +6821,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
             while(c.moveToNext()){
                 long id=c.getLong(0);String raw=c.getString(1);String key=norm(raw);String cn=canon(raw);if(key.isEmpty())continue;
                 if(!keep.containsKey(key)){keep.put(key,id);names.put(key,cn);ContentValues v=new ContentValues();v.put("name",cn);v.put("normalized_name",key);d.update("suppliers",v,"id=?",new String[]{String.valueOf(id)});}
-                else{long k=keep.get(key);String kn=names.get(key);d.execSQL("UPDATE supplier_transactions SET supplier_id=? WHERE supplier_id=?",new Object[]{k,id});d.execSQL("UPDATE purchase_invoices SET supplier=? WHERE supplier=?",new Object[]{kn,raw});String phone=c.getString(2);if(phone!=null&&!phone.trim().isEmpty()){Cursor pc=d.rawQuery("SELECT COALESCE(phone,'') FROM suppliers WHERE id=?",new String[]{String.valueOf(k)});String kp=pc.moveToFirst()?pc.getString(0):"";pc.close();if(kp.trim().isEmpty()){ContentValues pv=new ContentValues();pv.put("phone",phone.trim());d.update("suppliers",pv,"id=?",new String[]{String.valueOf(k)});}}del.add(id);}
+                else{long k=keep.get(key);String kn=names.get(key);d.execSQL("UPDATE supplier_transactions SET supplier_id=? WHERE supplier_id=?",new Object[]{k,id});d.execSQL("UPDATE cash_payments SET supplier_id=? WHERE supplier_id=?",new Object[]{k,id});d.execSQL("UPDATE purchase_invoices SET supplier=? WHERE supplier=?",new Object[]{kn,raw});String phone=c.getString(2);if(phone!=null&&!phone.trim().isEmpty()){Cursor pc=d.rawQuery("SELECT COALESCE(phone,'') FROM suppliers WHERE id=?",new String[]{String.valueOf(k)});String kp=pc.moveToFirst()?pc.getString(0):"";pc.close();if(kp.trim().isEmpty()){ContentValues pv=new ContentValues();pv.put("phone",phone.trim());d.update("suppliers",pv,"id=?",new String[]{String.valueOf(k)});}}del.add(id);}
             } c.close();for(Long id:del)d.delete("suppliers","id=?",new String[]{String.valueOf(id)});
         }
         void mergeItems(SQLiteDatabase d){
