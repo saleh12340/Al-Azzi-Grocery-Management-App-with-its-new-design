@@ -4811,35 +4811,58 @@ void operationActions(long customerId,String customerName,long tid,String detail
     }
 
     void saveUnifiedPurchase(String supplierName,String no,ArrayList<PurchaseLine> lines,double sum,double paid){
-        if(invoiceSaveInProgress){Toast.makeText(this,"جاري حفظ الفاتورة بالفعل.",Toast.LENGTH_SHORT).show();return;}
+        if(invoiceSaveInProgress){
+            Toast.makeText(this,"جاري حفظ الفاتورة بالفعل.",Toast.LENGTH_SHORT).show();
+            return;
+        }
         invoiceSaveInProgress=true;
         SQLiteDatabase tx=null;
         long purchaseId=0;
         boolean saved=false;
+        String savedNo=no==null?"":no.trim();
+        String savedSupplier=supplierName==null?"":supplierName.trim();
         try{
-            if(supplierName==null||supplierName.trim().isEmpty()||no==null||no.trim().isEmpty()||lines==null||lines.isEmpty())throw new Exception();
+            if(savedSupplier.isEmpty()||savedNo.isEmpty()||lines==null||lines.isEmpty())throw new IllegalArgumentException("أكمل بيانات فاتورة الشراء");
+            if(Double.isNaN(sum)||Double.isInfinite(sum)||sum<0||Double.isNaN(paid)||Double.isInfinite(paid)||paid<0||paid>sum)
+                throw new IllegalArgumentException("تحقق من الإجمالي والمبلغ المدفوع");
+            for(PurchaseLine line:lines){
+                if(line==null||line.name==null||line.name.trim().isEmpty()||Double.isNaN(line.qty)||Double.isInfinite(line.qty)||line.qty<=0
+                    ||Double.isNaN(line.cost)||Double.isInfinite(line.cost)||line.cost<0
+                    ||Double.isNaN(line.sale)||Double.isInfinite(line.sale)||line.sale<0
+                    ||Double.isNaN(line.total)||Double.isInfinite(line.total)||line.total<0)
+                    throw new IllegalArgumentException("يوجد صنف ببيانات غير صحيحة");
+            }
             tx=db.getWritableDatabase();
             tx.beginTransaction();
-            db.supplier(supplierName.trim(),"");
-            purchaseId=db.addPurchaseAuto(supplierName.trim(),sum,db.now());
+            db.supplier(savedSupplier,"");
+            purchaseId=db.addPurchaseAuto(savedSupplier,sum,db.now());
             if(purchaseId<=0)throw new Exception("purchase");
-            no=db.purchaseNo(purchaseId);
+            savedNo=db.purchaseNo(purchaseId);
             db.replacePurchaseLines(purchaseId,lines);
             db.updateStockFromPurchase(lines);
-            db.getWritableDatabase().execSQL("UPDATE purchase_invoices SET paid=? WHERE id=?",new Object[]{paid,purchaseId});
-            long supplierId=db.supplierIdByName(supplierName.trim());
-            if(supplierId>0 && paid>0) db.addSupplierPayment(supplierId,paid,"دفعة فاتورة شراء رقم "+no,no);
+            tx.execSQL("UPDATE purchase_invoices SET paid=? WHERE id=?",new Object[]{paid,purchaseId});
+            long supplierId=db.supplierIdByName(savedSupplier);
+            if(supplierId>0&&paid>0)db.addSupplierPayment(supplierId,paid,"دفعة فاتورة شراء رقم "+savedNo,savedNo);
             tx.setTransactionSuccessful();
+            tx.endTransaction();
+            tx=null;
             saved=true;
         }catch(Exception e){
-            Toast.makeText(this,"تعذر حفظ فاتورة الشراء.",Toast.LENGTH_LONG).show();
+            android.util.Log.e("AlAzziInvoice","Purchase invoice save failed",e);
+            Toast.makeText(this,e instanceof IllegalArgumentException?e.getMessage():"تعذر حفظ فاتورة الشراء.",Toast.LENGTH_LONG).show();
         }finally{
-            if(tx!=null)tx.endTransaction();
-            invoiceSaveInProgress=false;
+            try{
+                if(tx!=null&&tx.inTransaction())tx.endTransaction();
+            }catch(Exception finishError){
+                saved=false;
+                android.util.Log.e("AlAzziInvoice","Could not finish purchase transaction",finishError);
+            }finally{
+                invoiceSaveInProgress=false;
+            }
         }
         if(saved){
             Toast.makeText(this,"تم حفظ الفاتورة وتحديث المخزون",Toast.LENGTH_SHORT).show();
-            showPostSavePurchaseActions(purchaseId,no.trim(),supplierName.trim(),lines,sum,db.now());
+            showPostSavePurchaseActions(purchaseId,savedNo,savedSupplier,lines,sum,db.now());
             invoiceHistory();
         }
     }
