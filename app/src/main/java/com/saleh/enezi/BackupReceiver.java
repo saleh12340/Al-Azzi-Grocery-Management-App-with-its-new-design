@@ -37,19 +37,40 @@ public class BackupReceiver extends BroadcastReceiver {
         schedule(context);
     }
 
-    static void backup(Context c){
-        String fn="نسخة_احتياطية_"+new SimpleDateFormat("yyyy-MM-dd_HH-mm",Locale.US).format(new Date())+".db";
+    static boolean backup(Context c){
+        String fn="نسخة_احتياطية_"+new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss",Locale.US).format(new Date())+".db";
         File src=c.getDatabasePath("alazzi_grocery_runtime_v5.db");
-        if(!src.exists()) return;
+        File snapshot=new File(c.getCacheDir(),"alazzi_backup_snapshot.db");
+        if(!src.isFile()||src.length()<=0) return false;
+        SQLiteDatabase d=null;
         try{
-            SQLiteDatabase d=null;
-            try{
-                d=SQLiteDatabase.openDatabase(src.getPath(),null,SQLiteDatabase.OPEN_READWRITE);
-                try{d.execSQL("PRAGMA wal_checkpoint(FULL)");}catch(Exception ignored){}
-            }finally{
-                if(d!=null){try{d.close();}catch(Exception ignored){}}
+            if(snapshot.exists()&&!snapshot.delete())throw new IOException("تعذر تنظيف النسخة المؤقتة");
+            d=SQLiteDatabase.openDatabase(src.getPath(),null,SQLiteDatabase.OPEN_READWRITE);
+            // القفل الحصري يمنع عمليات الكتابة أثناء أخذ لقطة ملف قاعدة البيانات.
+            d.beginTransaction();
+            android.database.Cursor check=d.rawQuery("PRAGMA quick_check",null);
+            boolean valid=check.moveToFirst()&&"ok".equalsIgnoreCase(check.getString(0));
+            check.close();
+            if(!valid)throw new IOException("فشل فحص سلامة قاعدة البيانات");
+            try(InputStream in=new FileInputStream(src);OutputStream out=new FileOutputStream(snapshot,false)){
+                byte[] buffer=new byte[16384];int count;
+                while((count=in.read(buffer))!=-1)out.write(buffer,0,count);
+                out.flush();
             }
-            AppStorage.saveDatabaseBackup(c, src, fn);
-        }catch(Exception ignored){}
+            if(!snapshot.isFile()||snapshot.length()!=src.length())throw new IOException("النسخة المؤقتة غير مكتملة");
+            d.setTransactionSuccessful();
+            d.endTransaction();
+            d.close();d=null;
+            return AppStorage.saveDatabaseBackup(c,snapshot,fn);
+        }catch(Exception e){
+            android.util.Log.e("AlAzziBackup","Database backup failed",e);
+            return false;
+        }finally{
+            if(d!=null){
+                try{if(d.inTransaction())d.endTransaction();}catch(Exception ignored){}
+                try{d.close();}catch(Exception ignored){}
+            }
+            if(snapshot.exists())snapshot.delete();
+        }
     }
 }
