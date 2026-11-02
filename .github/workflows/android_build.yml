@@ -59,11 +59,13 @@ jobs:
         run: |
           APK=app/build/outputs/apk/debug/app-debug.apk
           BADGING=$("$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK")
-          echo "$BADGING" | grep -F "package: name='com.saleh.alazzigrocery.sidebyside'"
-          if echo "$BADGING" | grep -Fq "package: name='com.saleh.alazzigrocery.newapp'"; then
-            echo 'APK package ID matches the currently installed app; side-by-side install would fail' >&2
-            exit 1
-          fi
+          echo "$BADGING" | grep -F "package: name='com.saleh.alazzigrocery.v3'"
+          for EXISTING_ID in com.saleh.enezi com.saleh.alazzigrocery.newapp com.saleh.alazzigrocery.sidebyside; do
+            if echo "$BADGING" | grep -Fq "package: name='$EXISTING_ID'"; then
+              echo "APK package ID collides with a previously used app ID: $EXISTING_ID" >&2
+              exit 1
+            fi
+          done
 
       - name: Verify APK exists and is non-empty
         run: |
