@@ -1034,7 +1034,7 @@ void showMoreMenu(){
         rowB.setOrientation(LinearLayout.HORIZONTAL);
         rowB.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         addHomeSummaryCell(rowB,"عليك",fmt(db==null?0:db.totalDebts())+" ر.ي",RED);
-        addHomeSummaryCell(rowB,"لك",fmt(db==null?0:db.totalCredits())+" ر.ي",BLUE_PRIMARY);
+        addHomeSummaryCell(rowB,"لك",fmt(db==null?0:db.totalCredits())+" ر.ي",GREEN);
         summary.addView(rowB,new LinearLayout.LayoutParams(-1,dp(62)));
 
         content.addView(summary,new LinearLayout.LayoutParams(-1,-2));
@@ -4905,7 +4905,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
                 LinearLayout row=card();row.setPadding(dp(10),dp(7),dp(10),dp(7));row.setOnClickListener(v->supplierAccount(id,name,phone));
                 TextView n=tv(name,14);n.setTextColor(TEXT);n.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
                 TextView b=tv("الرصيد الحالي: "+fmt(Math.abs(bal))+" ر.ي • "+supplierBalanceLabel(bal),12);
-                b.setTextColor(bal>0.005?RED:(bal< -0.005?BLUE:MUTED));
+                b.setTextColor(bal>0.005?RED:(bal< -0.005?GREEN:MUTED));
                 row.addView(n,new LinearLayout.LayoutParams(-1,-2));row.addView(b,new LinearLayout.LayoutParams(-1,-2));
                 LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,-2);rp.setMargins(0,0,0,dp(6));list.addView(row,rp);count++;
             } c.close();
@@ -5018,7 +5018,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
         TextView head=tv(name,18);head.setTextColor(DARK);head.setTypeface(Typeface.DEFAULT,Typeface.BOLD);head.setGravity(Gravity.CENTER);
         content.addView(head,new LinearLayout.LayoutParams(-1,dp(42)));
         double current=supplierBalance(name);
-        TextView bal=tv("الرصيد الحالي: "+fmt(Math.abs(current))+" ر.ي • "+supplierBalanceLabel(current),16);bal.setGravity(Gravity.CENTER);bal.setTypeface(Typeface.DEFAULT,Typeface.BOLD);bal.setTextColor(current>0.005?RED:(current< -0.005?BLUE:GREEN));bal.setBackground(outlined(Color.WHITE,1,dp(12)));content.addView(bal,new LinearLayout.LayoutParams(-1,dp(52)));addSpace(5);
+        TextView bal=tv("الرصيد الحالي: "+fmt(Math.abs(current))+" ر.ي • "+supplierBalanceLabel(current),16);bal.setGravity(Gravity.CENTER);bal.setTypeface(Typeface.DEFAULT,Typeface.BOLD);bal.setTextColor(current>0.005?RED:GREEN);bal.setBackground(outlined(Color.WHITE,1,dp(12)));content.addView(bal,new LinearLayout.LayoutParams(-1,dp(52)));addSpace(5);
         LinearLayout top=new LinearLayout(this);top.setOrientation(LinearLayout.HORIZONTAL);top.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
         Button pay=action("＋ سداد للمورد",RED),share=button("مشاركة الحساب"),printStmt=button("🖨️ طباعة");
         top.addView(pay,new LinearLayout.LayoutParams(0,dp(42),1.2f));
@@ -5041,9 +5041,9 @@ void operationActions(long customerId,String customerName,long tid,String detail
             if(Math.abs(running)<.005)running=0;
             final double fAmount=amount,fRunning=running;final String fDate=date,fDetails=details,fRef=ref;final long fId=id;final int fKind=kind;
             LinearLayout row=card();row.setPadding(dp(9),dp(6),dp(9),dp(6));
-            TextView title=tv((kind==1?"🧾 فاتورة شراء":"💵 سداد")+" • "+(details==null?"":details),12.5f);title.setTypeface(Typeface.DEFAULT,Typeface.BOLD);title.setTextColor(amount>=0?RED:BLUE);
+            TextView title=tv((kind==1?"🧾 فاتورة شراء":"💵 سداد")+" • "+(details==null?"":details),12.5f);title.setTypeface(Typeface.DEFAULT,Typeface.BOLD);title.setTextColor(amount>=0?RED:GREEN);
             TextView meta=tv("📅 "+fDate+"   •   "+(fRef==null||fRef.isEmpty()?"بدون رقم فاتورة":"فاتورة #"+fRef),10.5f);meta.setTextColor(MUTED);
-            TextView vals=tv((amount>=0?"+":"")+fmt(Math.abs(amount))+" ر.ي   •   الرصيد بعد العملية: "+fmt(Math.abs(running))+" "+supplierBalanceLabel(running),11.5f);vals.setTextColor(amount>=0?RED:BLUE);
+            TextView vals=tv((amount>=0?"+":"")+fmt(Math.abs(amount))+" ر.ي   •   الرصيد بعد العملية: "+fmt(Math.abs(running))+" "+supplierBalanceLabel(running),11.5f);vals.setTextColor(amount>=0?RED:GREEN);
             row.addView(title,new LinearLayout.LayoutParams(-1,-2));row.addView(meta,new LinearLayout.LayoutParams(-1,-2));row.addView(vals,new LinearLayout.LayoutParams(-1,-2));
             row.setOnClickListener(v->showSupplierOperationDetails(supplierId,name,phone,fKind,fId,fRef,fDetails,fAmount,fDate,fRunning));
             LinearLayout.LayoutParams rp=new LinearLayout.LayoutParams(-1,-2);rp.setMargins(0,0,0,dp(6));list.addView(row,rp);count++;
@@ -5225,7 +5225,7 @@ void operationActions(long customerId,String customerName,long tid,String detail
         body.addView(detTv,new LinearLayout.LayoutParams(-1,-2));
         addSpaceTo(body,4);
 
-        TextView rb=denseText("الرصيد بعد العملية: "+fmt(Math.abs(running))+" "+supplierBalanceLabel(running),12,10.5f,running>0.005?RED:(running<-0.005?BLUE:GREEN));
+        TextView rb=denseText("الرصيد بعد العملية: "+fmt(Math.abs(running))+" "+supplierBalanceLabel(running),12,10.5f,running>0.005?RED:GREEN);
         rb.setGravity(Gravity.CENTER);
         rb.setBackground(glassFill(Color.argb(160,255,255,255)));
         rb.setPadding(dp(6),dp(4),dp(6),dp(4));
@@ -7634,7 +7634,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
                 TextView pv=tv(fmt(ptotal)+" ر.ي",14);
                 pv.setTextColor(GOLD);pv.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
                 TextView prem=tv("مدفوع "+fmt(ppaid)+" • متبقي "+fmt(Math.max(0,ptotal-ppaid)),10.5f);
-                prem.setTextColor(ppaid>=ptotal?BLUE_PRIMARY:RED);
+                prem.setTextColor(ppaid>=ptotal?GREEN:RED);
                 prem.setGravity(Gravity.LEFT);
                 money.addView(pv,new LinearLayout.LayoutParams(-1,dp(24)));
                 money.addView(prem,new LinearLayout.LayoutParams(-1,dp(18)));
@@ -8357,7 +8357,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         return s.toString();
     }
 
-    int balanceColor(double balance){if(balance>0.005)return RED;if(balance<-0.005)return BLUE;return GREEN;}
+    int balanceColor(double balance){if(balance>0.005)return RED;if(balance<-0.005)return GREEN;return GREEN;}
 
     String balanceText(double b){double x=Math.abs(b)<0.005?0:b;if(x>0)return "رصيدكم عليكم: "+fmt(x)+" ريال";if(x<0)return "رصيدكم لكم: "+fmt(Math.abs(x))+" ريال";return "رصيدكم مسدد بالكامل (0 ريال)";}
 
@@ -8618,7 +8618,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
 
         boldCellP.setTextAlign(Paint.Align.CENTER);
         boldCellP.setTextSize(12.5f);
-        boldCellP.setColor(isCash?GREEN:(remaining>0?RED:BLUE));
+        boldCellP.setColor(remaining>0?RED:GREEN);
         String opText=isCash?"مسدد نقداً: "+fmt(total)+" يمني":(paid>0?"عليك: "+fmt(remaining)+" يمني (مدفوع: "+fmt(paid)+")":"عليك: "+fmt(total)+" يمني");
         canvas.drawText(opText,pageW/2,y+23,boldCellP);
         y+=42;
@@ -9202,7 +9202,7 @@ long createNotePage(String title,String date){ContentValues v=new ContentValues(
         p.setColor(DARK);c.drawRect(margin,y,width-margin,y+Math.round(smallPx*1.5f),p);p.setColor(Color.WHITE);p.setTypeface(Typeface.create("sans",Typeface.BOLD));p.setTextSize(smallPx);c.drawText("اسم الصنف",width-margin-4,y+smallPx,p);p.setTextAlign(Paint.Align.CENTER);c.drawText("الكمية",margin+nameWidth+29,y+smallPx,p);c.drawText("الإجمالي",margin+nameWidth+102,y+smallPx,p);y+=Math.round(smallPx*1.7f);
         for(int i=0;i<safeLines.size();i++){Line l=safeLines.get(i);StaticLayout sl=layouts.get(i);int rh=Math.max(sl.getHeight(),Math.round(bodyPx*1.25f));if((i&1)==0){p.setColor(SURFACE_ALT);c.drawRect(margin,y,width-margin,y+rh+3,p);}c.save();c.translate(margin,y+1);sl.draw(c);c.restore();p.setTypeface(Typeface.create("sans",Typeface.NORMAL));p.setTextSize(bodyPx);p.setColor(TEXT);p.setTextAlign(Paint.Align.CENTER);float base=y+rh/2f-(p.ascent()+p.descent())/2f;c.drawText(fmt(l.qty),margin+nameWidth+29,base,p);p.setTypeface(Typeface.create("sans",Typeface.BOLD));c.drawText(fmt(l.total),margin+nameWidth+102,base,p);y+=rh+5;}
         y+=5;p.setTypeface(Typeface.create("sans",Typeface.BOLD));p.setTextSize(bodyPx);p.setColor(ORANGE);p.setTextAlign(Paint.Align.RIGHT);c.drawText("الإجمالي: "+fmt(total)+" ريال",width-margin,y+bodyPx,p);y+=Math.round(bodyPx+5);p.setTypeface(Typeface.create("sans",Typeface.NORMAL));p.setTextSize(smallPx);p.setColor(TEXT);c.drawText("المدفوع: "+fmt(paid)+" ريال",width-margin,y+smallPx,p);y+=Math.round(smallPx+3);c.drawText("المتبقي: "+fmt(Math.max(0,total-paid))+" ريال",width-margin,y+smallPx,p);y+=Math.round(smallPx+4);
-        p.setTypeface(Typeface.create("sans",Typeface.BOLD));p.setColor(balanceAfter>0.005?RED:(balanceAfter<-0.005?BLUE:DARK));String bal=balanceAfter>0.005?"الرصيد التراكمي: "+fmt(balanceAfter)+" ريال عليكم":(balanceAfter<-0.005?"الرصيد التراكمي: "+fmt(Math.abs(balanceAfter))+" ريال لكم":"الرصيد التراكمي: 0 ريال");c.drawText(bal,width-margin,y+smallPx,p);y+=Math.round(smallPx+5);p.setTypeface(Typeface.create("sans",Typeface.NORMAL));p.setTextAlign(Paint.Align.CENTER);p.setColor(MUTED);c.drawText("شكراً لتعاملكم معنا",width/2,y+smallPx,p);y+=Math.round(smallPx+6);return Bitmap.createBitmap(bmp,0,0,width,Math.min(y+5,bmp.getHeight()));
+        p.setTypeface(Typeface.create("sans",Typeface.BOLD));p.setColor(balanceAfter>0.005?RED:(balanceAfter<-0.005?GREEN:DARK));String bal=balanceAfter>0.005?"الرصيد التراكمي: "+fmt(balanceAfter)+" ريال عليكم":(balanceAfter<-0.005?"الرصيد التراكمي: "+fmt(Math.abs(balanceAfter))+" ريال لكم":"الرصيد التراكمي: 0 ريال");c.drawText(bal,width-margin,y+smallPx,p);y+=Math.round(smallPx+5);p.setTypeface(Typeface.create("sans",Typeface.NORMAL));p.setTextAlign(Paint.Align.CENTER);p.setColor(MUTED);c.drawText("شكراً لتعاملكم معنا",width/2,y+smallPx,p);y+=Math.round(smallPx+6);return Bitmap.createBitmap(bmp,0,0,width,Math.min(y+5,bmp.getHeight()));
     }
 
     Bitmap receiptBitmap(String text){return receiptBitmap(text,384);}
@@ -9555,7 +9555,7 @@ void account(long id,String name){
         // زر الرجوع موجود بالفعل في شريط الصفحة العام؛ لا نكرر زر رجوع ثانياً هنا.
         TextView hname=denseText(name,15.5f,13f,DARK); hname.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         hname.setGravity(Gravity.CENTER_VERTICAL|Gravity.RIGHT); head.addView(hname,new LinearLayout.LayoutParams(0,dp(38),1));
-        TextView balHead=denseText("الإجمالي: "+fmt(Math.abs(currentBal))+" ريال",12.5f,11f,currentBal>0.005?RED:(currentBal<-0.005?BLUE:GREEN));
+        TextView balHead=denseText("الإجمالي: "+fmt(Math.abs(currentBal))+" ريال",12.5f,11f,currentBal>0.005?RED:GREEN);
         balHead.setGravity(Gravity.CENTER); balHead.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
         balHead.setBackground(glassFill(currentBal>0.005?Color.argb(210,255,230,233):Color.argb(205,230,248,236)));
         balHead.setPadding(dp(8),dp(5),dp(8),dp(5)); head.addView(balHead,new LinearLayout.LayoutParams(-2,dp(34)));
@@ -9606,7 +9606,7 @@ void account(long id,String name){
         Button debit=button("🔴 قيد سحب (عليه +)");
         debit.setTextSize(13f); debit.setTextColor(Color.WHITE); debit.setBackground(rounded(RED,dp(10)));
         Button credit=button("🔵 دفعة سداد (سداد ✓)");
-        credit.setTextSize(13f); credit.setTextColor(Color.WHITE); credit.setBackground(rounded(BLUE,dp(10)));
+        credit.setTextSize(13f); credit.setTextColor(Color.WHITE); credit.setBackground(rounded(GREEN,dp(10)));
         addBtns.addView(debit,new LinearLayout.LayoutParams(0,dp(40),1));
         LinearLayout.LayoutParams cbp=new LinearLayout.LayoutParams(0,dp(40),1);
         cbp.setMargins(dp(6),0,0,0);
@@ -9689,11 +9689,11 @@ void account(long id,String name){
                 operationBox.setPadding(dp(3),dp(2),dp(3),dp(2));
                 operationBox.setClipChildren(false);
 
-                TextView opType=denseText(type==1?"قيد سحب":"دفعة سداد",11f,9f,type==1?RED:BLUE);
+                TextView opType=denseText(type==1?"قيد سحب":"دفعة سداد",11f,9f,type==1?RED:GREEN);
                 opType.setGravity(Gravity.CENTER);
                 opType.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
                 opType.setMaxLines(1);
-                TextView amt=denseText((type==1?"عليه: ":"له: ")+fmt(a)+" ر.ي",12f,9f,type==1?RED:BLUE);
+                TextView amt=denseText((type==1?"عليه: ":"له: ")+fmt(a)+" ر.ي",12f,9f,type==1?RED:GREEN);
                 amt.setGravity(Gravity.CENTER);
                 amt.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
                 amt.setMaxLines(1);
@@ -9745,7 +9745,7 @@ void account(long id,String name){
 
                 // اليسار: الرصيد التراكمي فقط.
                 TextView bal=denseText(fmt(Math.abs(balanceAfter))+" ريال",12f,9.5f,
-                    balanceAfter>0.005?RED:(balanceAfter<-0.005?BLUE:GREEN));
+                    balanceAfter>0.005?RED:GREEN);
                 bal.setGravity(Gravity.CENTER);
                 bal.setTypeface(Typeface.DEFAULT,Typeface.BOLD);
                 bal.setMaxLines(2);
