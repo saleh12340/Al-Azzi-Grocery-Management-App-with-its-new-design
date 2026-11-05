@@ -1,0 +1,13 @@
+<resources>
+    <color name="azzi_primary">#173744</color>
+    <color name="azzi_primary_variant">#255B70</color>
+    <color name="azzi_accent">#D39737</color>
+    <color name="azzi_positive">#27845B</color>
+    <color name="azzi_negative">#BE3939</color>
+    <color name="azzi_background">#F4F1E9</color>
+    <color name="azzi_surface">#FFFDF7</color>
+    <color name="azzi_surface_variant">#EDE9DE</color>
+    <color name="azzi_text">#273136</color>
+    <color name="azzi_text_secondary">#677071</color>
+    <color name="azzi_outline">#D8CFBC</color>
+</resources>

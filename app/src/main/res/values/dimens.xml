@@ -1,0 +1,9 @@
+<resources>
+    <dimen name="azzi_toolbar_height">60dp</dimen>
+    <dimen name="azzi_button_min_height">44dp</dimen>
+    <dimen name="azzi_field_min_height">46dp</dimen>
+    <dimen name="azzi_card_radius">14dp</dimen>
+    <dimen name="azzi_control_radius">12dp</dimen>
+    <dimen name="azzi_screen_padding">8dp</dimen>
+    <dimen name="azzi_section_spacing">8dp</dimen>
+</resources>
