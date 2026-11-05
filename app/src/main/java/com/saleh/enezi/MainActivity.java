@@ -48,13 +48,10 @@ import java.util.*;
 public class MainActivity extends Activity {
     static final int REQ_CONTACTS=4101, PICK_CONTACT=4102, PICK_TRANSFER_RECEIVER=4110, PICK_TRANSFER_SENDER=4111, REQ_CAMERA_SCAN=4103, REQ_GALLERY_SCAN=4104, REQ_PERM_CAMERA=4105, REQ_AUDIO=5110, REQ_VOICE_SEARCH=5111, REQ_VOICE_DETAIL=5112, REQ_VOICE_FIELD=5113;
     EditText customerNameInput, customerPhoneInput;
-    static final int ORANGE=Color.rgb(211,151,55), BLUE_PRIMARY=Color.rgb(37,91,112);
-    static final int ORANGE_SOFT=Color.rgb(211,151,55), BLUE_SOFT=Color.rgb(23,55,68);
-    // لوحة التطبيق الموحدة: خلفية عاجية دافئة، أزرق بترولي، ذهبي، وألوان مالية دلالية.
-    // الأسماء القديمة محفوظة لتجنب كسر منطق الشاشات الحالي، لكن قيمها أصبحت ضمن الهوية الجديدة.
-    static final int GREEN=Color.rgb(39,132,91), DARK=Color.rgb(23,55,68), GOLD=ORANGE, BLUE=BLUE_PRIMARY, RED=Color.rgb(190,57,57);
-    static final int BG=Color.rgb(244,241,233), TEXT=Color.rgb(39,49,54), MUTED=Color.rgb(103,112,113), CARD=Color.rgb(255,253,247);
-    static final int SURFACE_ALT=Color.rgb(237,233,222), BORDER=Color.rgb(216,207,188), ACCENT_LINE=ORANGE_SOFT;
+    // قيم الهوية تُقرأ من موارد التصميم المركزية حتى لا تختلف ألوان الشاشات عن colors.xml.
+    int ORANGE, BLUE_PRIMARY, ORANGE_SOFT, BLUE_SOFT;
+    int GREEN, DARK, GOLD, BLUE, RED;
+    int BG, TEXT, MUTED, CARD, SURFACE_ALT, BORDER, ACCENT_LINE;
     volatile boolean startupFinished=false; DB db; LinearLayout root,content,bottom; boolean darkCardMode=false; PopupWindow learningPopup; TextView pageTitle; int textSize=16; String currentPage="الرئيسية"; ArrayDeque<String> pageStack=new ArrayDeque<>(); long currentNotePageId=-1; int noteFontSize=14; boolean noteScrollMode=true; String noteSearchQuery="";
     Uri cameraScanTempUri; Bitmap scanRawBitmap; String scanFilterMode="magic"; float scanRotation=0; String scanCategoryFilter="الكل"; String scanSearchQuery="";
     EditText transferSenderName,transferSenderPhone,transferReceiverName,transferReceiverPhone,transferContactNameTarget,transferContactPhoneTarget;
@@ -64,6 +61,24 @@ public class MainActivity extends Activity {
 
     @Override public void onCreate(Bundle b){
         super.onCreate(b);
+        // تحميل لوحة الألوان مرة واحدة من الموارد المركزية قبل إنشاء أي شاشة.
+        android.content.res.Resources colors=getResources();
+        ORANGE=colors.getColor(R.color.azzi_accent);
+        BLUE_PRIMARY=colors.getColor(R.color.azzi_primary_variant);
+        ORANGE_SOFT=ORANGE;
+        BLUE_SOFT=colors.getColor(R.color.azzi_primary);
+        GREEN=colors.getColor(R.color.azzi_positive);
+        DARK=colors.getColor(R.color.azzi_primary);
+        GOLD=ORANGE;
+        BLUE=BLUE_PRIMARY;
+        RED=colors.getColor(R.color.azzi_negative);
+        BG=colors.getColor(R.color.azzi_background);
+        TEXT=colors.getColor(R.color.azzi_text);
+        MUTED=colors.getColor(R.color.azzi_text_secondary);
+        CARD=colors.getColor(R.color.azzi_surface);
+        SURFACE_ALT=colors.getColor(R.color.azzi_surface_variant);
+        BORDER=colors.getColor(R.color.azzi_outline);
+        ACCENT_LINE=ORANGE_SOFT;
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         getWindow().setStatusBarColor(DARK);
         getWindow().setNavigationBarColor(DARK);
