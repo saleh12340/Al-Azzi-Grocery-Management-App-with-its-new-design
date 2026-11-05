@@ -123,7 +123,7 @@ public class MainActivity extends Activity {
     void addSafeHomeButton(LinearLayout box,String label,View.OnClickListener click){
         Button b=button(label); b.setTextSize(16); b.setTextColor(TEXT);
         b.setBackground(outlined(CARD,dp(1),12)); b.setOnClickListener(click);
-        LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2); p.setMargins(0,dp(6),0,0); b.setMinHeight(dp(44)); box.addView(b,p);
+        LinearLayout.LayoutParams p=new LinearLayout.LayoutParams(-1,-2); p.setMargins(0,dp(6),0,0); b.setMinHeight(getResources().getDimensionPixelSize(R.dimen.azzi_button_min_height)); box.addView(b,p);
     }
 
     void showStartupRecovery(Throwable error){
@@ -399,7 +399,7 @@ public class MainActivity extends Activity {
         b.setTextSize(14.5f);
         b.setAllCaps(false);
         b.setMinHeight(dp(44));
-        b.setMinimumHeight(dp(44));
+        b.setMinimumHeight(getResources().getDimensionPixelSize(R.dimen.azzi_button_min_height));
         b.setPadding(dp(8),dp(3),dp(8),dp(3));
         b.setGravity(Gravity.CENTER);
         b.setStateListAnimator(null);
@@ -430,7 +430,7 @@ public class MainActivity extends Activity {
         EditText e=new EditText(this);
         e.setHint(h);
         e.setTextSize(14f);
-        e.setMinHeight(dp(44));
+        e.setMinHeight(getResources().getDimensionPixelSize(R.dimen.azzi_field_min_height));
         e.setSingleLine(true);
         e.setMaxLines(1);
         e.setEllipsize(null);
@@ -442,7 +442,7 @@ public class MainActivity extends Activity {
         e.setTextColor(TEXT);
         e.setHintTextColor(MUTED);
         e.setPadding(dp(10),0,dp(10),0);
-        e.setBackground(outlined(SURFACE_ALT,dp(1),12));
+        e.setBackground(outlined(SURFACE_ALT,dp(1),getResources().getDimensionPixelSize(R.dimen.azzi_control_radius)));
         e.setElevation(dp(1));
         e.setGravity(Gravity.RIGHT|Gravity.CENTER_VERTICAL);
         e.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
@@ -463,7 +463,7 @@ public class MainActivity extends Activity {
         }catch(Throwable ignored){}
         e.setOnFocusChangeListener((v,has)->{
             if(has){
-                e.setBackground(outlined(CARD,dp(2),12));
+                e.setBackground(outlined(CARD,dp(2),getResources().getDimensionPixelSize(R.dimen.azzi_control_radius)));
                 e.postDelayed(() -> e.selectAll(),60);
             }else{
                 e.setBackground(outlined(SURFACE_ALT,dp(1),12));
@@ -632,13 +632,13 @@ public class MainActivity extends Activity {
         titleBox.addView(logo,new LinearLayout.LayoutParams(-1,-2));
         titleBox.addView(pt,new LinearLayout.LayoutParams(-1,-2));
         bar.addView(titleBox,new LinearLayout.LayoutParams(0,-2,1));
-        root.addView(bar,new LinearLayout.LayoutParams(-1,dp(60)));
+        root.addView(bar,new LinearLayout.LayoutParams(-1,getResources().getDimensionPixelSize(R.dimen.azzi_toolbar_height)));
 
         ScrollView sv=new ScrollView(this);
         sv.setFillViewport(true); sv.setClipToPadding(false);
         content=new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(dp(8),dp(8),dp(8),dp(10));
+        int screenPadding=getResources().getDimensionPixelSize(R.dimen.azzi_screen_padding);\n        content.setPadding(screenPadding,screenPadding,screenPadding,screenPadding+dp(2));
         content.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
 
@@ -1983,7 +1983,7 @@ void showGeneralActions(){
     }
     GradientDrawable bg(int color,float radius){return rounded(color,dp((int)radius));}
     GradientDrawable outline(int color,float radius){return outlined(color,1,dp((int)radius));}
-    LinearLayout card(){LinearLayout c=new LinearLayout(this);c.setOrientation(LinearLayout.VERTICAL);c.setPadding(dp(12),dp(10),dp(12),dp(10));c.setBackground(darkCardMode ? rounded(DARK,dp(14)) : outline(CARD,14));c.setElevation(dp(1));c.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);return c;}
+    LinearLayout card(){LinearLayout c=new LinearLayout(this);c.setOrientation(LinearLayout.VERTICAL);c.setPadding(dp(12),dp(10),dp(12),dp(10));int radius=getResources().getDimensionPixelSize(R.dimen.azzi_card_radius);c.setBackground(darkCardMode ? rounded(DARK,radius) : outlined(CARD,dp(1),radius));c.setElevation(dp(1));c.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);return c;}
     void addCard(View v,int h){content.addView(v,new LinearLayout.LayoutParams(-1,dp(Math.max(50,h-18))));space(4);}
     void add(View v,int h){content.addView(v,new LinearLayout.LayoutParams(-1,dp(Math.max(42,h-12))));space(4);}
     void space(int h){addSpace(dp(h));}
