@@ -50,7 +50,7 @@ public class MainActivity extends Activity {
     EditText customerNameInput, customerPhoneInput;
     static final int ORANGE=Color.rgb(211,151,55), BLUE_PRIMARY=Color.rgb(37,91,112);
     static final int ORANGE_SOFT=Color.rgb(211,151,55), BLUE_SOFT=Color.rgb(23,55,68);
-    // لوحة التطبيق الموحدة: أبيض كأساس، أزرق كلون رئيسي، وبرتقالي كلون إبراز.
+    // لوحة التطبيق الموحدة: خلفية عاجية دافئة، أزرق بترولي، ذهبي، وألوان مالية دلالية.
     // الأسماء القديمة محفوظة لتجنب كسر منطق الشاشات الحالي، لكن قيمها أصبحت ضمن الهوية الجديدة.
     static final int GREEN=Color.rgb(39,132,91), DARK=Color.rgb(23,55,68), GOLD=ORANGE, BLUE=BLUE_PRIMARY, RED=Color.rgb(190,57,57);
     static final int BG=Color.rgb(244,241,233), TEXT=Color.rgb(39,49,54), MUTED=Color.rgb(103,112,113), CARD=Color.rgb(255,253,247);
@@ -9508,14 +9508,15 @@ Uri saveReceiptBitmap(Bitmap bitmap,String no)throws Exception{
 
     void applyDenseGlassPage(){
         try{
-            root.setBackgroundColor(Color.WHITE);
+            // جميع الصفحات الكثيفة تستخدم خلفية النظام نفسها؛ الاختلاف يكون في ترتيب المحتوى لا في الهوية.
+            root.setBackgroundColor(BG);
             if(content!=null){
-                content.setBackgroundColor(Color.WHITE);
-                content.setPadding(dp(6),dp(4),dp(6),dp(8));
+                content.setBackgroundColor(BG);
+                content.setPadding(dp(8),dp(8),dp(8),dp(10));
             }
             if(bottom!=null&&bottom.getChildCount()>0){
                 View nav=bottom.getChildAt(0);
-                nav.setBackground(darkCardMode ? rounded(Color.BLACK,dp(10)) : outlined(CARD,dp(1),dp(10)));
+                nav.setBackground(darkCardMode ? rounded(DARK,dp(10)) : outlined(CARD,dp(1),dp(10)));
             }
         }catch(Throwable ignored){}
     }
