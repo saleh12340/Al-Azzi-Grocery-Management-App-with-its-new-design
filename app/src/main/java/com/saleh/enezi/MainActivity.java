@@ -638,7 +638,8 @@ public class MainActivity extends Activity {
         sv.setFillViewport(true); sv.setClipToPadding(false);
         content=new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
-        int screenPadding=getResources().getDimensionPixelSize(R.dimen.azzi_screen_padding);\n        content.setPadding(screenPadding,screenPadding,screenPadding,screenPadding+dp(2));
+        int screenPadding=getResources().getDimensionPixelSize(R.dimen.azzi_screen_padding);
+        content.setPadding(screenPadding,screenPadding,screenPadding,screenPadding+dp(2));
         content.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
 
 
